@@ -4,6 +4,8 @@ import { DashboardList } from "@/components/dashboard-list";
 import { UserMenu } from "@/components/user-menu";
 import Link from "next/link";
 import { ArrowLeft } from "@phosphor-icons/react/dist/ssr";
+import { Button } from "@/components/ui/button";
+import { cleanupExpiredOrLimitReachedFile } from "@/lib/cleanup";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -18,6 +20,25 @@ export default async function DashboardPage() {
     .select('*')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });
+    
+  // Cleanup expired/limit reached files
+  if (uploads) {
+      const candidates = uploads.filter(file => {
+          if (file.file_deleted) return false;
+          const isExpired = new Date(file.expiration_time) < new Date();
+          const isLimitReached = file.download_limit !== null && file.download_count >= file.download_limit;
+          return isExpired || isLimitReached;
+      });
+
+      if (candidates.length > 0) {
+          await Promise.all(candidates.map(file => cleanupExpiredOrLimitReachedFile(file.id)));
+          
+          // Update local state to reflect deletion
+          candidates.forEach(file => {
+              file.file_deleted = true;
+          });
+      }
+  }
 
   return (
     <div className="min-h-screen bg-slate-50/50">
@@ -52,6 +73,4 @@ export default async function DashboardPage() {
   )
 }
 
-// Simple wrapper for button in server component if needed, but we can import Client Button
-import { Button } from "@/components/ui/button";
 

@@ -18,7 +18,8 @@ create table public.uploads (
   is_password_protected boolean default false,
   password_salt text,
   encrypted_key text,
-  encrypted_key_iv text
+  encrypted_key_iv text,
+  file_deleted boolean default false
 );
 
 -- RLS

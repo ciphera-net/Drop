@@ -41,10 +41,11 @@ export function DashboardList({ uploads }: { uploads: any[] }) {
     };
   }, [supabase]);
 
-  const handleDelete = async (id: string) => {
+    const handleDelete = async (id: string) => {
       setDeleting(id);
       try {
         await supabase.from('uploads').delete().eq('id', id);
+        // We try to remove from storage too just in case, it's idempotent
         await supabase.storage.from('drop-files').remove([id]);
         router.refresh();
       } catch (e) {
@@ -65,19 +66,42 @@ export function DashboardList({ uploads }: { uploads: any[] }) {
 
   return (
      <div className="space-y-4">
-        {files.map(file => (
-           <div key={file.id} className="bg-white p-4 rounded-xl border flex items-center justify-between shadow-sm hover:shadow-md transition-shadow">
+        {files.map(file => {
+           const isExpired = new Date(file.expiration_time) < new Date();
+           const isLimitReached = file.download_limit !== null && file.download_count >= file.download_limit;
+           const isDeleted = file.file_deleted || isExpired || isLimitReached;
+
+           let statusLabel = null;
+           if (file.file_deleted) {
+               if (isLimitReached) statusLabel = "Limit Reached";
+               else if (isExpired) statusLabel = "Expired";
+               else statusLabel = "Deleted";
+           } else if (isLimitReached) {
+               statusLabel = "Limit Reached";
+           } else if (isExpired) {
+               statusLabel = "Expired";
+           }
+
+           return (
+           <div key={file.id} className={`bg-white p-4 rounded-xl border flex items-center justify-between shadow-sm hover:shadow-md transition-shadow ${isDeleted ? 'opacity-75 bg-gray-50' : ''}`}>
               <div className="flex items-center gap-4 overflow-hidden">
-                 <div className="bg-orange-50 p-3 rounded-lg flex-shrink-0">
-                    <File className="w-6 h-6 text-primary" weight="duotone" />
+                 <div className={`p-3 rounded-lg flex-shrink-0 ${isDeleted ? 'bg-gray-100' : 'bg-orange-50'}`}>
+                    <File className={`w-6 h-6 ${isDeleted ? 'text-gray-400' : 'text-primary'}`} weight="duotone" />
                  </div>
                  <div className="min-w-0">
-                    <p className="font-medium text-gray-900 truncate">
-                       {/* We can't decrypt name, so show generic name + ID slice */}
-                       <Link href={`/d/${file.id}`} target="_blank" className="hover:underline decoration-primary">
-                          File <span className="text-gray-400 text-xs font-mono">#{file.id.slice(0, 8)}</span>
-                       </Link>
-                    </p>
+                    <div className="flex items-center gap-2">
+                        <p className={`font-medium truncate ${isDeleted ? 'text-gray-500' : 'text-gray-900'}`}>
+                        {/* We can't decrypt name, so show generic name + ID slice */}
+                        <Link href={isDeleted ? '#' : `/d/${file.id}`} target={isDeleted ? undefined : "_blank"} className={isDeleted ? 'cursor-default' : 'hover:underline decoration-primary'}>
+                            File <span className="text-gray-400 text-xs font-mono">#{file.id.slice(0, 8)}</span>
+                        </Link>
+                        </p>
+                        {statusLabel && (
+                            <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-[10px] font-bold uppercase tracking-wider">
+                                {statusLabel}
+                            </span>
+                        )}
+                    </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
                        <span className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />
@@ -97,13 +121,13 @@ export function DashboardList({ uploads }: { uploads: any[] }) {
                     onClick={() => handleDelete(file.id)} 
                     className="text-muted-foreground hover:text-destructive hover:bg-red-50"
                     disabled={deleting === file.id}
-                    title="Delete File"
+                    title={isDeleted ? "Remove from History" : "Delete File"}
                   >
                      {deleting === file.id ? <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div> : <Trash weight="bold" />}
                   </Button>
               </div>
            </div>
-        ))}
+        )})}
      </div>
   )
 }

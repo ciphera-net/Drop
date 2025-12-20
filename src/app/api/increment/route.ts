@@ -14,12 +14,16 @@ export async function POST(request: Request) {
     // 1. Get current count and limit
     const { data: file, error: fetchError } = await supabase
       .from('uploads')
-      .select('download_count, download_limit')
+      .select('download_count, download_limit, file_deleted')
       .eq('id', id)
       .single();
 
     if (fetchError || !file) {
       return NextResponse.json({ error: 'File not found' }, { status: 404 });
+    }
+
+    if (file.file_deleted) {
+      return NextResponse.json({ error: 'File deleted' }, { status: 410 });
     }
 
     // 2. Check limit

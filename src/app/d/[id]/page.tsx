@@ -2,6 +2,7 @@ import { createClient } from "@/utils/supabase/server";
 import { notFound } from "next/navigation";
 import { DownloadView } from "@/components/download-view";
 import Link from "next/link";
+import { cleanupExpiredOrLimitReachedFile } from "@/lib/cleanup";
 
 export default async function DownloadPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -19,9 +20,15 @@ export default async function DownloadPage({ params }: { params: Promise<{ id: s
   // Check expiration (Server side check)
   const isExpired = new Date(file.expiration_time) < new Date();
   const isLimitReached = file.download_limit !== null && file.download_count >= file.download_limit;
-
-  if (isExpired || isLimitReached) {
-     return (
+  
+  // If logically deleted but not marked, or marked deleted, handle it.
+  if (isExpired || isLimitReached || file.file_deleted) {
+      if (!file.file_deleted) {
+          // Trigger cleanup if not already marked
+          await cleanupExpiredOrLimitReachedFile(file.id);
+      }
+      
+      return (
          <div className="min-h-screen flex items-center justify-center bg-gray-50">
              <div className="text-center p-8 bg-white rounded-2xl shadow-xl max-w-md mx-4">
                  <div className="mx-auto bg-gray-100 p-3 rounded-full w-16 h-16 flex items-center justify-center mb-4">

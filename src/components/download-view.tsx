@@ -122,6 +122,17 @@ export function DownloadView({ file }: { file: any }) {
        URL.revokeObjectURL(url);
        setProgress(100);
 
+       // Check if this download reached the limit and trigger cleanup
+       const currentCount = data.new_count || downloadCount + 1;
+       if (file.download_limit !== null && currentCount >= file.download_limit) {
+           // We don't await this to avoid blocking the UI, but we trigger it
+           fetch('/api/cleanup', {
+               method: 'POST',
+               headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({ id: file.id })
+           }).catch(err => console.error('Failed to trigger cleanup:', err));
+       }
+
     } catch (e: any) {
        console.error(e);
        setError(e.message || "Download failed. Please try again.");

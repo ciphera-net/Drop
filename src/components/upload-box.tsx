@@ -151,6 +151,7 @@ export function UploadBox() {
       });
 
       if (dbError) throw dbError;
+
       setProgress(100);
 
       // 6. Generate Link

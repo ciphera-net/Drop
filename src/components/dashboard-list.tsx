@@ -68,14 +68,17 @@ export function DashboardList({ uploads }: { uploads: any[] }) {
      <div className="space-y-4">
         {files.map(file => {
            const isExpired = new Date(file.expiration_time) < new Date();
-           const isDeleted = file.file_deleted || isExpired;
+           const isLimitReached = file.download_limit !== null && file.download_count >= file.download_limit;
+           const isDeleted = file.file_deleted || isExpired || isLimitReached;
 
            let statusLabel = null;
            if (file.file_deleted) {
-               if (isExpired) statusLabel = "Expired";
+               if (isLimitReached) statusLabel = "Limit Reached";
+               else if (isExpired) statusLabel = "Expired";
                else statusLabel = "Deleted";
-           } else if (isExpired) {
-               statusLabel = "Expired";
+           } else {
+               if (isLimitReached) statusLabel = "Limit Reached";
+               else if (isExpired) statusLabel = "Expired";
            }
 
            return (

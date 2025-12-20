@@ -76,6 +76,18 @@ export function DownloadView({ file }: { file: any }) {
     setProgress(1);
     
     try {
+       // Increment download count first
+       const incRes = await fetch('/api/increment', {
+            method: 'POST',
+            body: JSON.stringify({ id: file.id }),
+            headers: { 'Content-Type': 'application/json' }
+       });
+        
+       if (!incRes.ok) {
+            const err = await incRes.json();
+            throw new Error(err.error || "Failed to initiate download");
+       }
+
        const supabase = createClient();
        let decryptedBlob: Blob;
 

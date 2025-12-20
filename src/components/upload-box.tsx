@@ -23,6 +23,7 @@ export function UploadBox() {
   const [shareLink, setShareLink] = useState<string | null>(null);
   const [magicWords, setMagicWords] = useState<string | null>(null);
   const [expiration, setExpiration] = useState("1h");
+  const [maxDownloads, setMaxDownloads] = useState<number | null>(1);
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -149,7 +150,8 @@ export function UploadBox() {
         password_salt: passwordSalt,
         encrypted_key: encryptedKey,
         encrypted_key_iv: encryptedKeyIv,
-        magic_words: generatedMagicWords
+        magic_words: generatedMagicWords,
+        download_limit: maxDownloads
       });
 
       if (dbError) throw dbError;
@@ -190,6 +192,7 @@ export function UploadBox() {
     setShareLink(null);
     setMagicWords(null);
     setPassword("");
+    setMaxDownloads(1);
     setProgress(0);
     setUploading(false);
     setUploadStats(null);
@@ -401,6 +404,25 @@ export function UploadBox() {
                                )}
                              >
                                {opt}
+                             </button>
+                           ))}
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs mb-1.5 block text-muted-foreground">Max Downloads</Label>
+                        <div className="flex space-x-1">
+                           {[1, 10, 100, null].map((opt) => (
+                             <button 
+                               key={String(opt)}
+                               onClick={() => setMaxDownloads(opt)}
+                               className={cn(
+                                 "flex-1 py-1.5 text-xs rounded-md border transition-all duration-200 font-medium",
+                                 maxDownloads === opt 
+                                   ? "bg-primary text-white border-primary shadow-sm" 
+                                   : "bg-background text-gray-600 border-border hover:border-primary/30"
+                               )}
+                             >
+                               {opt === null ? "Unlimited" : opt}
                              </button>
                            ))}
                         </div>

@@ -6,7 +6,7 @@ export async function cleanupExpiredOrLimitReachedFile(fileId: string) {
   // 1. Fetch file to verify conditions (and check if already deleted to avoid redundant work)
   const { data: file, error } = await supabase
     .from('uploads')
-    .select('expiration_time, file_deleted, iv')
+    .select('expiration_time, file_deleted, iv, download_limit, download_count')
     .eq('id', fileId)
     .single();
 
@@ -20,9 +20,10 @@ export async function cleanupExpiredOrLimitReachedFile(fileId: string) {
   }
 
   const isExpired = new Date(file.expiration_time) < new Date();
+  const isLimitReached = file.download_limit !== null && file.download_count >= file.download_limit;
 
-  if (isExpired) {
-    console.log(`Cleaning up file ${fileId} (Expired: ${isExpired})`);
+  if (isExpired || isLimitReached) {
+    console.log(`Cleaning up file ${fileId} (Expired: ${isExpired}, Limit Reached: ${isLimitReached})`);
     
     // 2. Remove from Storage
     

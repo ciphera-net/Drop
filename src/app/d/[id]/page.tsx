@@ -26,9 +26,10 @@ export default async function DownloadPage({ params }: { params: Promise<{ id: s
 
   // Check expiration (Server side check)
   const isExpired = new Date(file.expiration_time) < new Date();
+  const isLimitReached = file.download_limit !== null && file.download_count >= file.download_limit;
   
   // If logically deleted but not marked, or marked deleted, handle it.
-  if (isExpired || file.file_deleted) {
+  if (isExpired || isLimitReached || file.file_deleted) {
       if (!file.file_deleted) {
           // Trigger cleanup if not already marked
           await cleanupExpiredOrLimitReachedFile(file.id);
@@ -42,8 +43,8 @@ export default async function DownloadPage({ params }: { params: Promise<{ id: s
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                  </div>
-                 <h1 className="text-2xl font-bold text-gray-900 mb-2">Transfer Expired</h1>
-                 <p className="text-gray-600">This file is no longer available. It has expired.</p>
+                 <h1 className="text-2xl font-bold text-gray-900 mb-2">Transfer Unavailable</h1>
+                 <p className="text-gray-600">This file is no longer available. It has expired or the download limit was reached.</p>
              </div>
          </div>
      )

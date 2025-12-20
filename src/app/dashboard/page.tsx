@@ -26,7 +26,8 @@ export default async function DashboardPage() {
       const candidates = uploads.filter(file => {
           if (file.file_deleted) return false;
           const isExpired = new Date(file.expiration_time) < new Date();
-          return isExpired;
+          const isLimitReached = file.download_limit !== null && file.download_count >= file.download_limit;
+          return isExpired || isLimitReached;
       });
 
       if (candidates.length > 0) {

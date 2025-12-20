@@ -15,6 +15,7 @@ export function DownloadView({ file }: { file: any }) {
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [manualKey, setManualKey] = useState("");
+  const [downloadCount, setDownloadCount] = useState(file.download_count);
 
   useEffect(() => {
     const hash = window.location.hash.substring(1);
@@ -44,6 +45,7 @@ export function DownloadView({ file }: { file: any }) {
 
   const handleDownload = async () => {
     if (!key) return;
+    setError(null);
     setDownloading(true);
     setProgress(10);
     
@@ -55,13 +57,24 @@ export function DownloadView({ file }: { file: any }) {
           body: JSON.stringify({ id: file.id })
        });
 
+       const data = await incRes.json();
+
        if (!incRes.ok) {
-           const data = await incRes.json();
+           if (incRes.status === 403 && data.error === 'Download limit reached') {
+               setDownloadCount(file.download_limit || downloadCount + 1);
+               setError(data.error);
+               setDownloading(false);
+               return;
+           }
            throw new Error(data.error || "Failed to start download");
        }
 
+       if (data.new_count) {
+           setDownloadCount(data.new_count);
+       }
+
        const supabase = createClient();
-       const { data, error } = await supabase.storage
+       const { data: fileData, error } = await supabase.storage
           .from('drop-files')
           .download(file.id);
 
@@ -69,7 +82,7 @@ export function DownloadView({ file }: { file: any }) {
        setProgress(60);
 
        const iv = EncryptionService.base64ToIv(file.iv);
-       const decryptedBlob = await EncryptionService.decryptFile(data, key, iv);
+       const decryptedBlob = await EncryptionService.decryptFile(fileData, key, iv);
        setProgress(90);
 
        const url = URL.createObjectURL(decryptedBlob);
@@ -89,6 +102,8 @@ export function DownloadView({ file }: { file: any }) {
        setDownloading(false);
     }
   };
+
+  const isLimitReached = file.download_limit !== null && downloadCount >= file.download_limit;
 
   if (!key) {
       return (
@@ -149,10 +164,23 @@ export function DownloadView({ file }: { file: any }) {
                           {progress < 60 ? 'Downloading encrypted file...' : 'Decrypting locally...'}
                       </p>
                   </div>
+              ) : isLimitReached ? (
+                  <div className="text-center p-4 bg-gray-50 rounded-lg border border-gray-200">
+                      <p className="text-sm font-medium text-gray-900">Download Limit Reached</p>
+                      <p className="text-xs text-muted-foreground mt-1">This file can no longer be downloaded.</p>
+                  </div>
               ) : (
-                  <Button className="w-full" size="lg" onClick={handleDownload}>
-                      <DownloadSimple className="mr-2 text-xl" weight="bold" /> Download File
-                  </Button>
+                  <div className="space-y-4">
+                      {error && (
+                          <div className="flex items-center text-sm text-destructive justify-center p-3 bg-red-50 rounded-lg border border-red-100">
+                              <WarningCircle className="mr-2 h-5 w-5 shrink-0" weight="fill" /> 
+                              <span>{error}</span>
+                          </div>
+                      )}
+                      <Button className="w-full" size="lg" onClick={handleDownload}>
+                          <DownloadSimple className="mr-2 text-xl" weight="bold" /> Download File
+                      </Button>
+                  </div>
               )}
           </CardContent>
           <CardFooter className="justify-center">

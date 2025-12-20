@@ -160,11 +160,12 @@ export function UploadBox() {
       // 5. Generate Link
       const keyBase64 = await EncryptionService.exportKey(key);
       const origin = window.location.origin;
-      
+      const linkId = generatedMagicWords || fileId;
+
       if (password) {
-        setShareLink(`${origin}/d/${fileId}`);
+        setShareLink(`${origin}/d/${linkId}`);
       } else {
-        setShareLink(`${origin}/d/${fileId}#${keyBase64}`);
+        setShareLink(`${origin}/d/${linkId}#${keyBase64}`);
       }
 
     } catch (e: any) {
@@ -231,16 +232,6 @@ export function UploadBox() {
               </div>
             </div>
           </div>
-
-          {magicWords && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-blue-900">
-              <div className="text-center space-y-1">
-                <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">Magic Words</p>
-                <p className="text-lg font-bold font-mono select-all">{magicWords}</p>
-                <p className="text-xs text-blue-600/80">Use these words on the homepage to find this file.</p>
-              </div>
-            </div>
-          )}
 
           <div className="flex space-x-2">
             <Input readOnly value={shareLink} className="font-mono text-xs" />

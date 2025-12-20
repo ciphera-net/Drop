@@ -36,7 +36,8 @@ export function MagicWordInput() {
         throw new Error(data.error || 'File not found');
       }
 
-      router.push(`/d/${data.id}`);
+      // If we found it, navigate to the URL with the magic words to keep it pretty
+      router.push(`/d/${normalizedWords}`);
     } catch (err: any) {
       setError(err.message);
       setLoading(false);

@@ -1,10 +1,58 @@
 "use client";
 import { createClient } from "@/utils/supabase/client";
 import { Button } from "./ui/button";
-import { Trash, Clock, File, DownloadSimple, FileText } from "@phosphor-icons/react";
+import { Trash, Clock, File, DownloadSimple, FileText, Timer } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+
+function FileCountdown({ expiresAt }: { expiresAt: string }) {
+  const [timeLeft, setTimeLeft] = useState<string>("");
+
+  useEffect(() => {
+    const updateTimer = () => {
+      const now = new Date().getTime();
+      const expirationDate = new Date(expiresAt).getTime();
+      const distance = expirationDate - now;
+
+      if (distance < 0) {
+        setTimeLeft("Expired");
+        return;
+      }
+
+      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+      let timeString = "";
+      if (days > 0) {
+        timeString = `${days}d ${hours}h`;
+      } else if (hours > 0) {
+        timeString = `${hours}h ${minutes}m`;
+      } else if (minutes > 0) {
+        timeString = `${minutes}m ${seconds}s`;
+      } else {
+        timeString = `${seconds}s`;
+      }
+      
+      setTimeLeft(timeString);
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [expiresAt]);
+
+  if (timeLeft === "Expired" || !timeLeft) return null;
+
+  return (
+      <span className="flex items-center gap-1 text-orange-600 font-medium bg-orange-50 px-1.5 py-0.5 rounded text-[10px] md:text-xs" title="Expires in">
+          <Timer className="w-3 h-3" />
+          {timeLeft}
+      </span>
+  );
+}
 
 export function DashboardList({ uploads }: { uploads: any[] }) {
   const supabase = createClient();
@@ -116,6 +164,12 @@ export function DashboardList({ uploads }: { uploads: any[] }) {
                         <FileText className="w-3 h-3" />
                         {(file.size / 1024 / 1024).toFixed(2)} MB
                      </span>
+                     {!isDeleted && (
+                        <>
+                           <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                           <FileCountdown expiresAt={file.expiration_time} />
+                        </>
+                     )}
                       {/* Show download count if relevant (limit exists or count > 0) */}
                       {(file.download_limit !== null || file.download_count > 0) && (
                         <>

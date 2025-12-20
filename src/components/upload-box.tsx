@@ -17,6 +17,7 @@ export function UploadBox() {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [uploadStats, setUploadStats] = useState<{ speed: number; eta: number } | null>(null);
   const [shareLink, setShareLink] = useState<string | null>(null);
   const [expiration, setExpiration] = useState("1h");
   const [downloadLimit, setDownloadLimit] = useState("1");
@@ -84,6 +85,7 @@ export function UploadBox() {
     setUploading(true);
     setError(null);
     setProgress(1); // Start
+    setUploadStats(null);
 
     try {
       // 1. Generate Key
@@ -116,7 +118,10 @@ export function UploadBox() {
           key, 
           'drop-files', 
           storagePath, 
-          (percent) => setProgress(percent)
+          (stats) => {
+              setProgress(stats.percent);
+              setUploadStats({ speed: stats.speed, eta: stats.eta });
+          }
       );
 
       // 4. DB Insert
@@ -135,7 +140,7 @@ export function UploadBox() {
         mime_type_encrypted: encMime,
         mime_type_iv: mimeIv,
         size: file.size, // Original size
-        iv: "CHUNKED_V1", // Marker for chunked file format
+        iv: "CHUNKED_PARALLEL_V1", // Marker for parallel chunked file format
         expiration_time: expiresAt.toISOString(),
         download_limit: parseInt(downloadLimit),
         download_count: 0,
@@ -164,6 +169,7 @@ export function UploadBox() {
       setError(e.message || "Upload failed. Please check your connection.");
     } finally {
       setUploading(false);
+      setUploadStats(null);
     }
   };
 
@@ -181,6 +187,22 @@ export function UploadBox() {
     setPassword("");
     setProgress(0);
     setUploading(false);
+    setUploadStats(null);
+  };
+
+  const formatSpeed = (bytesPerSec: number) => {
+      if (bytesPerSec === 0) return '0 KB/s';
+      const mb = bytesPerSec / (1024 * 1024);
+      if (mb >= 1) return `${mb.toFixed(1)} MB/s`;
+      return `${(bytesPerSec / 1024).toFixed(0)} KB/s`;
+  };
+
+  const formatTime = (seconds: number) => {
+      if (!isFinite(seconds) || seconds < 0) return '...';
+      if (seconds < 60) return `${seconds}s`;
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${mins}m ${secs}s`;
   };
 
   if (shareLink) {
@@ -309,7 +331,16 @@ export function UploadBox() {
                  <Progress value={progress} className="h-2" />
                  <div className="flex justify-between text-xs text-muted-foreground">
                     <span>{progress < 100 ? 'Uploading & Encrypting...' : 'Finalizing...'}</span>
-                    <span>{progress}%</span>
+                    <div className="flex gap-3">
+                        {uploadStats && (
+                            <>
+                                <span className="font-mono text-primary">{formatSpeed(uploadStats.speed)}</span>
+                                <span className="text-muted-foreground/70">•</span>
+                                <span>{formatTime(uploadStats.eta)} left</span>
+                            </>
+                        )}
+                        {!uploadStats && <span>{progress}%</span>}
+                    </div>
                  </div>
                </div>
              )}

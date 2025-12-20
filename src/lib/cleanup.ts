@@ -6,7 +6,7 @@ export async function cleanupExpiredOrLimitReachedFile(fileId: string) {
   // 1. Fetch file to verify conditions (and check if already deleted to avoid redundant work)
   const { data: file, error } = await supabase
     .from('uploads')
-    .select('expiration_time, download_limit, download_count, file_deleted')
+    .select('expiration_time, download_limit, download_count, file_deleted, iv')
     .eq('id', fileId)
     .single();
 
@@ -26,16 +26,38 @@ export async function cleanupExpiredOrLimitReachedFile(fileId: string) {
     console.log(`Cleaning up file ${fileId} (Expired: ${isExpired}, Limit: ${isLimitReached})`);
     
     // 2. Remove from Storage
-    const { error: storageError } = await supabase.storage
+    
+    // Strategy A: Try to remove as a single file (Legacy)
+    const { error: legacyError } = await supabase.storage
         .from('drop-files')
         .remove([fileId]);
 
-    if (storageError) {
-        console.error(`Cleanup: Failed to remove file ${fileId} from storage`, storageError);
-        // Continue to update DB flag? Maybe, but better to retry. 
-        // However, if we fail to delete from storage, we shouldn't mark it as deleted in DB?
-        // Or we should mark it as deleted so we don't serve it, even if storage delete failed.
-        // Yes, mark as deleted to stop access. Storage can be cleaned up later if needed (orphaned).
+    if (legacyError) {
+         console.warn(`Cleanup: Legacy remove failed for ${fileId}`, legacyError);
+    }
+
+    // Strategy B: Check for chunks (Folder structure)
+    // We list files inside the "folder" named fileId
+    const { data: chunks, error: listError } = await supabase.storage
+        .from('drop-files')
+        .list(fileId, {
+            limit: 1000, // Should cover most files. For huge files > 20GB (1000 * 20MB), might need pagination, but fine for now.
+        });
+
+    if (listError) {
+        console.error(`Cleanup: Failed to list chunks for ${fileId}`, listError);
+    } else if (chunks && chunks.length > 0) {
+        // Construct paths: {fileId}/{chunkName}
+        const pathsToRemove = chunks.map(chunk => `${fileId}/${chunk.name}`);
+        const { error: chunkRemoveError } = await supabase.storage
+            .from('drop-files')
+            .remove(pathsToRemove);
+        
+        if (chunkRemoveError) {
+            console.error(`Cleanup: Failed to remove chunks for ${fileId}`, chunkRemoveError);
+        } else {
+            console.log(`Cleanup: Removed ${chunks.length} chunks for ${fileId}`);
+        }
     }
 
     // 3. Update DB
@@ -49,4 +71,3 @@ export async function cleanupExpiredOrLimitReachedFile(fileId: string) {
     }
   }
 }
-

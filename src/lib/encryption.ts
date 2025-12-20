@@ -1,7 +1,7 @@
 export class EncryptionService {
   private static ALGORITHM = 'AES-GCM';
   private static KEY_LENGTH = 256;
-  public static CHUNK_SIZE = 10 * 1024 * 1024; // 10MB
+  public static CHUNK_SIZE = 20 * 1024 * 1024; // 20MB
   public static ENCRYPTED_CHUNK_OVERHEAD = 28; // 12 (IV) + 16 (Tag)
 
   // Generate a random key

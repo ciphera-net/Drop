@@ -1,9 +1,17 @@
 import { EncryptionService } from "@/lib/encryption";
 import { createClient } from "@/utils/supabase/client";
 
-interface UploadProgressCallback {
-  (progress: number): void;
+interface UploadProgress {
+  percent: number;
+  speed: number; // bytes per second
+  eta: number; // seconds remaining
 }
+
+interface UploadProgressCallback {
+  (progress: UploadProgress): void;
+}
+
+const CONCURRENCY_LIMIT = 4; // Reduced from 6 for better stability
 
 export async function uploadEncryptedFile(
   file: File,
@@ -17,124 +25,135 @@ export async function uploadEncryptedFile(
   
   if (!session) throw new Error("No active session");
 
-  // Keep a reference to the token that we can update
-  let currentToken = session.access_token;
-
   const chunkSize = EncryptionService.CHUNK_SIZE;
   const totalChunks = Math.ceil(file.size / chunkSize);
   const totalOverhead = totalChunks * EncryptionService.ENCRYPTED_CHUNK_OVERHEAD;
   const totalSize = file.size + totalOverhead;
-
-  // 1. Initialize TUS Upload
-  const endpoint = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/upload/resumable`;
   
-  // Encode metadata strictly as TUS expects (base64)
-  // key value pairs, values base64 encoded
-  const metadata = {
-    bucketName: bucket,
-    objectName: path,
-    contentType: 'application/octet-stream',
-    cacheControl: '3600',
-  };
+  let totalUploadedBytes = 0;
+  const activeUploads = new Set<Promise<void>>();
   
-  const metadataStr = Object.entries(metadata)
-    .map(([k, v]) => `${k} ${btoa(v)}`)
-    .join(',');
+  // Speed calculation state
+  let startTime = performance.now();
+  let lastSpeedUpdate = startTime;
+  let bytesSinceLastUpdate = 0;
+  let currentSpeed = 0;
+  const SMOOTHING_FACTOR = 0.1;
 
-  const headers = {
-    'Authorization': `Bearer ${currentToken}`,
-    'Tus-Resumable': '1.0.0',
-    'Upload-Length': totalSize.toString(),
-    'Upload-Metadata': metadataStr,
-    'x-upsert': 'true', // Optional, depending on need
-  };
-
-  const createRes = await fetch(endpoint, {
-    method: 'POST',
-    headers,
-  });
-
-  if (!createRes.ok) {
-     // Read the error body if possible to debug
-    const text = await createRes.text();
-    throw new Error(`Failed to create upload: ${createRes.status} ${createRes.statusText} - ${text}`);
-  }
-
-  const uploadUrl = createRes.headers.get('Location');
-  if (!uploadUrl) {
-    throw new Error("No upload location returned");
-  }
-
-  // 2. Upload Chunks
-  let offset = 0;
-  
-  for (let i = 0; i < totalChunks; i++) {
-    // Check/Refresh Token every ~10 chunks (100MB)
-    if (i > 0 && i % 10 === 0) {
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        if (currentSession?.access_token) {
-            currentToken = currentSession.access_token;
-        }
-    }
-
-    const start = i * chunkSize;
+  // Helper to upload a single chunk using XHR with Retries
+  const uploadChunkTask = async (index: number) => {
+    const start = index * chunkSize;
     const end = Math.min(start + chunkSize, file.size);
     
-    // Read Chunk
+    // 1. Read & Encrypt
     const chunkBlob = file.slice(start, end);
     const chunkBuffer = await chunkBlob.arrayBuffer();
-    
-    // Encrypt Chunk
     const { encrypted, iv } = await EncryptionService.encryptChunk(chunkBuffer, key);
     
-    // Construct Encrypted Payload: [IV][Data]
-    // IV is 12 bytes.
+    // 2. Prepare Payload
     const payload = new Uint8Array(iv.byteLength + encrypted.byteLength);
     payload.set(iv, 0);
     payload.set(new Uint8Array(encrypted), iv.byteLength);
     
-    // Upload with current token
-    // Retry logic could be added here
-    await uploadChunk(uploadUrl, payload, offset, currentToken);
+    // 3. Upload using XHR with Retry Logic
+    const chunkPath = `${path}/${index}`;
+    const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/${bucket}/${chunkPath}`;
     
-    offset += payload.byteLength;
+    let chunkUploadedBytes = 0;
+    let retries = 3;
+
+    while (retries > 0) {
+        try {
+            await new Promise<void>((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', url);
+                
+                // Refresh token if needed? For now using session token.
+                xhr.setRequestHeader('Authorization', `Bearer ${session.access_token}`);
+                xhr.setRequestHeader('x-upsert', 'true');
+                
+                // Set explicit timeout (e.g., 5 minutes per chunk to allow slow uploads)
+                xhr.timeout = 300000; 
+
+                xhr.upload.onprogress = (e) => {
+                    if (e.lengthComputable) {
+                        const diff = e.loaded - chunkUploadedBytes;
+                        // Only count positive progress (in case of retry where it resets)
+                        if (diff > 0) {
+                            chunkUploadedBytes = e.loaded;
+                            totalUploadedBytes += diff;
+                            bytesSinceLastUpdate += diff;
+                        }
+                        
+                        // Update speed/progress every 500ms
+                        const now = performance.now();
+                        if (now - lastSpeedUpdate > 500) {
+                            const timeDiff = (now - lastSpeedUpdate) / 1000;
+                            const instantSpeed = bytesSinceLastUpdate / timeDiff;
+                            
+                            // Smooth speed
+                            currentSpeed = (currentSpeed * (1 - SMOOTHING_FACTOR)) + (instantSpeed * SMOOTHING_FACTOR);
+                            if (currentSpeed === 0) currentSpeed = instantSpeed;
+
+                            const percent = Math.min(99, Math.round((totalUploadedBytes / totalSize) * 100));
+                            const remainingBytes = totalSize - totalUploadedBytes;
+                            const eta = currentSpeed > 0 ? Math.ceil(remainingBytes / currentSpeed) : 0;
+
+                            onProgress({ percent, speed: currentSpeed, eta });
+                            
+                            lastSpeedUpdate = now;
+                            bytesSinceLastUpdate = 0;
+                        }
+                    }
+                };
+
+                xhr.onload = () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        resolve();
+                    } else {
+                        reject(new Error(`Upload failed with status ${xhr.status}`));
+                    }
+                };
+
+                xhr.onerror = () => reject(new Error("Network error"));
+                xhr.ontimeout = () => reject(new Error("Request timed out"));
+                
+                xhr.send(payload);
+            });
+            
+            // Success!
+            break; 
+
+        } catch (e: any) {
+            console.warn(`Chunk ${index} failed, retrying... (${retries} left)`, e);
+            retries--;
+            
+            // If we failed, we need to subtract the bytes we "thought" we uploaded for this chunk from the total
+            // so the progress bar doesn't look weird.
+            totalUploadedBytes -= chunkUploadedBytes;
+            chunkUploadedBytes = 0;
+
+            if (retries === 0) throw e;
+            
+            // Exponential backoff: 1s, 2s, 4s
+            const delay = 1000 * Math.pow(2, 3 - retries);
+            await new Promise(r => setTimeout(r, delay));
+        }
+    }
+  };
+
+  // Queue Manager
+  for (let i = 0; i < totalChunks; i++) {
+    if (activeUploads.size >= CONCURRENCY_LIMIT) {
+        await Promise.race(activeUploads);
+    }
     
-    // Calculate Progress (Approximate based on encrypted size vs total encrypted)
-    const percent = Math.round((offset / totalSize) * 100);
-    onProgress(percent);
+    const task = uploadChunkTask(i).then(() => {
+        activeUploads.delete(task);
+    });
+    
+    activeUploads.add(task);
   }
-}
-
-async function uploadChunk(url: string, data: Uint8Array, offset: number, token: string) {
-  // Simple retry logic for resilience
-  let retries = 3;
-  while (retries > 0) {
-      try {
-          const res = await fetch(url, {
-            method: 'PATCH',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Tus-Resumable': '1.0.0',
-              'Upload-Offset': offset.toString(),
-              'Content-Type': 'application/offset+octet-stream',
-            },
-            body: data,
-          });
-
-          if (res.ok) return;
-          
-          if (res.status === 401) {
-              // Token might have expired during the request? 
-              // We should fail so the outer loop refreshes, but simplistic retry helps network blips.
-              throw new Error("Unauthorized");
-          }
-           const text = await res.text();
-           throw new Error(`Status ${res.status}: ${text}`);
-      } catch (e) {
-          retries--;
-          if (retries === 0) throw e;
-          // Wait 1s before retry
-          await new Promise(r => setTimeout(r, 1000));
-      }
-  }
+  
+  await Promise.all(activeUploads);
 }

@@ -104,7 +104,8 @@ export function DownloadView({ file }: { file: any }) {
        let decryptedBlob: Blob;
 
        if (file.iv === "CHUNKED_V1") {
-           // --- Chunked Download Logic ---
+           // --- Legacy TUS Chunked Download Logic ---
+           // We keep this for backward compatibility with the previous implementation
            const { data: signedData, error: urlError } = await supabase.storage
               .from('drop-files')
               .createSignedUrl(file.id, 60 * 60);
@@ -112,59 +113,38 @@ export function DownloadView({ file }: { file: any }) {
            if (urlError) throw urlError;
            if (!signedData?.signedUrl) throw new Error("Failed to get download URL");
 
-           const response = await fetch(signedData.signedUrl);
-           const reader = response.body?.getReader();
-           if (!reader) throw new Error("Stream not supported by browser");
+           decryptedBlob = await downloadStream(signedData.signedUrl, file.size, key);
 
-           const decryptedChunks: BlobPart[] = [];
+       } else if (file.iv === "CHUNKED_PARALLEL_V1") {
+           // --- Parallel Chunked Download Logic ---
            const CHUNK_SIZE = EncryptionService.CHUNK_SIZE;
-           const OVERHEAD = EncryptionService.ENCRYPTED_CHUNK_OVERHEAD;
-           
-           let remainingOriginalSize = file.size; // Original size from DB
-           let streamBuffer = new Uint8Array(0);
-           
-           // Decrypt loop
-           while (remainingOriginalSize > 0) {
-               // Calculate expected encrypted size for next chunk
-               const currentPlainSize = Math.min(remainingOriginalSize, CHUNK_SIZE);
-               const currentEncryptedSize = currentPlainSize + OVERHEAD;
-               
-               // Read from stream until we have enough data
-               while (streamBuffer.length < currentEncryptedSize) {
-                   const { done, value } = await reader.read();
-                   if (done) break;
-                   
-                   // Append value to buffer
-                   const newBuffer = new Uint8Array(streamBuffer.length + value.length);
-                   newBuffer.set(streamBuffer);
-                   newBuffer.set(value, streamBuffer.length);
-                   streamBuffer = newBuffer;
-               }
-               
-               if (streamBuffer.length < currentEncryptedSize) {
-                   throw new Error("Unexpected end of stream (File corrupted or incomplete)");
-               }
-               
-               // Extract Chunk
-               const chunkData = streamBuffer.slice(0, currentEncryptedSize);
-               streamBuffer = streamBuffer.slice(currentEncryptedSize);
-               
-               // Decrypt
-               const decrypted = await EncryptionService.decryptChunk(chunkData.buffer, key);
-               decryptedChunks.push(decrypted);
-               
-               remainingOriginalSize -= currentPlainSize;
-               
-               // Update Progress
-               // 1% to 100% mapped to file progress
-               const progressVal = Math.round((1 - remainingOriginalSize / file.size) * 100);
-               setProgress(progressVal);
+           const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+           const decryptedChunks: BlobPart[] = [];
+           let totalBytesDecrypted = 0;
+
+           for (let i = 0; i < totalChunks; i++) {
+                // Fetch each chunk
+                const chunkPath = `${file.id}/${i}`;
+                const { data: chunkData, error: chunkError } = await supabase.storage
+                    .from('drop-files')
+                    .download(chunkPath);
+                
+                if (chunkError) throw chunkError;
+                
+                // Decrypt
+                const buffer = await chunkData.arrayBuffer();
+                const decryptedChunk = await EncryptionService.decryptChunk(buffer, key);
+                decryptedChunks.push(decryptedChunk);
+
+                totalBytesDecrypted += decryptedChunk.byteLength;
+                const percent = Math.round((totalBytesDecrypted / file.size) * 100);
+                setProgress(percent);
            }
            
            decryptedBlob = new Blob(decryptedChunks);
 
        } else {
-           // --- Legacy Download Logic ---
+           // --- Legacy Single File Download Logic ---
            setProgress(10);
            const { data: fileData, error } = await supabase.storage
               .from('drop-files')
@@ -206,6 +186,56 @@ export function DownloadView({ file }: { file: any }) {
        setDownloading(false);
     }
   };
+
+  // Helper for TUS stream
+  async function downloadStream(url: string, originalSize: number, key: CryptoKey): Promise<Blob> {
+        const response = await fetch(url);
+        const reader = response.body?.getReader();
+        if (!reader) throw new Error("Stream not supported by browser");
+
+        const decryptedChunks: BlobPart[] = [];
+        const CHUNK_SIZE = EncryptionService.CHUNK_SIZE;
+        const OVERHEAD = EncryptionService.ENCRYPTED_CHUNK_OVERHEAD;
+        
+        let remainingOriginalSize = originalSize;
+        let streamBuffer = new Uint8Array(0);
+        let processedBytes = 0;
+        
+        while (remainingOriginalSize > 0) {
+            const currentPlainSize = Math.min(remainingOriginalSize, CHUNK_SIZE);
+            const currentEncryptedSize = currentPlainSize + OVERHEAD;
+            
+            while (streamBuffer.length < currentEncryptedSize) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                const newBuffer = new Uint8Array(streamBuffer.length + value.length);
+                newBuffer.set(streamBuffer);
+                newBuffer.set(value, streamBuffer.length);
+                streamBuffer = newBuffer;
+            }
+            
+            if (streamBuffer.length < currentEncryptedSize) {
+                // If this happens at the very end and we have a few bytes, it might be padding issues?
+                // But for now strict check.
+                 if (streamBuffer.length === 0 && remainingOriginalSize > 0) throw new Error("Unexpected end of stream");
+                 // If we have some data but not enough, that's an error.
+                 throw new Error("Corrupted stream");
+            }
+            
+            const chunkData = streamBuffer.slice(0, currentEncryptedSize);
+            streamBuffer = streamBuffer.slice(currentEncryptedSize);
+            
+            const decrypted = await EncryptionService.decryptChunk(chunkData.buffer, key);
+            decryptedChunks.push(decrypted);
+            
+            remainingOriginalSize -= currentPlainSize;
+            processedBytes += currentPlainSize;
+            
+            const percent = Math.round((processedBytes / originalSize) * 100);
+            setProgress(percent);
+        }
+        return new Blob(decryptedChunks);
+  }
 
   const isLimitReached = file.download_limit !== null && downloadCount >= file.download_limit;
 

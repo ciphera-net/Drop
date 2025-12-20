@@ -17,7 +17,6 @@ export default async function Home() {
                D
              </div>
              <span>Drop</span>
-             <span className="text-[10px] uppercase font-bold tracking-wider text-primary/80 mt-1.5 ml-1 px-2 py-0.5 bg-orange-50 rounded-full border border-orange-100 hidden sm:inline-block">by Ciphera</span>
            </div>
            
            <UserMenu user={user} />

@@ -74,7 +74,7 @@ export function DownloadView({ file }: { file: any }) {
     if (!key) return;
     setError(null);
     setDownloading(true);
-    setProgress(10);
+    setProgress(1);
     
     try {
        // Increment download count via API
@@ -101,17 +101,85 @@ export function DownloadView({ file }: { file: any }) {
        }
 
        const supabase = createClient();
-       const { data: fileData, error } = await supabase.storage
-          .from('drop-files')
-          .download(file.id);
+       let decryptedBlob: Blob;
 
-       if (error) throw error;
-       setProgress(60);
+       if (file.iv === "CHUNKED_V1") {
+           // --- Chunked Download Logic ---
+           const { data: signedData, error: urlError } = await supabase.storage
+              .from('drop-files')
+              .createSignedUrl(file.id, 60 * 60);
+           
+           if (urlError) throw urlError;
+           if (!signedData?.signedUrl) throw new Error("Failed to get download URL");
 
-       const iv = EncryptionService.base64ToIv(file.iv);
-       const decryptedBlob = await EncryptionService.decryptFile(fileData, key, iv);
-       setProgress(90);
+           const response = await fetch(signedData.signedUrl);
+           const reader = response.body?.getReader();
+           if (!reader) throw new Error("Stream not supported by browser");
 
+           const decryptedChunks: BlobPart[] = [];
+           const CHUNK_SIZE = EncryptionService.CHUNK_SIZE;
+           const OVERHEAD = EncryptionService.ENCRYPTED_CHUNK_OVERHEAD;
+           
+           let remainingOriginalSize = file.size; // Original size from DB
+           let streamBuffer = new Uint8Array(0);
+           
+           // Decrypt loop
+           while (remainingOriginalSize > 0) {
+               // Calculate expected encrypted size for next chunk
+               const currentPlainSize = Math.min(remainingOriginalSize, CHUNK_SIZE);
+               const currentEncryptedSize = currentPlainSize + OVERHEAD;
+               
+               // Read from stream until we have enough data
+               while (streamBuffer.length < currentEncryptedSize) {
+                   const { done, value } = await reader.read();
+                   if (done) break;
+                   
+                   // Append value to buffer
+                   const newBuffer = new Uint8Array(streamBuffer.length + value.length);
+                   newBuffer.set(streamBuffer);
+                   newBuffer.set(value, streamBuffer.length);
+                   streamBuffer = newBuffer;
+               }
+               
+               if (streamBuffer.length < currentEncryptedSize) {
+                   throw new Error("Unexpected end of stream (File corrupted or incomplete)");
+               }
+               
+               // Extract Chunk
+               const chunkData = streamBuffer.slice(0, currentEncryptedSize);
+               streamBuffer = streamBuffer.slice(currentEncryptedSize);
+               
+               // Decrypt
+               const decrypted = await EncryptionService.decryptChunk(chunkData.buffer, key);
+               decryptedChunks.push(decrypted);
+               
+               remainingOriginalSize -= currentPlainSize;
+               
+               // Update Progress
+               // 1% to 100% mapped to file progress
+               const progressVal = Math.round((1 - remainingOriginalSize / file.size) * 100);
+               setProgress(progressVal);
+           }
+           
+           decryptedBlob = new Blob(decryptedChunks);
+
+       } else {
+           // --- Legacy Download Logic ---
+           setProgress(10);
+           const { data: fileData, error } = await supabase.storage
+              .from('drop-files')
+              .download(file.id);
+
+           if (error) throw error;
+           setProgress(60);
+
+           const iv = EncryptionService.base64ToIv(file.iv);
+           decryptedBlob = await EncryptionService.decryptFile(fileData, key, iv);
+       }
+       
+       setProgress(100);
+
+       // Trigger browser download
        const url = URL.createObjectURL(decryptedBlob);
        const a = document.createElement('a');
        a.href = url;
@@ -120,12 +188,10 @@ export function DownloadView({ file }: { file: any }) {
        a.click();
        document.body.removeChild(a);
        URL.revokeObjectURL(url);
-       setProgress(100);
 
        // Check if this download reached the limit and trigger cleanup
        const currentCount = data.new_count || downloadCount + 1;
        if (file.download_limit !== null && currentCount >= file.download_limit) {
-           // We don't await this to avoid blocking the UI, but we trigger it
            fetch('/api/cleanup', {
                method: 'POST',
                headers: { 'Content-Type': 'application/json' },
@@ -219,7 +285,7 @@ export function DownloadView({ file }: { file: any }) {
                   <div className="space-y-2">
                       <Progress value={progress} className="h-2" />
                       <p className="text-center text-xs text-muted-foreground">
-                          {progress < 60 ? 'Downloading encrypted file...' : 'Decrypting locally...'}
+                          {progress < 100 ? 'Downloading & Decrypting...' : 'Finalizing...'}
                       </p>
                   </div>
               ) : isLimitReached ? (
@@ -249,4 +315,3 @@ export function DownloadView({ file }: { file: any }) {
       </Card>
   )
 }
-

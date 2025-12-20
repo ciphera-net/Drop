@@ -1,6 +1,8 @@
 export class EncryptionService {
   private static ALGORITHM = 'AES-GCM';
   private static KEY_LENGTH = 256;
+  public static CHUNK_SIZE = 10 * 1024 * 1024; // 10MB
+  public static ENCRYPTED_CHUNK_OVERHEAD = 28; // 12 (IV) + 16 (Tag)
 
   // Generate a random key
   static async generateKey(): Promise<CryptoKey> {
@@ -152,6 +154,35 @@ export class EncryptionService {
       { name: "AES-GCM", length: 256 },
       true,
       ["encrypt", "decrypt"]
+    );
+  }
+
+  // Encrypt a single chunk (for streaming/large files)
+  static async encryptChunk(chunk: ArrayBuffer, key: CryptoKey): Promise<{ encrypted: ArrayBuffer; iv: Uint8Array }> {
+    const iv = window.crypto.getRandomValues(new Uint8Array(12));
+    const encryptedBuffer = await window.crypto.subtle.encrypt(
+      {
+        name: this.ALGORITHM,
+        iv: iv,
+      },
+      key,
+      chunk
+    );
+    return {
+      encrypted: encryptedBuffer,
+      iv: iv,
+    };
+  }
+
+  // Decrypt a single chunk
+  static async decryptChunk(encryptedChunkWithIv: ArrayBuffer, key: CryptoKey): Promise<ArrayBuffer> {
+    const iv = encryptedChunkWithIv.slice(0, 12);
+    const data = encryptedChunkWithIv.slice(12);
+    
+    return window.crypto.subtle.decrypt(
+        { name: this.ALGORITHM, iv: new Uint8Array(iv) },
+        key,
+        data
     );
   }
 

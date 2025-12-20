@@ -11,6 +11,7 @@ import { Label } from "./ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "./ui/dialog";
 import { CloudArrowUp, File as FileIcon, Copy, Check, X, EnvelopeSimple, LockKey, Warning } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
+import { uploadEncryptedFile } from "@/utils/upload-manager";
 
 export function UploadBox() {
   const [file, setFile] = useState<File | null>(null);
@@ -82,17 +83,13 @@ export function UploadBox() {
     if (!file) return;
     setUploading(true);
     setError(null);
-    setProgress(5);
+    setProgress(1); // Start
 
     try {
       // 1. Generate Key
       const key = await EncryptionService.generateKey();
       
-      // 2. Encrypt File
-      const { encryptedBlob, iv } = await EncryptionService.encryptFile(file, key);
-      setProgress(30);
-
-      // 3. Encrypt Metadata
+      // 2. Encrypt Metadata
       const { encrypted: encFilename, iv: filenameIv } = await EncryptionService.encryptText(file.name, key);
       const { encrypted: encMime, iv: mimeIv } = await EncryptionService.encryptText(file.type || 'application/octet-stream', key);
 
@@ -110,21 +107,19 @@ export function UploadBox() {
         encryptedKeyIv = encryptedKeyData.iv;
       }
 
-      // 4. Upload Storage
+      // 3. Upload Storage (Chunked & Resumable)
       const fileId = crypto.randomUUID();
       const storagePath = `${fileId}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('drop-files')
-        .upload(storagePath, encryptedBlob, {
-          contentType: 'application/octet-stream',
-          upsert: false
-        });
+      await uploadEncryptedFile(
+          file, 
+          key, 
+          'drop-files', 
+          storagePath, 
+          (percent) => setProgress(percent)
+      );
 
-      if (uploadError) throw uploadError;
-      setProgress(70);
-
-      // 5. DB Insert
+      // 4. DB Insert
       const now = new Date();
       let expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 1d
       if (expiration === '1h') expiresAt = new Date(now.getTime() + 60 * 60 * 1000);
@@ -139,8 +134,8 @@ export function UploadBox() {
         filename_iv: filenameIv,
         mime_type_encrypted: encMime,
         mime_type_iv: mimeIv,
-        size: file.size,
-        iv: EncryptionService.ivToBase64(iv),
+        size: file.size, // Original size
+        iv: "CHUNKED_V1", // Marker for chunked file format
         expiration_time: expiresAt.toISOString(),
         download_limit: parseInt(downloadLimit),
         download_count: 0,
@@ -154,7 +149,7 @@ export function UploadBox() {
 
       setProgress(100);
 
-      // 6. Generate Link
+      // 5. Generate Link
       const keyBase64 = await EncryptionService.exportKey(key);
       const origin = window.location.origin;
       
@@ -313,7 +308,7 @@ export function UploadBox() {
                <div className="space-y-2">
                  <Progress value={progress} className="h-2" />
                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>{progress < 40 ? 'Encrypting...' : 'Uploading...'}</span>
+                    <span>{progress < 100 ? 'Uploading & Encrypting...' : 'Finalizing...'}</span>
                     <span>{progress}%</span>
                  </div>
                </div>
@@ -393,4 +388,3 @@ export function UploadBox() {
     </Card>
   );
 }
-

@@ -29,13 +29,13 @@ export default async function Home() {
          
          <div className="text-center mb-12 max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
             <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-gray-900 mb-6">
-               Simple. Secure. <br/>
+               The Secure Way <br/>
                <span className="text-primary relative whitespace-nowrap">
-                 Private
+                 to Share
                  <svg className="absolute w-full h-3 -bottom-1 left-0 text-orange-200 -z-10" viewBox="0 0 100 10" preserveAspectRatio="none">
                     <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="8" fill="none" />
                  </svg>
-               </span>.
+               </span>
             </h1>
             <p className="text-lg md:text-xl text-gray-600 mb-8 leading-relaxed">
                Share files with end-to-end encryption. <br className="hidden md:block"/>

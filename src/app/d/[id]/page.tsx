@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { notFound } from "next/navigation";
 import { DownloadView } from "@/components/download-view";
+import Link from "next/link";
 
 export default async function DownloadPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -35,12 +36,12 @@ export default async function DownloadPage({ params }: { params: Promise<{ id: s
   return (
     <div className="min-h-screen flex flex-col bg-slate-50/50">
        <header className="py-6 text-center border-b bg-white/80 backdrop-blur-sm sticky top-0 z-10">
-          <div className="flex items-center justify-center gap-2 font-bold text-xl text-gray-900">
+          <Link href="/" className="inline-flex items-center justify-center gap-2 font-bold text-xl text-gray-900 hover:opacity-80 transition-opacity">
              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white shadow-sm">
                D
              </div>
              <span>Drop</span>
-          </div>
+          </Link>
        </header>
        <main className="flex-1 flex items-center justify-center p-4">
           <DownloadView file={file} />

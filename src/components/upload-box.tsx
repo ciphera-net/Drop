@@ -9,7 +9,7 @@ import { Progress } from "./ui/progress";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "./ui/dialog";
-import { CloudArrowUp, File as FileIcon, Copy, Check, X, EnvelopeSimple, LockKey } from "@phosphor-icons/react";
+import { CloudArrowUp, File as FileIcon, Copy, Check, X, EnvelopeSimple, LockKey, Warning } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 export function UploadBox() {
@@ -201,6 +201,16 @@ export function UploadBox() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-amber-900">
+            <div className="flex gap-3">
+              <Warning className="w-5 h-5 flex-shrink-0 text-amber-600" weight="fill" />
+              <div className="text-sm space-y-1">
+                <p className="font-semibold">Save this link immediately!</p>
+                <p>For security reasons, this URL is shown only once. You will not be able to see it again after you leave this page.</p>
+              </div>
+            </div>
+          </div>
+
           <div className="flex space-x-2">
             <Input readOnly value={shareLink} className="font-mono text-xs" />
             <Button size="icon" onClick={copyLink} className={copied ? "bg-green-600 hover:bg-green-700" : ""}>

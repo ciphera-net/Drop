@@ -9,7 +9,8 @@ import { Progress } from "./ui/progress";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "./ui/dialog";
-import { CloudArrowUp, File as FileIcon, Copy, Check, X, EnvelopeSimple, LockKey, Warning } from "@phosphor-icons/react";
+import { CloudArrowUp, File as FileIcon, Copy, Check, X, EnvelopeSimple, LockKey, Warning, QrCode } from "@phosphor-icons/react";
+import { QRCodeSVG } from "qrcode.react";
 import { cn } from "@/lib/utils";
 import { uploadEncryptedFile } from "@/utils/upload-manager";
 
@@ -235,7 +236,8 @@ export function UploadBox() {
             </Button>
           </div>
           
-          <Dialog>
+          <div className="grid grid-cols-2 gap-2">
+            <Dialog>
               <DialogTrigger asChild>
                   <Button variant="outline" className="w-full">
                       <EnvelopeSimple className="mr-2" /> Email Link
@@ -273,6 +275,33 @@ export function UploadBox() {
                    )}
               </DialogContent>
           </Dialog>
+
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="w-full">
+                <QrCode className="mr-2" /> Show QR
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-xs">
+              <DialogHeader>
+                <DialogTitle className="text-center">Scan to Download</DialogTitle>
+                <DialogDescription className="text-center">
+                  Scan this QR code with your mobile device to download the file.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex justify-center py-6 bg-white rounded-xl border-2 border-primary/10 shadow-[0_0_15px_rgba(253,94,15,0.1)]">
+                <QRCodeSVG 
+                  value={shareLink} 
+                  size={180} 
+                  level="H" 
+                  includeMargin={true} 
+                  fgColor="#111827"
+                  className="rounded-lg"
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
+          </div>
 
           <p className="text-xs text-muted-foreground text-center">
              This link contains the encryption key. Don't share it publicly.

@@ -1,7 +1,7 @@
 "use client";
 import { createClient } from "@/utils/supabase/client";
 import { Button } from "./ui/button";
-import { Trash, Clock, File, Link as LinkIcon, Check, WarningCircle } from "@phosphor-icons/react";
+import { Trash, Clock, File } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -10,7 +10,6 @@ export function DashboardList({ uploads }: { uploads: any[] }) {
   const supabase = createClient();
   const router = useRouter();
   const [deleting, setDeleting] = useState<string | null>(null);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [files, setFiles] = useState(uploads);
 
   useEffect(() => {
@@ -55,21 +54,6 @@ export function DashboardList({ uploads }: { uploads: any[] }) {
       }
   };
 
-  const handleCopyLink = async (file: any) => {
-    let url = `${window.location.origin}/d/${file.id}`;
-    
-    // For non-password protected files, the key is NOT stored on server (Zero-Knowledge)
-    // So we cannot recover the full link.
-    if (!file.is_password_protected) {
-       // We can only copy the base URL, which will prompt for key manually.
-       // Ideally we might want to warn the user, but for now we just copy what we have.
-    }
-
-    navigator.clipboard.writeText(url);
-    setCopiedId(file.id);
-    setTimeout(() => setCopiedId(null), 2000);
-  };
-
   if (files.length === 0) {
       return (
           <div className="text-center py-20 text-gray-500 bg-white rounded-2xl border border-dashed">
@@ -107,15 +91,6 @@ export function DashboardList({ uploads }: { uploads: any[] }) {
                  </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={() => handleCopyLink(file)} 
-                    className="text-muted-foreground hover:text-primary hover:bg-blue-50"
-                    title={!file.is_password_protected ? "Copy Link (Key missing for non-password files)" : "Copy Share Link"}
-                  >
-                     {copiedId === file.id ? <Check weight="bold" className="text-green-600" /> : <LinkIcon weight="bold" />}
-                  </Button>
                   <Button 
                     variant="ghost" 
                     size="icon" 

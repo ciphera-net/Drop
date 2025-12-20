@@ -30,13 +30,20 @@ export async function POST(req: NextRequest) {
 
     if (updateError) throw updateError;
 
+    let limitReached = false;
+
     // Check if limit reached AFTER increment
     if (file.download_limit !== null && newCount >= file.download_limit) {
-         // Trigger cleanup (async)
-         cleanupExpiredOrLimitReachedFile(id).catch(console.error);
+         limitReached = true;
+         // Mark as deleted in DB immediately so no new users can access it
+         await supabase.from('uploads').update({ file_deleted: true }).eq('id', id);
+         
+         // NOTE: We do NOT trigger storage cleanup here to allow the current user to complete their download.
+         // The client is responsible for calling the cleanup endpoint after download, 
+         // or it will be cleaned up by the sender's dashboard check eventually.
     }
 
-    return NextResponse.json({ success: true, count: newCount });
+    return NextResponse.json({ success: true, count: newCount, limitReached });
 
   } catch (e: any) {
     console.error(e);

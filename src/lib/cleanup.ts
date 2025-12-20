@@ -3,7 +3,7 @@ import { createAdminClient } from "@/utils/supabase/admin";
 export async function cleanupExpiredOrLimitReachedFile(fileId: string) {
   const supabase = createAdminClient();
 
-  // 1. Fetch file to verify conditions (and check if already deleted to avoid redundant work)
+  // 1. Fetch file to verify conditions
   const { data: file, error } = await supabase
     .from('uploads')
     .select('expiration_time, file_deleted, iv, download_limit, download_count')
@@ -15,15 +15,14 @@ export async function cleanupExpiredOrLimitReachedFile(fileId: string) {
     return;
   }
 
-  if (file.file_deleted) {
-    return; // Already deleted
-  }
+  // Note: We don't return early if file.file_deleted is true because we might still need to clean up storage
+  // if it was only marked logically deleted by the increment API.
 
   const isExpired = new Date(file.expiration_time) < new Date();
   const isLimitReached = file.download_limit !== null && file.download_count >= file.download_limit;
 
-  if (isExpired || isLimitReached) {
-    console.log(`Cleaning up file ${fileId} (Expired: ${isExpired}, Limit Reached: ${isLimitReached})`);
+  if (isExpired || isLimitReached || file.file_deleted) {
+    console.log(`Cleaning up file ${fileId} (Expired: ${isExpired}, Limit Reached: ${isLimitReached}, Deleted Flag: ${file.file_deleted})`);
     
     // 2. Remove from Storage
     

@@ -16,6 +16,7 @@ export function DownloadView({ file }: { file: any }) {
   const [error, setError] = useState<string | null>(null);
   const [manualKey, setManualKey] = useState("");
   const [password, setPassword] = useState("");
+  const [showLimitReachedMessage, setShowLimitReachedMessage] = useState(false);
 
   useEffect(() => {
     const hash = window.location.hash.substring(1);
@@ -88,6 +89,9 @@ export function DownloadView({ file }: { file: any }) {
             throw new Error(err.error || "Failed to initiate download");
        }
 
+       const incData = await incRes.json();
+       const isLimitReached = incData.limitReached;
+
        const supabase = createClient();
        let decryptedBlob: Blob;
 
@@ -156,6 +160,16 @@ export function DownloadView({ file }: { file: any }) {
        a.click();
        document.body.removeChild(a);
        URL.revokeObjectURL(url);
+
+       if (isLimitReached) {
+           setShowLimitReachedMessage(true);
+           // Trigger final cleanup to remove storage
+           await fetch('/api/cleanup', {
+               method: 'POST',
+               body: JSON.stringify({ id: file.id }),
+               headers: { 'Content-Type': 'application/json' }
+           });
+       }
 
     } catch (e: any) {
        console.error(e);
@@ -279,6 +293,18 @@ export function DownloadView({ file }: { file: any }) {
               </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
+              {showLimitReachedMessage && (
+                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3 text-amber-900 animate-in slide-in-from-top-2">
+                      <WarningCircle className="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" weight="fill" />
+                      <div>
+                          <p className="font-semibold">Last Download</p>
+                          <p className="text-sm mt-1">
+                              The download limit for this file has been reached. It has now been removed and is no longer accessible.
+                          </p>
+                      </div>
+                  </div>
+              )}
+
               <div className="flex items-center p-4 bg-secondary/50 rounded-xl border border-border/50">
                 <FileIcon className="w-10 h-10 text-primary mr-4" weight="duotone" />
                 <div className="flex-1 min-w-0">
@@ -302,8 +328,8 @@ export function DownloadView({ file }: { file: any }) {
                               <span>{error}</span>
                           </div>
                       )}
-                      <Button className="w-full" size="lg" onClick={handleDownload}>
-                          <DownloadSimple className="mr-2 text-xl" weight="bold" /> Download File
+                      <Button className="w-full" size="lg" onClick={handleDownload} disabled={showLimitReachedMessage}>
+                          <DownloadSimple className="mr-2 text-xl" weight="bold" /> {showLimitReachedMessage ? "File Removed" : "Download File"}
                       </Button>
                   </div>
               )}

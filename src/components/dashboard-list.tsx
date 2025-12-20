@@ -107,12 +107,12 @@ export function DashboardList({ uploads }: { uploads: any[] }) {
                         )}
                     </div>
                    <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                      <span className="flex items-center gap-1">
+                      <span className="flex items-center gap-1" title="Created at">
                          <Clock className="w-3 h-3" />
                          {new Date(file.created_at).toLocaleDateString()}
                       </span>
                      <span className="w-1 h-1 rounded-full bg-gray-300"></span>
-                     <span className="flex items-center gap-1">
+                     <span className="flex items-center gap-1" title="File size">
                         <FileText className="w-3 h-3" />
                         {(file.size / 1024 / 1024).toFixed(2)} MB
                      </span>

@@ -1,14 +1,16 @@
 "use client";
 import { createClient } from "@/utils/supabase/client";
 import { Button } from "./ui/button";
-import { Trash, Clock, File } from "@phosphor-icons/react";
+import { Trash, Clock, File, Link as LinkIcon, Check } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 export function DashboardList({ uploads }: { uploads: any[] }) {
   const supabase = createClient();
   const router = useRouter();
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [files, setFiles] = useState(uploads);
 
   useEffect(() => {
@@ -53,6 +55,13 @@ export function DashboardList({ uploads }: { uploads: any[] }) {
       }
   };
 
+  const handleCopyLink = (id: string) => {
+    const url = `${window.location.origin}/d/${id}`;
+    navigator.clipboard.writeText(url);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
   if (files.length === 0) {
       return (
           <div className="text-center py-20 text-gray-500 bg-white rounded-2xl border border-dashed">
@@ -73,7 +82,9 @@ export function DashboardList({ uploads }: { uploads: any[] }) {
                  <div className="min-w-0">
                     <p className="font-medium text-gray-900 truncate">
                        {/* We can't decrypt name, so show generic name + ID slice */}
-                       File <span className="text-gray-400 text-xs font-mono">#{file.id.slice(0, 8)}</span>
+                       <Link href={`/d/${file.id}`} target="_blank" className="hover:underline decoration-primary">
+                          File <span className="text-gray-400 text-xs font-mono">#{file.id.slice(0, 8)}</span>
+                       </Link>
                     </p>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
                        <span className="flex items-center gap-1">
@@ -87,15 +98,27 @@ export function DashboardList({ uploads }: { uploads: any[] }) {
                     </div>
                  </div>
               </div>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => handleDelete(file.id)} 
-                className="text-muted-foreground hover:text-destructive hover:bg-red-50 flex-shrink-0"
-                disabled={deleting === file.id}
-              >
-                 {deleting === file.id ? <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div> : <Trash weight="bold" />}
-              </Button>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => handleCopyLink(file.id)} 
+                    className="text-muted-foreground hover:text-primary hover:bg-blue-50"
+                    title="Copy Share Link"
+                  >
+                     {copiedId === file.id ? <Check weight="bold" className="text-green-600" /> : <LinkIcon weight="bold" />}
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => handleDelete(file.id)} 
+                    className="text-muted-foreground hover:text-destructive hover:bg-red-50"
+                    disabled={deleting === file.id}
+                    title="Delete File"
+                  >
+                     {deleting === file.id ? <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div> : <Trash weight="bold" />}
+                  </Button>
+              </div>
            </div>
         ))}
      </div>

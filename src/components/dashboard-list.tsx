@@ -68,16 +68,12 @@ export function DashboardList({ uploads }: { uploads: any[] }) {
      <div className="space-y-4">
         {files.map(file => {
            const isExpired = new Date(file.expiration_time) < new Date();
-           const isLimitReached = file.download_limit !== null && file.download_count >= file.download_limit;
-           const isDeleted = file.file_deleted || isExpired || isLimitReached;
+           const isDeleted = file.file_deleted || isExpired;
 
            let statusLabel = null;
            if (file.file_deleted) {
-               if (isLimitReached) statusLabel = "Limit Reached";
-               else if (isExpired) statusLabel = "Expired";
+               if (isExpired) statusLabel = "Expired";
                else statusLabel = "Deleted";
-           } else if (isLimitReached) {
-               statusLabel = "Limit Reached";
            } else if (isExpired) {
                statusLabel = "Expired";
            }
@@ -93,7 +89,12 @@ export function DashboardList({ uploads }: { uploads: any[] }) {
                         <p className={`font-medium truncate ${isDeleted ? 'text-gray-500' : 'text-gray-900'}`}>
                         {/* We can't decrypt name, so show generic name + ID slice */}
                         <Link href={isDeleted ? '#' : `/d/${file.id}`} target={isDeleted ? undefined : "_blank"} className={isDeleted ? 'cursor-default' : 'hover:underline decoration-primary'}>
-                            File <span className="text-gray-400 text-xs font-mono">#{file.id.slice(0, 8)}</span>
+                            {file.magic_words ? (
+                                <span className="font-mono font-bold text-primary mr-2">{file.magic_words}</span>
+                            ) : (
+                                <span>File </span>
+                            )}
+                            <span className="text-gray-400 text-xs font-mono">#{file.id.slice(0, 8)}</span>
                         </Link>
                         </p>
                         {statusLabel && (
@@ -109,8 +110,6 @@ export function DashboardList({ uploads }: { uploads: any[] }) {
                        </span>
                        <span className="w-1 h-1 rounded-full bg-gray-300"></span>
                        <span>{(file.size / 1024 / 1024).toFixed(2)} MB</span>
-                       <span className="w-1 h-1 rounded-full bg-gray-300"></span>
-                       <span>{file.download_count} / {file.download_limit || '∞'} downloads</span>
                     </div>
                  </div>
               </div>

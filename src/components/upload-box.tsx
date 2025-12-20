@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback } from "react";
 import { EncryptionService } from "@/lib/encryption";
 import { createClient } from "@/utils/supabase/client";
+import { generateMagicWords } from "@/utils/magic-words";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "./ui/card";
 import { Progress } from "./ui/progress";
@@ -20,8 +21,8 @@ export function UploadBox() {
   const [progress, setProgress] = useState(0);
   const [uploadStats, setUploadStats] = useState<{ speed: number; eta: number } | null>(null);
   const [shareLink, setShareLink] = useState<string | null>(null);
+  const [magicWords, setMagicWords] = useState<string | null>(null);
   const [expiration, setExpiration] = useState("1h");
-  const [downloadLimit, setDownloadLimit] = useState("1");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -131,6 +132,7 @@ export function UploadBox() {
       if (expiration === '1h') expiresAt = new Date(now.getTime() + 60 * 60 * 1000);
       if (expiration === '7d') expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
+      const generatedMagicWords = generateMagicWords();
       const { data: { user } } = await supabase.auth.getUser();
 
       const { error: dbError } = await supabase.from('uploads').insert({
@@ -143,17 +145,17 @@ export function UploadBox() {
         size: file.size, // Original size
         iv: "CHUNKED_PARALLEL_V1", // Marker for parallel chunked file format
         expiration_time: expiresAt.toISOString(),
-        download_limit: parseInt(downloadLimit),
-        download_count: 0,
         is_password_protected: !!password,
         password_salt: passwordSalt,
         encrypted_key: encryptedKey,
-        encrypted_key_iv: encryptedKeyIv
+        encrypted_key_iv: encryptedKeyIv,
+        magic_words: generatedMagicWords
       });
 
       if (dbError) throw dbError;
 
       setProgress(100);
+      setMagicWords(generatedMagicWords);
 
       // 5. Generate Link
       const keyBase64 = await EncryptionService.exportKey(key);
@@ -185,6 +187,7 @@ export function UploadBox() {
   const reset = () => {
     setFile(null);
     setShareLink(null);
+    setMagicWords(null);
     setPassword("");
     setProgress(0);
     setUploading(false);
@@ -228,6 +231,16 @@ export function UploadBox() {
               </div>
             </div>
           </div>
+
+          {magicWords && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-blue-900">
+              <div className="text-center space-y-1">
+                <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">Magic Words</p>
+                <p className="text-lg font-bold font-mono select-all">{magicWords}</p>
+                <p className="text-xs text-blue-600/80">Use these words on the homepage to find this file.</p>
+              </div>
+            </div>
+          )}
 
           <div className="flex space-x-2">
             <Input readOnly value={shareLink} className="font-mono text-xs" />
@@ -400,18 +413,6 @@ export function UploadBox() {
                              </button>
                            ))}
                         </div>
-                      </div>
-                      <div>
-                         <Label className="text-xs mb-1.5 block text-muted-foreground">Download Limit</Label>
-                         <select 
-                           className="w-full text-xs h-[28px] rounded-md border border-border px-2 bg-background focus:ring-1 focus:ring-primary focus:border-primary outline-none"
-                           value={downloadLimit}
-                           onChange={(e) => setDownloadLimit(e.target.value)}
-                         >
-                            <option value="1">1 Download</option>
-                            <option value="10">10 Downloads</option>
-                            <option value="100">100 Downloads</option>
-                         </select>
                       </div>
                       <div className="col-span-2 pt-2 border-t border-dashed border-border/60">
                          <Label className="text-xs mb-1.5 flex items-center gap-1 text-muted-foreground">

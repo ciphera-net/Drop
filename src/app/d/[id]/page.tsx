@@ -7,11 +7,18 @@ import { cleanupExpiredOrLimitReachedFile } from "@/lib/cleanup";
 export default async function DownloadPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
-  const { data: file, error } = await supabase
-    .from('uploads')
-    .select('*')
-    .eq('id', id)
-    .single();
+  
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+  
+  let query = supabase.from('uploads').select('*');
+  
+  if (isUuid) {
+    query = query.eq('id', id);
+  } else {
+    query = query.eq('magic_words', id);
+  }
+
+  const { data: file, error } = await query.single();
 
   if (error || !file) {
     notFound();
@@ -19,10 +26,9 @@ export default async function DownloadPage({ params }: { params: Promise<{ id: s
 
   // Check expiration (Server side check)
   const isExpired = new Date(file.expiration_time) < new Date();
-  const isLimitReached = file.download_limit !== null && file.download_count >= file.download_limit;
   
   // If logically deleted but not marked, or marked deleted, handle it.
-  if (isExpired || isLimitReached || file.file_deleted) {
+  if (isExpired || file.file_deleted) {
       if (!file.file_deleted) {
           // Trigger cleanup if not already marked
           await cleanupExpiredOrLimitReachedFile(file.id);
@@ -37,7 +43,7 @@ export default async function DownloadPage({ params }: { params: Promise<{ id: s
                     </svg>
                  </div>
                  <h1 className="text-2xl font-bold text-gray-900 mb-2">Transfer Expired</h1>
-                 <p className="text-gray-600">This file is no longer available. It has either expired or reached its download limit.</p>
+                 <p className="text-gray-600">This file is no longer available. It has expired.</p>
              </div>
          </div>
      )

@@ -16,7 +16,6 @@ export function DownloadView({ file }: { file: any }) {
   const [error, setError] = useState<string | null>(null);
   const [manualKey, setManualKey] = useState("");
   const [password, setPassword] = useState("");
-  const [downloadCount, setDownloadCount] = useState(file.download_count);
 
   useEffect(() => {
     const hash = window.location.hash.substring(1);
@@ -77,29 +76,6 @@ export function DownloadView({ file }: { file: any }) {
     setProgress(1);
     
     try {
-       // Increment download count via API
-       const incRes = await fetch('/api/increment', {
-          method: 'POST', 
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: file.id })
-       });
-
-       const data = await incRes.json();
-
-       if (!incRes.ok) {
-           if (incRes.status === 403 && data.error === 'Download limit reached') {
-               setDownloadCount(file.download_limit || downloadCount + 1);
-               setError(data.error);
-               setDownloading(false);
-               return;
-           }
-           throw new Error(data.error || "Failed to start download");
-       }
-
-       if (data.new_count) {
-           setDownloadCount(data.new_count);
-       }
-
        const supabase = createClient();
        let decryptedBlob: Blob;
 
@@ -169,16 +145,6 @@ export function DownloadView({ file }: { file: any }) {
        document.body.removeChild(a);
        URL.revokeObjectURL(url);
 
-       // Check if this download reached the limit and trigger cleanup
-       const currentCount = data.new_count || downloadCount + 1;
-       if (file.download_limit !== null && currentCount >= file.download_limit) {
-           fetch('/api/cleanup', {
-               method: 'POST',
-               headers: { 'Content-Type': 'application/json' },
-               body: JSON.stringify({ id: file.id })
-           }).catch(err => console.error('Failed to trigger cleanup:', err));
-       }
-
     } catch (e: any) {
        console.error(e);
        setError(e.message || "Download failed. Please try again.");
@@ -236,8 +202,6 @@ export function DownloadView({ file }: { file: any }) {
         }
         return new Blob(decryptedChunks);
   }
-
-  const isLimitReached = file.download_limit !== null && downloadCount >= file.download_limit;
 
   if (!key) {
       return (
@@ -317,11 +281,6 @@ export function DownloadView({ file }: { file: any }) {
                       <p className="text-center text-xs text-muted-foreground">
                           {progress < 100 ? 'Downloading & Decrypting...' : 'Finalizing...'}
                       </p>
-                  </div>
-              ) : isLimitReached ? (
-                  <div className="text-center p-4 bg-gray-50 rounded-lg border border-gray-200">
-                      <p className="text-sm font-medium text-gray-900">Download Limit Reached</p>
-                      <p className="text-xs text-muted-foreground mt-1">This file can no longer be downloaded.</p>
                   </div>
               ) : (
                   <div className="space-y-4">

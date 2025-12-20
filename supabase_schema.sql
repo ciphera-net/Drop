@@ -13,8 +13,6 @@ create table public.uploads (
   size bigint not null,
   iv text not null, -- IV for the file blob
   expiration_time timestamp with time zone not null,
-  download_limit int,
-  download_count int default 0,
   is_password_protected boolean default false,
   password_salt text,
   encrypted_key text,
@@ -44,10 +42,10 @@ create policy "Public read by ID"
 -- 3. Update (Increment download count) -> Needs function or policy
 -- For MVP, we might skip enforcing download limit via DB constraints and do it in UI/Edge function.
 -- To allow client to update download_count (not secure, but MVP):
-create policy "Public increment count"
-  on public.uploads for update
-  using (true)
-  with check (true);
+-- create policy "Public increment count"
+--   on public.uploads for update
+--   using (true)
+--   with check (true);
 
 -- 4. Delete: Only Owner
 create policy "Owner can delete"

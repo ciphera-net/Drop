@@ -1,5 +1,6 @@
 import { UploadBox } from "@/components/upload-box";
 import { FeatureSection } from "@/components/feature-section";
+import { MagicWordInput } from "@/components/magic-word-input";
 import { createClient } from "@/utils/supabase/server";
 import { UserMenu } from "@/components/user-menu";
 import Link from "next/link";
@@ -44,6 +45,7 @@ export default async function Home() {
          </div>
 
          <div className="w-full max-w-md animate-in fade-in slide-in-from-bottom-8 duration-700 delay-150">
+           <MagicWordInput />
            <UploadBox />
          </div>
          

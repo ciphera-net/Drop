@@ -3,12 +3,42 @@ import { createClient } from "@/utils/supabase/client";
 import { Button } from "./ui/button";
 import { Trash, Clock, File } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export function DashboardList({ uploads }: { uploads: any[] }) {
   const supabase = createClient();
   const router = useRouter();
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [files, setFiles] = useState(uploads);
+
+  useEffect(() => {
+    setFiles(uploads);
+  }, [uploads]);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('realtime-uploads')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'uploads',
+        },
+        (payload) => {
+          setFiles((currentFiles) =>
+            currentFiles.map((file) =>
+              file.id === payload.new.id ? { ...file, ...payload.new } : file
+            )
+          );
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [supabase]);
 
   const handleDelete = async (id: string) => {
       setDeleting(id);
@@ -23,7 +53,7 @@ export function DashboardList({ uploads }: { uploads: any[] }) {
       }
   };
 
-  if (uploads.length === 0) {
+  if (files.length === 0) {
       return (
           <div className="text-center py-20 text-gray-500 bg-white rounded-2xl border border-dashed">
              <p>No active transfers.</p>
@@ -34,7 +64,7 @@ export function DashboardList({ uploads }: { uploads: any[] }) {
 
   return (
      <div className="space-y-4">
-        {uploads.map(file => (
+        {files.map(file => (
            <div key={file.id} className="bg-white p-4 rounded-xl border flex items-center justify-between shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center gap-4 overflow-hidden">
                  <div className="bg-orange-50 p-3 rounded-lg flex-shrink-0">

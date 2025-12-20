@@ -68,4 +68,3 @@ create policy "Anyone can download file"
 create policy "Owner can delete file"
   on storage.objects for delete
   using ( bucket_id = 'drop-files' and (auth.uid() = owner) );
-

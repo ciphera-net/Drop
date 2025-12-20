@@ -48,6 +48,18 @@ export function DownloadView({ file }: { file: any }) {
     setProgress(10);
     
     try {
+       // Increment download count via API
+       const incRes = await fetch('/api/increment', {
+          method: 'POST', 
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: file.id })
+       });
+
+       if (!incRes.ok) {
+           const data = await incRes.json();
+           throw new Error(data.error || "Failed to start download");
+       }
+
        const supabase = createClient();
        const { data, error } = await supabase.storage
           .from('drop-files')
@@ -70,9 +82,9 @@ export function DownloadView({ file }: { file: any }) {
        URL.revokeObjectURL(url);
        setProgress(100);
 
-    } catch (e) {
+    } catch (e: any) {
        console.error(e);
-       setError("Download failed. Please try again.");
+       setError(e.message || "Download failed. Please try again.");
     } finally {
        setDownloading(false);
     }

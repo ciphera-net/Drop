@@ -17,7 +17,10 @@ export default async function DownloadPage({ params }: { params: Promise<{ id: s
   }
 
   // Check expiration (Server side check)
-  if (new Date(file.expiration_time) < new Date()) {
+  const isExpired = new Date(file.expiration_time) < new Date();
+  const isLimitReached = file.download_limit !== null && file.download_count >= file.download_limit;
+
+  if (isExpired || isLimitReached) {
      return (
          <div className="min-h-screen flex items-center justify-center bg-gray-50">
              <div className="text-center p-8 bg-white rounded-2xl shadow-xl max-w-md mx-4">

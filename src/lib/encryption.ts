@@ -40,7 +40,7 @@ export class EncryptionService {
     const encryptedBuffer = await window.crypto.subtle.encrypt(
       {
         name: this.ALGORITHM,
-        iv: iv,
+        iv: iv as any,
       },
       key,
       arrayBuffer
@@ -59,7 +59,7 @@ export class EncryptionService {
     const decryptedBuffer = await window.crypto.subtle.decrypt(
       {
         name: this.ALGORITHM,
-        iv: iv,
+        iv: iv as any,
       },
       key,
       arrayBuffer
@@ -95,7 +95,7 @@ export class EncryptionService {
   }
   
   static ivToBase64(iv: Uint8Array): string {
-     return this.arrayBufferToBase64(iv.buffer);
+     return this.arrayBufferToBase64(iv.buffer as any);
   }
   
   static base64ToIv(base64: string): Uint8Array {
@@ -107,7 +107,7 @@ export class EncryptionService {
     const iv = window.crypto.getRandomValues(new Uint8Array(12));
     const encoded = new TextEncoder().encode(text);
     const encryptedBuffer = await window.crypto.subtle.encrypt(
-      { name: this.ALGORITHM, iv },
+      { name: this.ALGORITHM, iv: iv as any },
       key,
       encoded
     );
@@ -121,7 +121,7 @@ export class EncryptionService {
     const encrypted = this.base64ToArrayBuffer(encryptedBase64);
     const iv = this.base64ToIv(ivBase64);
     const decryptedBuffer = await window.crypto.subtle.decrypt(
-      { name: this.ALGORITHM, iv },
+      { name: this.ALGORITHM, iv: iv as any },
       key,
       encrypted
     );

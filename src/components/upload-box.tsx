@@ -9,7 +9,7 @@ import { Progress } from "./ui/progress";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "./ui/dialog";
-import { CloudArrowUp, File as FileIcon, Copy, Check, X, Gear, EnvelopeSimple, LockKey } from "@phosphor-icons/react";
+import { CloudArrowUp, File as FileIcon, Copy, Check, X, EnvelopeSimple, LockKey } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 export function UploadBox() {
@@ -17,11 +17,10 @@ export function UploadBox() {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [shareLink, setShareLink] = useState<string | null>(null);
-  const [expiration, setExpiration] = useState("1d");
-  const [downloadLimit, setDownloadLimit] = useState("10");
+  const [expiration, setExpiration] = useState("1h");
+  const [downloadLimit, setDownloadLimit] = useState("1");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [showSettings, setShowSettings] = useState(false);
   const [copied, setCopied] = useState(false);
   
   const [email, setEmail] = useState("");
@@ -313,60 +312,55 @@ export function UploadBox() {
                <div className="space-y-4">
                  <div className="flex items-center justify-between text-sm">
                     <span className="font-medium text-gray-700">Transfer Settings</span>
-                    <Button variant="ghost" size="sm" onClick={() => setShowSettings(!showSettings)} className="text-primary hover:text-primary/80 hover:bg-orange-50">
-                       <Gear className="mr-1" /> {showSettings ? 'Hide' : 'Edit'}
-                    </Button>
                  </div>
                  
-                 {showSettings && (
-                   <div className="space-y-3 p-3 border rounded-lg bg-secondary/20 animate-in slide-in-from-top-2 duration-200">
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <Label className="text-xs mb-1.5 block text-muted-foreground">Expires In</Label>
-                          <div className="flex space-x-1">
-                             {['1h', '1d', '7d'].map((opt) => (
-                               <button 
-                                 key={opt}
-                                 onClick={() => setExpiration(opt)}
-                                 className={cn(
-                                   "flex-1 py-1.5 text-xs rounded-md border transition-all duration-200 font-medium",
-                                   expiration === opt 
-                                     ? "bg-primary text-white border-primary shadow-sm" 
-                                     : "bg-background text-gray-600 border-border hover:border-primary/30"
-                                 )}
-                               >
-                                 {opt}
-                               </button>
-                             ))}
-                          </div>
-                        </div>
-                        <div>
-                           <Label className="text-xs mb-1.5 block text-muted-foreground">Download Limit</Label>
-                           <select 
-                             className="w-full text-xs h-[28px] rounded-md border border-border px-2 bg-background focus:ring-1 focus:ring-primary focus:border-primary outline-none"
-                             value={downloadLimit}
-                             onChange={(e) => setDownloadLimit(e.target.value)}
-                           >
-                              <option value="1">1 Download</option>
-                              <option value="10">10 Downloads</option>
-                              <option value="100">100 Downloads</option>
-                           </select>
-                        </div>
-                        <div className="col-span-2 pt-2 border-t border-dashed border-border/60">
-                           <Label className="text-xs mb-1.5 flex items-center gap-1 text-muted-foreground">
-                              <LockKey weight="fill" className="text-orange-500"/> Password Protection (Optional)
-                           </Label>
-                           <Input 
-                              type="password" 
-                              placeholder="Enter a password to encrypt this file" 
-                              className="h-8 text-xs bg-background"
-                              value={password}
-                              onChange={(e) => setPassword(e.target.value)}
-                           />
+                 <div className="space-y-3 p-3 border rounded-lg bg-secondary/20 animate-in slide-in-from-top-2 duration-200">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs mb-1.5 block text-muted-foreground">Expires In</Label>
+                        <div className="flex space-x-1">
+                           {['1h', '1d', '7d'].map((opt) => (
+                             <button 
+                               key={opt}
+                               onClick={() => setExpiration(opt)}
+                               className={cn(
+                                 "flex-1 py-1.5 text-xs rounded-md border transition-all duration-200 font-medium",
+                                 expiration === opt 
+                                   ? "bg-primary text-white border-primary shadow-sm" 
+                                   : "bg-background text-gray-600 border-border hover:border-primary/30"
+                               )}
+                             >
+                               {opt}
+                             </button>
+                           ))}
                         </div>
                       </div>
-                   </div>
-                 )}
+                      <div>
+                         <Label className="text-xs mb-1.5 block text-muted-foreground">Download Limit</Label>
+                         <select 
+                           className="w-full text-xs h-[28px] rounded-md border border-border px-2 bg-background focus:ring-1 focus:ring-primary focus:border-primary outline-none"
+                           value={downloadLimit}
+                           onChange={(e) => setDownloadLimit(e.target.value)}
+                         >
+                            <option value="1">1 Download</option>
+                            <option value="10">10 Downloads</option>
+                            <option value="100">100 Downloads</option>
+                         </select>
+                      </div>
+                      <div className="col-span-2 pt-2 border-t border-dashed border-border/60">
+                         <Label className="text-xs mb-1.5 flex items-center gap-1 text-muted-foreground">
+                            <LockKey weight="fill" className="text-orange-500"/> Password Protection (Optional)
+                         </Label>
+                         <Input 
+                            type="password" 
+                            placeholder="Enter a password to encrypt this file" 
+                            className="h-8 text-xs bg-background"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                         />
+                      </div>
+                    </div>
+                 </div>
                </div>
              )}
           </div>

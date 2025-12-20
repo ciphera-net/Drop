@@ -30,8 +30,6 @@ export default async function DashboardPage() {
                     </div>
                     <span className="hidden sm:inline">Drop</span>
                 </Link>
-                <div className="h-6 w-px bg-gray-200 hidden sm:block"></div>
-                <h1 className="text-lg font-medium text-gray-700">My Drops</h1>
              </div>
              <UserMenu user={user} />
           </div>

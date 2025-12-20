@@ -156,7 +156,7 @@ export function DashboardList({ uploads }: { uploads: any[] }) {
                     </div>
                    <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
                       <span className="flex items-center gap-1" title="Created at">
-                         <Clock className="w-3 h-3" />
+                         <Clock className="w-3.5 h-3.5" />
                          {new Date(file.created_at).toLocaleDateString()}
                       </span>
                      <span className="w-1 h-1 rounded-full bg-gray-300"></span>

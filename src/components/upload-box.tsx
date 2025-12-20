@@ -9,7 +9,7 @@ import { Progress } from "./ui/progress";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "./ui/dialog";
-import { CloudArrowUp, File as FileIcon, Copy, Check, X, Gear, EnvelopeSimple } from "@phosphor-icons/react";
+import { CloudArrowUp, File as FileIcon, Copy, Check, X, Gear, EnvelopeSimple, LockKey } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 export function UploadBox() {
@@ -19,6 +19,7 @@ export function UploadBox() {
   const [shareLink, setShareLink] = useState<string | null>(null);
   const [expiration, setExpiration] = useState("1d");
   const [downloadLimit, setDownloadLimit] = useState("10");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -96,6 +97,20 @@ export function UploadBox() {
       const { encrypted: encFilename, iv: filenameIv } = await EncryptionService.encryptText(file.name, key);
       const { encrypted: encMime, iv: mimeIv } = await EncryptionService.encryptText(file.type || 'application/octet-stream', key);
 
+      // Handle Password Protection
+      let encryptedKey = null;
+      let encryptedKeyIv = null;
+      let passwordSalt = null;
+
+      if (password) {
+        const salt = window.crypto.getRandomValues(new Uint8Array(16));
+        passwordSalt = EncryptionService.ivToBase64(salt);
+        const passwordKey = await EncryptionService.deriveKeyFromPassword(password, passwordSalt);
+        const encryptedKeyData = await EncryptionService.encryptKey(key, passwordKey);
+        encryptedKey = encryptedKeyData.encryptedKey;
+        encryptedKeyIv = encryptedKeyData.iv;
+      }
+
       // 4. Upload Storage
       const fileId = crypto.randomUUID();
       const storagePath = `${fileId}`;
@@ -129,7 +144,11 @@ export function UploadBox() {
         iv: EncryptionService.ivToBase64(iv),
         expiration_time: expiresAt.toISOString(),
         download_limit: parseInt(downloadLimit),
-        download_count: 0
+        download_count: 0,
+        is_password_protected: !!password,
+        password_salt: passwordSalt,
+        encrypted_key: encryptedKey,
+        encrypted_key_iv: encryptedKeyIv
       });
 
       if (dbError) throw dbError;
@@ -138,7 +157,12 @@ export function UploadBox() {
       // 6. Generate Link
       const keyBase64 = await EncryptionService.exportKey(key);
       const origin = window.location.origin;
-      setShareLink(`${origin}/d/${fileId}#${keyBase64}`);
+      
+      if (password) {
+        setShareLink(`${origin}/d/${fileId}`);
+      } else {
+        setShareLink(`${origin}/d/${fileId}#${keyBase64}`);
+      }
 
     } catch (e: any) {
       console.error(e);
@@ -159,6 +183,7 @@ export function UploadBox() {
   const reset = () => {
     setFile(null);
     setShareLink(null);
+    setPassword("");
     setProgress(0);
     setUploading(false);
   };
@@ -326,6 +351,18 @@ export function UploadBox() {
                               <option value="10">10 Downloads</option>
                               <option value="100">100 Downloads</option>
                            </select>
+                        </div>
+                        <div className="col-span-2 pt-2 border-t border-dashed border-border/60">
+                           <Label className="text-xs mb-1.5 flex items-center gap-1 text-muted-foreground">
+                              <LockKey weight="fill" className="text-orange-500"/> Password Protection (Optional)
+                           </Label>
+                           <Input 
+                              type="password" 
+                              placeholder="Enter a password to encrypt this file" 
+                              className="h-8 text-xs bg-background"
+                              value={password}
+                              onChange={(e) => setPassword(e.target.value)}
+                           />
                         </div>
                       </div>
                    </div>

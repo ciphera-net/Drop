@@ -14,7 +14,11 @@ create table public.uploads (
   iv text not null, -- IV for the file blob
   expiration_time timestamp with time zone not null,
   download_limit int,
-  download_count int default 0
+  download_count int default 0,
+  is_password_protected boolean default false,
+  password_salt text,
+  encrypted_key text,
+  encrypted_key_iv text
 );
 
 -- RLS

@@ -15,14 +15,15 @@ export function DownloadView({ file }: { file: any }) {
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [manualKey, setManualKey] = useState("");
+  const [password, setPassword] = useState("");
   const [downloadCount, setDownloadCount] = useState(file.download_count);
 
   useEffect(() => {
     const hash = window.location.hash.substring(1);
-    if (hash) {
+    if (hash && !file.is_password_protected) {
        attemptDecryptMetadata(hash);
     }
-  }, []);
+  }, [file.is_password_protected]);
 
   const attemptDecryptMetadata = async (base64Key: string) => {
      try {
@@ -41,6 +42,32 @@ export function DownloadView({ file }: { file: any }) {
         console.error("Invalid key", e);
         setError("Decryption failed. The key might be invalid.");
      }
+  };
+
+  const attemptUnlockWithPassword = async () => {
+    try {
+        setError(null);
+        if (!password) return;
+
+        const passwordKey = await EncryptionService.deriveKeyFromPassword(password, file.password_salt);
+        const k = await EncryptionService.decryptKey(file.encrypted_key, file.encrypted_key_iv, passwordKey);
+
+        // Decrypt filename
+        const name = await EncryptionService.decryptText(
+            file.filename_encrypted, 
+            file.filename_iv, 
+            k
+        );
+        setKey(k);
+        setDecryptedName(name);
+    } catch (e: any) {
+        // If it's a crypto operation error, it usually means the password (and thus the key) is wrong.
+        // We suppress the console error to avoid alarming developers/users, as this is a handled "business logic" failure.
+        if (e.name !== 'OperationError') {
+             console.error("Unlock failed", e);
+        }
+        setError("Incorrect password. Please try again.");
+    }
   };
 
   const handleDownload = async () => {
@@ -112,24 +139,44 @@ export function DownloadView({ file }: { file: any }) {
                  <div className="mx-auto bg-orange-100 p-3 rounded-full mb-2">
                      <LockKey className="w-8 h-8 text-orange-600" weight="fill" />
                  </div>
-                 <CardTitle>Encrypted File</CardTitle>
+                 <CardTitle>{file.is_password_protected ? "Password Protected" : "Encrypted File"}</CardTitle>
                  <CardDescription>
-                     This file is end-to-end encrypted. We need the key to unlock it.
+                     {file.is_password_protected 
+                        ? "This file is protected with a password. Enter it below to unlock."
+                        : "This file is end-to-end encrypted. We need the key to unlock it."
+                     }
                  </CardDescription>
              </CardHeader>
              <CardContent className="space-y-4">
                  <div className="text-sm text-center text-muted-foreground">
-                    If you used the link provided, the key should have been applied automatically.
+                    {!file.is_password_protected && "If you used the link provided, the key should have been applied automatically."}
                  </div>
                  <div className="space-y-2">
-                    <Input 
-                        placeholder="Paste decryption key here (if missing)" 
-                        value={manualKey}
-                        onChange={(e) => setManualKey(e.target.value)}
-                    />
-                    <Button className="w-full" onClick={() => attemptDecryptMetadata(manualKey)}>
-                        Unlock File
-                    </Button>
+                    {file.is_password_protected ? (
+                        <>
+                            <Input 
+                                type="password"
+                                placeholder="Enter password" 
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && attemptUnlockWithPassword()}
+                            />
+                            <Button className="w-full" onClick={attemptUnlockWithPassword}>
+                                Unlock File
+                            </Button>
+                        </>
+                    ) : (
+                        <>
+                            <Input 
+                                placeholder="Paste decryption key here (if missing)" 
+                                value={manualKey}
+                                onChange={(e) => setManualKey(e.target.value)}
+                            />
+                            <Button className="w-full" onClick={() => attemptDecryptMetadata(manualKey)}>
+                                Unlock File
+                            </Button>
+                        </>
+                    )}
                  </div>
                  {error && (
                      <div className="flex items-center text-sm text-destructive justify-center mt-2">

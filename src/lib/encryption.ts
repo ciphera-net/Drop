@@ -127,5 +127,69 @@ export class EncryptionService {
     );
     return new TextDecoder().decode(decryptedBuffer);
   }
+
+  // Derive key from password using PBKDF2
+  static async deriveKeyFromPassword(password: string, saltBase64: string): Promise<CryptoKey> {
+    const enc = new TextEncoder();
+    const salt = this.base64ToIv(saltBase64); // Using base64ToIv to convert string to Uint8Array
+    
+    const keyMaterial = await window.crypto.subtle.importKey(
+      "raw",
+      enc.encode(password),
+      { name: "PBKDF2" },
+      false,
+      ["deriveBits", "deriveKey"]
+    );
+
+    return window.crypto.subtle.deriveKey(
+      {
+        name: "PBKDF2",
+        salt: salt as any,
+        iterations: 100000,
+        hash: "SHA-256"
+      },
+      keyMaterial,
+      { name: "AES-GCM", length: 256 },
+      true,
+      ["encrypt", "decrypt"]
+    );
+  }
+
+  // Encrypt a key (Wrap key)
+  static async encryptKey(keyToEncrypt: CryptoKey, wrappingKey: CryptoKey): Promise<{ encryptedKey: string; iv: string }> {
+      const exportedKey = await window.crypto.subtle.exportKey("raw", keyToEncrypt);
+      const iv = window.crypto.getRandomValues(new Uint8Array(12));
+      
+      const encryptedBuffer = await window.crypto.subtle.encrypt(
+          { name: "AES-GCM", iv: iv as any },
+          wrappingKey,
+          exportedKey
+      );
+
+      return {
+          encryptedKey: this.arrayBufferToBase64(encryptedBuffer),
+          iv: this.ivToBase64(iv)
+      };
+  }
+
+  // Decrypt a key (Unwrap key)
+  static async decryptKey(encryptedKeyBase64: string, ivBase64: string, wrappingKey: CryptoKey): Promise<CryptoKey> {
+      const encryptedBuffer = this.base64ToArrayBuffer(encryptedKeyBase64);
+      const iv = this.base64ToIv(ivBase64);
+
+      const decryptedBuffer = await window.crypto.subtle.decrypt(
+          { name: "AES-GCM", iv: iv as any },
+          wrappingKey,
+          encryptedBuffer
+      );
+
+      return window.crypto.subtle.importKey(
+          "raw",
+          decryptedBuffer,
+          { name: "AES-GCM", length: 256 },
+          true,
+          ["encrypt", "decrypt"]
+      );
+  }
 }
 

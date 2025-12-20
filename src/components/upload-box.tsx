@@ -116,8 +116,11 @@ export function UploadBox() {
       if (expiration === '1h') expiresAt = new Date(now.getTime() + 60 * 60 * 1000);
       if (expiration === '7d') expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
+      const { data: { user } } = await supabase.auth.getUser();
+
       const { error: dbError } = await supabase.from('uploads').insert({
         id: fileId,
+        user_id: user?.id,
         filename_encrypted: encFilename,
         filename_iv: filenameIv,
         mime_type_encrypted: encMime,

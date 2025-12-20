@@ -51,9 +51,16 @@ export function UploadBox() {
     }
   }
 
+  const MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024; // 5GB
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+      const selectedFile = e.target.files[0];
+      if (selectedFile.size > MAX_FILE_SIZE) {
+        setError("File size exceeds the 5GB limit.");
+        return;
+      }
+      setFile(selectedFile);
       setError(null);
     }
   };
@@ -61,7 +68,12 @@ export function UploadBox() {
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setFile(e.dataTransfer.files[0]);
+      const droppedFile = e.dataTransfer.files[0];
+      if (droppedFile.size > MAX_FILE_SIZE) {
+        setError("File size exceeds the 5GB limit.");
+        return;
+      }
+      setFile(droppedFile);
       setError(null);
     }
   }, []);
@@ -244,7 +256,7 @@ export function UploadBox() {
                 <CloudArrowUp className="w-8 h-8 text-primary" weight="fill" />
              </div>
              <p className="font-medium text-gray-900">Click to upload or drag and drop</p>
-             <p className="text-sm text-muted-foreground mt-1">Up to 500MB (Browser Limit)</p>
+             <p className="text-sm text-muted-foreground mt-1">Up to 5GB</p>
           </div>
         ) : (
           <div className="space-y-4">

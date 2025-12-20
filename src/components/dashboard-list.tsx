@@ -1,7 +1,7 @@
 "use client";
 import { createClient } from "@/utils/supabase/client";
 import { Button } from "./ui/button";
-import { Trash, Clock, File, DownloadSimple } from "@phosphor-icons/react";
+import { Trash, Clock, File, DownloadSimple, FileText } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -111,8 +111,11 @@ export function DashboardList({ uploads }: { uploads: any[] }) {
                          <Clock className="w-3 h-3" />
                          {new Date(file.created_at).toLocaleDateString()}
                       </span>
-                      <span className="w-1 h-1 rounded-full bg-gray-300"></span>
-                      <span>{(file.size / 1024 / 1024).toFixed(2)} MB</span>
+                     <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                     <span className="flex items-center gap-1">
+                        <FileText className="w-3 h-3" />
+                        {(file.size / 1024 / 1024).toFixed(2)} MB
+                     </span>
                       {/* Show download count if relevant (limit exists or count > 0) */}
                       {(file.download_limit !== null || file.download_count > 0) && (
                         <>

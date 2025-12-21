@@ -147,3 +147,45 @@ add column if not exists download_count int default 0;
 alter table public.uploads
 drop column if exists tags;
 
+-- 09_atomic_increment.sql
+-- Function to safely increment download count and check limit atomically
+create or replace function increment_download_count(row_id uuid)
+returns table (new_count int, limit_reached boolean)
+language plpgsql
+security definer
+as $$
+declare
+  _limit int;
+  _count int;
+  _is_deleted boolean;
+begin
+  -- Lock the row for update to prevent race conditions
+  select download_limit, download_count, file_deleted
+  into _limit, _count, _is_deleted
+  from public.uploads
+  where id = row_id
+  for update;
+
+  if not found then
+    raise exception 'File not found';
+  end if;
+
+  if _is_deleted then
+     -- If already deleted, just return current state
+     return query select _count, true;
+     return;
+  end if;
+
+  -- Increment
+  _count := coalesce(_count, 0) + 1;
+
+  -- Update
+  update public.uploads
+  set download_count = _count,
+      -- If limit reached, mark deleted immediately
+      file_deleted = case when (_limit is not null and _count >= _limit) then true else file_deleted end
+  where id = row_id;
+
+  return query select _count, (_limit is not null and _count >= _limit);
+end;
+$$;

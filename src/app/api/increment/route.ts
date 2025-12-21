@@ -1,6 +1,5 @@
 import { createAdminClient } from "@/utils/supabase/admin";
 import { NextRequest, NextResponse } from "next/server";
-import { cleanupExpiredOrLimitReachedFile } from "@/lib/cleanup";
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,45 +8,32 @@ export async function POST(req: NextRequest) {
 
     const supabase = createAdminClient();
 
-    // Fetch current count and limit
-    const { data: file, error: fetchError } = await supabase
-        .from('uploads')
-        .select('download_count, download_limit')
-        .eq('id', id)
-        .single();
-        
-    if (fetchError || !file) {
+    // Call the atomic RPC function
+    const { data, error } = await supabase
+        .rpc('increment_download_count', { row_id: id });
+
+    if (error) {
+        console.error("RPC Error:", error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // RPC returns an array of rows (even if just one)
+    const result = Array.isArray(data) ? data[0] : data;
+    
+    if (!result) {
         return NextResponse.json({ error: "File not found" }, { status: 404 });
     }
 
-    const newCount = (file.download_count || 0) + 1;
-    
-    // Update count
-    const { error: updateError } = await supabase
-        .from('uploads')
-        .update({ download_count: newCount })
-        .eq('id', id);
+    const { new_count, limit_reached } = result;
 
-    if (updateError) throw updateError;
-
-    let limitReached = false;
-
-    // Check if limit reached AFTER increment
-    if (file.download_limit !== null && newCount >= file.download_limit) {
-         limitReached = true;
-         // Mark as deleted in DB immediately so no new users can access it
-         await supabase.from('uploads').update({ file_deleted: true }).eq('id', id);
-         
-         // NOTE: We do NOT trigger storage cleanup here to allow the current user to complete their download.
-         // The client is responsible for calling the cleanup endpoint after download, 
-         // or it will be cleaned up by the sender's dashboard check eventually.
-    }
-
-    return NextResponse.json({ success: true, count: newCount, limitReached });
+    return NextResponse.json({ 
+        success: true, 
+        count: new_count, 
+        limitReached: limit_reached 
+    });
 
   } catch (e: any) {
     console.error(e);
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
-

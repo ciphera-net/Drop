@@ -53,7 +53,7 @@
    - `SUPABASE_SERVICE_ROLE_KEY`
 
 4. **Run Database Migrations**
-   Execute the SQL files in the `migrations/` folder in your Supabase SQL editor to set up the schema and policies.
+   Copy the contents of `supabase/schema.sql` and execute it in your Supabase SQL Editor to set up the schema, policies, and functions.
 
 5. **Start the Development Server**
    ```bash

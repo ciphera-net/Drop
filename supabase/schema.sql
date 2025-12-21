@@ -26,11 +26,17 @@ create table public.uploads (
   password_salt text,
   encrypted_key text,
   encrypted_key_iv text,
-  file_deleted boolean default false
+  file_deleted boolean default false,
+  magic_words text UNIQUE,
+  download_limit int, -- NULL means unlimited
+  download_count int default 0
 );
 
 -- RLS
 alter table public.uploads enable row level security;
+
+-- Create index for faster lookup
+CREATE INDEX IF NOT EXISTS uploads_magic_words_idx ON public.uploads (magic_words);
 
 -- Policies
 
@@ -48,15 +54,7 @@ create policy "Public read by ID"
   on public.uploads for select
   using (true);
 
--- 3. Update (Increment download count) -> Needs function or policy
--- For MVP, we might skip enforcing download limit via DB constraints and do it in UI/Edge function.
--- To allow client to update download_count (not secure, but MVP):
--- create policy "Public increment count"
---   on public.uploads for update
---   using (true)
---   with check (true);
-
--- 4. Delete: Only Owner
+-- 3. Delete: Only Owner
 create policy "Owner can delete"
   on public.uploads for delete
   using (auth.uid() = user_id);
@@ -66,91 +64,47 @@ create policy "Owner can delete"
 insert into storage.buckets (id, name, public) values ('drop-files', 'drop-files', false);
 
 -- Storage Policies
--- 1. Upload
+-- 1. Upload (Insert) - Allow anyone to upload new files
 create policy "Anyone can upload file"
   on storage.objects for insert
   with check ( bucket_id = 'drop-files' );
 
--- 2. Download
-create policy "Anyone can download file"
+-- 2. Secure Download (Select)
+-- Logic: 
+-- 1. Allow if auth user is the owner (uploader) - always see own files
+-- 2. Public access ONLY if verified against DB (exists in uploads AND not deleted/limit reached)
+create policy "Secure public download"
   on storage.objects for select
-  using ( bucket_id = 'drop-files' );
+  using (
+    bucket_id = 'drop-files'
+    and (
+        (auth.uid() = owner)
+        or
+        exists (
+          select 1 from public.uploads
+          where id::text = split_part(storage.objects.name, '/', 1)
+          and (
+            file_deleted = false
+            or
+            (download_limit is not null and download_count <= download_limit)
+          )
+        )
+    )
+  );
 
--- 3. Delete
+-- 3. Delete: Only Owner
 create policy "Owner can delete file"
   on storage.objects for delete
   using ( bucket_id = 'drop-files' and (auth.uid() = owner) );
 
+
 -- ==========================================
--- Migrations
+-- Functions
 -- ==========================================
 
--- 01_enable_realtime_uploads.sql
--- Enable Realtime for uploads table
-alter publication supabase_realtime add table public.uploads;
-
--- 02_add_password_protection.sql
--- Note: Columns might already exist in base schema
-DO $$ 
-BEGIN 
-    BEGIN
-        ALTER TABLE public.uploads ADD COLUMN is_password_protected boolean DEFAULT false;
-    EXCEPTION
-        WHEN duplicate_column THEN NULL;
-    END;
-    BEGIN
-        ALTER TABLE public.uploads ADD COLUMN password_salt text;
-    EXCEPTION
-        WHEN duplicate_column THEN NULL;
-    END;
-    BEGIN
-        ALTER TABLE public.uploads ADD COLUMN encrypted_key text;
-    EXCEPTION
-        WHEN duplicate_column THEN NULL;
-    END;
-    BEGIN
-        ALTER TABLE public.uploads ADD COLUMN encrypted_key_iv text;
-    EXCEPTION
-        WHEN duplicate_column THEN NULL;
-    END;
-END $$;
-
--- 03_add_file_deleted_flag.sql
-DO $$ 
-BEGIN 
-    ALTER TABLE public.uploads ADD COLUMN file_deleted boolean default false;
-EXCEPTION
-    WHEN duplicate_column THEN NULL;
-END $$;
-
--- 04_add_magic_words.sql
--- Add magic_words column to uploads table
-ALTER TABLE public.uploads 
-ADD COLUMN IF NOT EXISTS magic_words text UNIQUE;
-
--- Create index for faster lookup
-CREATE INDEX IF NOT EXISTS uploads_magic_words_idx ON public.uploads (magic_words);
-
--- 05_remove_burn_on_read.sql
--- Remove burn on read functionality columns
-alter table public.uploads 
-drop column if exists download_limit,
-drop column if exists download_count;
-
--- 06_restore_max_downloads.sql
--- Restore max downloads functionality
-alter table public.uploads 
-add column if not exists download_limit int, -- NULL means unlimited
-add column if not exists download_count int default 0;
-
--- 08_remove_tags_from_uploads.sql
-alter table public.uploads
-drop column if exists tags;
-
--- 09_atomic_increment.sql
 -- Function to safely increment download count and check limit atomically
 create or replace function increment_download_count(row_id uuid)
-returns table (new_count int, limit_reached boolean)
+returns table (new_count int, limit_reached boolean, allowed boolean)
 language plpgsql
 security definer
 as $$
@@ -171,8 +125,17 @@ begin
   end if;
 
   if _is_deleted then
-     -- If already deleted, just return current state
-     return query select _count, true;
+     -- If already deleted, denied.
+     return query select _count, true, false;
+     return;
+  end if;
+
+  -- Check if we are ALREADY at the limit before this increment
+  if _limit is not null and _count >= _limit then
+     -- Limit was already reached (race condition handling if is_deleted wasn't set yet)
+     -- Mark deleted self-healing
+     update public.uploads set file_deleted = true where id = row_id;
+     return query select _count, true, false;
      return;
   end if;
 
@@ -182,10 +145,11 @@ begin
   -- Update
   update public.uploads
   set download_count = _count,
-      -- If limit reached, mark deleted immediately
+      -- If limit reached (>= limit), mark deleted immediately
       file_deleted = case when (_limit is not null and _count >= _limit) then true else file_deleted end
   where id = row_id;
 
-  return query select _count, (_limit is not null and _count >= _limit);
+  -- Allowed is true because we just successfully incremented within the limit
+  return query select _count, (_limit is not null and _count >= _limit), true;
 end;
 $$;

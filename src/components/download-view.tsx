@@ -86,6 +86,11 @@ export function DownloadView({ file }: { file: any }) {
         
        if (!incRes.ok) {
             const err = await incRes.json();
+            // If the error indicates limit reached, show specific UI state
+            if (incRes.status === 410 || err.limitReached) {
+                setShowLimitReachedMessage(true);
+                throw new Error("This file is no longer available.");
+            }
             throw new Error(err.error || "Failed to initiate download");
        }
 

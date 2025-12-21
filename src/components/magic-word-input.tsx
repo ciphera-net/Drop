@@ -70,7 +70,7 @@ export function MagicWordInput() {
                     disabled={loading}
                     autoComplete="off"
                     autoCorrect="off"
-                    autoCapitalize="off"
+                    autoCapitalize="none"
                     spellCheck="false"
                 />
 

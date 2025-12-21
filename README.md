@@ -32,8 +32,8 @@
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/Ciphera/drop.git
-   cd drop
+   git clone https://github.com/ciphera-net/Drop.git
+   cd Drop
    ```
 
 2. **Install dependencies**

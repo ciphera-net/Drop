@@ -6,7 +6,7 @@
   "private": true,
   "repository": {
     "type": "git",
-    "url": "https://github.com/Ciphera/drop.git"
+    "url": "https://github.com/ciphera-net/Drop.git"
   },
   "scripts": {
     "dev": "next dev",

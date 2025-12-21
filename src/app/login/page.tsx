@@ -122,7 +122,7 @@ export default function LoginPage() {
            <button 
              type="button" 
              onClick={() => setIsSignUp(!isSignUp)}
-             className="text-sm text-primary hover:underline font-medium"
+             className="text-sm text-primary hover:underline font-medium cursor-pointer"
            >
              {isSignUp ? "Already have an account? Sign In" : "Don't have an account? Sign Up"}
            </button>

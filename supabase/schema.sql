@@ -1,3 +1,12 @@
+-- 
+-- Main Supabase Schema
+-- This file contains the initial schema and all applied migrations.
+--
+
+-- ==========================================
+-- Base Schema (from supabase_schema.sql)
+-- ==========================================
+
 -- Enable UUID extension
 create extension if not exists "uuid-ossp";
 
@@ -71,3 +80,70 @@ create policy "Anyone can download file"
 create policy "Owner can delete file"
   on storage.objects for delete
   using ( bucket_id = 'drop-files' and (auth.uid() = owner) );
+
+-- ==========================================
+-- Migrations
+-- ==========================================
+
+-- 01_enable_realtime_uploads.sql
+-- Enable Realtime for uploads table
+alter publication supabase_realtime add table public.uploads;
+
+-- 02_add_password_protection.sql
+-- Note: Columns might already exist in base schema
+DO $$ 
+BEGIN 
+    BEGIN
+        ALTER TABLE public.uploads ADD COLUMN is_password_protected boolean DEFAULT false;
+    EXCEPTION
+        WHEN duplicate_column THEN NULL;
+    END;
+    BEGIN
+        ALTER TABLE public.uploads ADD COLUMN password_salt text;
+    EXCEPTION
+        WHEN duplicate_column THEN NULL;
+    END;
+    BEGIN
+        ALTER TABLE public.uploads ADD COLUMN encrypted_key text;
+    EXCEPTION
+        WHEN duplicate_column THEN NULL;
+    END;
+    BEGIN
+        ALTER TABLE public.uploads ADD COLUMN encrypted_key_iv text;
+    EXCEPTION
+        WHEN duplicate_column THEN NULL;
+    END;
+END $$;
+
+-- 03_add_file_deleted_flag.sql
+DO $$ 
+BEGIN 
+    ALTER TABLE public.uploads ADD COLUMN file_deleted boolean default false;
+EXCEPTION
+    WHEN duplicate_column THEN NULL;
+END $$;
+
+-- 04_add_magic_words.sql
+-- Add magic_words column to uploads table
+ALTER TABLE public.uploads 
+ADD COLUMN IF NOT EXISTS magic_words text UNIQUE;
+
+-- Create index for faster lookup
+CREATE INDEX IF NOT EXISTS uploads_magic_words_idx ON public.uploads (magic_words);
+
+-- 05_remove_burn_on_read.sql
+-- Remove burn on read functionality columns
+alter table public.uploads 
+drop column if exists download_limit,
+drop column if exists download_count;
+
+-- 06_restore_max_downloads.sql
+-- Restore max downloads functionality
+alter table public.uploads 
+add column if not exists download_limit int, -- NULL means unlimited
+add column if not exists download_count int default 0;
+
+-- 08_remove_tags_from_uploads.sql
+alter table public.uploads
+drop column if exists tags;
+

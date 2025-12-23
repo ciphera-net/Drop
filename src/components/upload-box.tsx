@@ -12,7 +12,7 @@ import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Label } from "./ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "./ui/dialog";
-import { CloudArrowUp, File as FileIcon, Copy, Check, X, EnvelopeSimple, LockKey, Warning, QrCode, NotePencil, Fire } from "@phosphor-icons/react";
+import { CloudArrowUp, File as FileIcon, Copy, Check, X, EnvelopeSimple, LockKey, Warning, QrCode, NotePencil, Fire, Infinity as InfinityIcon } from "@phosphor-icons/react";
 import { QRCodeSVG } from "qrcode.react";
 import { cn } from "@/lib/utils";
 import { uploadEncryptedFile } from "@/utils/upload-manager";
@@ -470,14 +470,14 @@ export function UploadBox() {
                                onClick={() => setMaxDownloads(opt)}
                                disabled={maxDownloads === 1}
                                className={cn(
-                                 "flex-1 py-1.5 text-xs rounded-md border transition-all duration-200 font-medium",
+                                 "flex-1 py-1.5 text-xs rounded-md border transition-all duration-200 font-medium flex items-center justify-center",
                                  maxDownloads === opt 
                                    ? "bg-primary text-white border-primary shadow-sm" 
                                    : "bg-background text-muted-foreground border-border hover:border-primary/30",
                                  maxDownloads === 1 && "opacity-50 cursor-not-allowed bg-muted text-muted-foreground"
                                )}
                              >
-                               {opt === null ? "Unlimited" : opt}
+                               {opt === null ? <InfinityIcon weight="bold" className="w-4 h-4" /> : opt}
                              </button>
                            ))}
                         </div>

@@ -1,4 +1,22 @@
+import { createSHA256 } from 'hash-wasm';
+
 export type FileCategory = 'image' | 'video' | 'audio' | 'pdf' | 'archive' | 'code' | 'text' | 'other';
+
+export async function calculateFileHash(file: File): Promise<string> {
+  const hasher = await createSHA256();
+  const chunkSize = 10 * 1024 * 1024; // 10MB chunk size for hashing
+  const totalChunks = Math.ceil(file.size / chunkSize);
+
+  for (let i = 0; i < totalChunks; i++) {
+    const start = i * chunkSize;
+    const end = Math.min(start + chunkSize, file.size);
+    const chunk = file.slice(start, end);
+    const buffer = await chunk.arrayBuffer();
+    hasher.update(new Uint8Array(buffer));
+  }
+
+  return hasher.digest();
+}
 
 export function getFileCategory(file: File): FileCategory {
   const mimeType = file.type;

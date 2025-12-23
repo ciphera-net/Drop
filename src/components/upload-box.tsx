@@ -13,13 +13,14 @@ import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Label } from "./ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "./ui/dialog";
-import { CloudArrowUp, Copy, Check, X, EnvelopeSimple, LockKey, Warning, QrCode, NotePencil, Fire, Infinity as InfinityIcon, Share } from "@phosphor-icons/react";
+import { CloudArrowUp, Copy, Check, X, EnvelopeSimple, LockKey, Warning, QrCode, NotePencil, Fire, Infinity as InfinityIcon, Share, CaretDown, CaretUp } from "@phosphor-icons/react";
 import { QRCodeSVG } from "qrcode.react";
 import { cn } from "@/lib/utils";
 import { uploadEncryptedFile } from "@/utils/upload-manager";
 import { toast } from "sonner";
-import { getFileCategory } from "@/utils/file-helpers";
+import { getFileCategory, calculateFileHash } from "@/utils/file-helpers";
 import { FileIconDisplay } from "@/components/file-icon-display";
+import { Fingerprint } from "@phosphor-icons/react";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024; // 5GB
 
@@ -42,6 +43,8 @@ export function UploadBox() {
   const [sendingEmail, setSendingEmail] = useState(false);
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [canShare, setCanShare] = useState(false);
+  const [uploadedFileHash, setUploadedFileHash] = useState<string | null>(null);
+  const [showHash, setShowHash] = useState(false);
 
   useEffect(() => {
     if (typeof navigator !== 'undefined' && 'share' in navigator) {
@@ -218,6 +221,9 @@ export function UploadBox() {
       // 1. Generate Key
       const key = await EncryptionService.generateKey();
       
+      // Start Hashing in Parallel
+      const hashPromise = calculateFileHash(file);
+
       // 2. Encrypt Metadata
       const { encrypted: encFilename, iv: filenameIv } = await EncryptionService.encryptText(file.name, key);
       const { encrypted: encMime, iv: mimeIv } = await EncryptionService.encryptText(file.type || 'application/octet-stream', key);
@@ -260,6 +266,10 @@ export function UploadBox() {
           }
       );
 
+      // Wait for hash to complete
+      const fileHash = await hashPromise;
+      setUploadedFileHash(fileHash);
+
       // 4. DB Insert
       const now = new Date();
       let expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 1d
@@ -289,7 +299,8 @@ export function UploadBox() {
         message_encrypted: encMessage,
         message_iv: messageIv,
         magic_words: generatedMagicWords,
-        download_limit: maxDownloads
+        download_limit: maxDownloads,
+        file_hash: fileHash
       });
 
       if (dbError) throw dbError;
@@ -327,6 +338,8 @@ export function UploadBox() {
   const reset = () => {
     setFile(null);
     setShareLink(null);
+    setUploadedFileHash(null);
+    setShowHash(false);
     setPassword("");
     setMessage("");
     setMaxDownloads(1);
@@ -399,6 +412,32 @@ export function UploadBox() {
                 </Button>
             )}
           </div>
+          
+          {uploadedFileHash && (
+            <div className="border border-border rounded-lg overflow-hidden">
+                <button 
+                  onClick={() => setShowHash(!showHash)}
+                  className="w-full flex items-center justify-between p-3 bg-secondary/30 hover:bg-secondary/50 transition-colors text-xs font-medium text-muted-foreground"
+                >
+                   <div className="flex items-center gap-2">
+                      <Fingerprint className="w-4 h-4 text-primary" weight="fill" />
+                      <span>Verify File Integrity (Optional)</span>
+                   </div>
+                   {showHash ? <CaretUp className="w-3 h-3" /> : <CaretDown className="w-3 h-3" />}
+                </button>
+                
+                {showHash && (
+                    <div className="p-3 bg-card border-t border-border animate-in slide-in-from-top-1">
+                        <p className="text-[10px] text-muted-foreground mb-2">
+                            This SHA-256 hash allows the recipient to mathematically verify that the file has not been modified.
+                        </p>
+                       <code className="text-[10px] text-muted-foreground font-mono break-all block leading-tight bg-muted/50 p-2 rounded">
+                          {uploadedFileHash}
+                       </code>
+                    </div>
+                )}
+            </div>
+          )}
           
           <div className="grid grid-cols-2 gap-2">
             <Dialog open={isEmailDialogOpen} onOpenChange={setIsEmailDialogOpen}>

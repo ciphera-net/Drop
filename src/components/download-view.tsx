@@ -5,7 +5,7 @@ import { createClient } from "@/utils/supabase/client";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "./ui/card";
 import { Progress } from "./ui/progress";
-import { LockKey, DownloadSimple, WarningCircle, NotePencil, Fire } from "@phosphor-icons/react";
+import { LockKey, DownloadSimple, WarningCircle, NotePencil, Fire, Fingerprint, CaretDown, CaretUp } from "@phosphor-icons/react";
 import { FileIconDisplay } from "@/components/file-icon-display";
 import { Input } from "./ui/input";
 import { toast } from "sonner";
@@ -19,6 +19,7 @@ export function DownloadView({ file }: { file: any }) {
   const [manualKey, setManualKey] = useState("");
   const [password, setPassword] = useState("");
   const [showLimitReachedMessage, setShowLimitReachedMessage] = useState(false);
+  const [showHash, setShowHash] = useState(false);
 
   const attemptDecryptMetadata = useCallback(async (base64Key: string) => {
      try {
@@ -351,6 +352,32 @@ export function DownloadView({ file }: { file: any }) {
                    <p className="text-sm text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                 </div>
               </div>
+
+              {file.file_hash && (
+                <div className="border border-border rounded-lg overflow-hidden">
+                    <button 
+                      onClick={() => setShowHash(!showHash)}
+                      className="w-full flex items-center justify-between p-3 bg-secondary/30 hover:bg-secondary/50 transition-colors text-xs font-medium text-muted-foreground"
+                    >
+                       <div className="flex items-center gap-2">
+                          <Fingerprint className="w-4 h-4 text-primary" weight="fill" />
+                          <span>Verify File Integrity (Optional)</span>
+                       </div>
+                       {showHash ? <CaretUp className="w-3 h-3" /> : <CaretDown className="w-3 h-3" />}
+                    </button>
+                    
+                    {showHash && (
+                        <div className="p-3 bg-card border-t border-border animate-in slide-in-from-top-1">
+                            <p className="text-[10px] text-muted-foreground mb-2">
+                                Compare this hash with the one provided by the sender to verify the file hasn't been tampered with.
+                            </p>
+                           <code className="text-[10px] text-muted-foreground font-mono break-all block leading-tight bg-muted/50 p-2 rounded">
+                              {file.file_hash}
+                           </code>
+                        </div>
+                    )}
+                </div>
+              )}
 
               {decryptedMessage && (
                   <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900/50 rounded-xl p-4 animate-in fade-in slide-in-from-top-2">

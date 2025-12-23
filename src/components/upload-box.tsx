@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
+import JSZip from "jszip";
 import { EncryptionService } from "@/lib/encryption";
 import { createClient } from "@/utils/supabase/client";
 import { generateMagicWords } from "@/utils/magic-words";
@@ -18,6 +19,7 @@ import { uploadEncryptedFile } from "@/utils/upload-manager";
 
 export function UploadBox() {
   const [file, setFile] = useState<File | null>(null);
+  const [zipping, setZipping] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [uploadStats, setUploadStats] = useState<{ speed: number; eta: number } | null>(null);
@@ -60,28 +62,59 @@ export function UploadBox() {
 
   const MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024; // 5GB
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const selectedFile = e.target.files[0];
-      if (selectedFile.size > MAX_FILE_SIZE) {
-        setError("File size exceeds the 5GB limit.");
+  const processFiles = async (fileList: FileList | File[]) => {
+    setError(null);
+    if (fileList.length === 0) return;
+
+    let totalSize = 0;
+    for (let i = 0; i < fileList.length; i++) {
+      totalSize += fileList[i].size;
+    }
+
+    if (totalSize > MAX_FILE_SIZE) {
+      setError("Total file size exceeds the 5GB limit.");
+      return;
+    }
+
+    if (fileList.length === 1) {
+      setFile(fileList[0]);
+      return;
+    }
+
+    setZipping(true);
+    try {
+      const zip = new JSZip();
+      for (let i = 0; i < fileList.length; i++) {
+        zip.file(fileList[i].name, fileList[i]);
+      }
+      
+      const content = await zip.generateAsync({ type: "blob" });
+      const zipFile = new File([content], `archive-${Date.now()}.zip`, { type: "application/zip" });
+      
+      if (zipFile.size > MAX_FILE_SIZE) {
+        setError("Resulting archive exceeds the 5GB limit.");
         return;
       }
-      setFile(selectedFile);
-      setError(null);
+      
+      setFile(zipFile);
+    } catch (e) {
+      console.error("Failed to zip files:", e);
+      setError("Failed to process multiple files.");
+    } finally {
+      setZipping(false);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      processFiles(e.target.files);
     }
   };
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const droppedFile = e.dataTransfer.files[0];
-      if (droppedFile.size > MAX_FILE_SIZE) {
-        setError("File size exceeds the 5GB limit.");
-        return;
-      }
-      setFile(droppedFile);
-      setError(null);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      processFiles(e.dataTransfer.files);
     }
   }, []);
 
@@ -353,6 +386,7 @@ export function UploadBox() {
           >
              <input 
                type="file" 
+               multiple
                className="hidden" 
                ref={fileInputRef} 
                onChange={handleFileSelect} 
@@ -361,7 +395,12 @@ export function UploadBox() {
                 <CloudArrowUp className="w-8 h-8 text-primary" weight="fill" />
              </div>
              <p className="font-medium text-foreground">Click to upload or drag and drop</p>
-             <p className="text-sm text-muted-foreground mt-1">Up to 5GB</p>
+             <p className="text-sm text-muted-foreground mt-1">Single file or multiple files (auto-zipped) up to 5GB</p>
+          </div>
+        ) : zipping ? (
+          <div className="flex flex-col items-center justify-center py-12 space-y-4">
+             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+             <p className="text-muted-foreground font-medium">Zipping files...</p>
           </div>
         ) : (
           <div className="space-y-4">

@@ -72,33 +72,33 @@
   }
 
   .dark {
-    /* Monokai Pro Theme */
-    --background: #2D2A2E;
-    --foreground: #FCFCFA;
+    /* Dracula Theme */
+    --background: #282a36;
+    --foreground: #f8f8f2;
 
-    --card: #403E41;
-    --card-foreground: #FCFCFA;
+    --card: #343746; /* Slightly lighter than bg */
+    --card-foreground: #f8f8f2;
 
-    --popover: #403E41;
-    --popover-foreground: #FCFCFA;
+    --popover: #343746;
+    --popover-foreground: #f8f8f2;
 
-    --primary: #FD5E0F; /* Keeping brand primary, close to Monokai Orange */
+    --primary: #FD5E0F;
     --primary-foreground: #FFFFFF;
 
-    --secondary: #5B595C;
-    --secondary-foreground: #FCFCFA;
+    --secondary: #44475a;
+    --secondary-foreground: #f8f8f2;
 
-    --muted: #403E41;
-    --muted-foreground: #939293;
+    --muted: #44475a;
+    --muted-foreground: #6272a4;
 
-    --accent: #5B595C;
-    --accent-foreground: #FCFCFA;
+    --accent: #44475a;
+    --accent-foreground: #f8f8f2;
 
-    --destructive: #FF6188;
-    --destructive-foreground: #FFFFFF;
+    --destructive: #ff5555;
+    --destructive-foreground: #f8f8f2;
 
-    --border: #5B595C;
-    --input: #221F22;
+    --border: #44475a;
+    --input: #44475a; /* Or darker? Dracula inputs are usually the same as secondary */
     --ring: #FD5E0F;
   }
 }

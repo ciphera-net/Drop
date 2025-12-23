@@ -3,13 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "./ui/button";
-import { MagicWand, ArrowRight, Spinner, WarningCircle } from "@phosphor-icons/react";
+import { MagicWand, ArrowRight, Spinner } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export function MagicWordInput() {
   const [words, setWords] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [isFocused, setIsFocused] = useState(false);
   const router = useRouter();
 
@@ -18,7 +18,6 @@ export function MagicWordInput() {
     if (!words.trim()) return;
 
     setLoading(true);
-    setError(null);
 
     try {
       // Normalize input: lowercase, replace spaces with dashes
@@ -37,8 +36,9 @@ export function MagicWordInput() {
       }
 
       router.push(`/d/${normalizedWords}`);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred";
+      toast.error(errorMessage === 'File not found' ? "No file found with those magic words" : errorMessage);
       setLoading(false);
     }
   };
@@ -63,7 +63,6 @@ export function MagicWordInput() {
                     value={words}
                     onChange={(e) => {
                         setWords(e.target.value);
-                        if (error) setError(null);
                     }}
                     onFocus={() => setIsFocused(true)}
                     onBlur={() => setIsFocused(false)}
@@ -94,15 +93,6 @@ export function MagicWordInput() {
                 </div>
             </form>
         </div>
-
-        {error && (
-            <div className="mt-3 flex items-center justify-center gap-2 text-sm text-red-500 font-medium animate-in slide-in-from-top-2 fade-in">
-                <WarningCircle size={16} weight="fill" />
-                <span>
-                    {error === 'File not found' ? "No file found with those magic words" : error}
-                </span>
-            </div>
-        )}
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Progress } from "./ui/progress";
 import { LockKey, DownloadSimple, File as FileIcon, WarningCircle, NotePencil, Fire } from "@phosphor-icons/react";
 import { Input } from "./ui/input";
+import { toast } from "sonner";
 
 export function DownloadView({ file }: { file: any }) {
   const [key, setKey] = useState<CryptoKey | null>(null);
@@ -14,7 +15,6 @@ export function DownloadView({ file }: { file: any }) {
   const [decryptedMessage, setDecryptedMessage] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [error, setError] = useState<string | null>(null);
   const [manualKey, setManualKey] = useState("");
   const [password, setPassword] = useState("");
   const [showLimitReachedMessage, setShowLimitReachedMessage] = useState(false);
@@ -24,11 +24,10 @@ export function DownloadView({ file }: { file: any }) {
     if (hash && !file.is_password_protected) {
        attemptDecryptMetadata(hash);
     }
-  }, [file.is_password_protected]);
+  }, [file.is_password_protected, attemptDecryptMetadata]);
 
-  const attemptDecryptMetadata = async (base64Key: string) => {
+  const attemptDecryptMetadata = useCallback(async (base64Key: string) => {
      try {
-        setError(null);
         const k = await EncryptionService.importKey(base64Key);
         
         // Decrypt filename
@@ -56,13 +55,12 @@ export function DownloadView({ file }: { file: any }) {
         setDecryptedName(name);
      } catch (e) {
         console.error("Invalid key", e);
-        setError("Decryption failed. The key might be invalid.");
+        toast.error("Decryption failed. The key might be invalid.");
      }
-  };
+  }, [file]);
 
   const attemptUnlockWithPassword = async () => {
     try {
-        setError(null);
         if (!password) return;
 
         const passwordKey = await EncryptionService.deriveKeyFromPassword(password, file.password_salt);
@@ -91,19 +89,18 @@ export function DownloadView({ file }: { file: any }) {
 
         setKey(k);
         setDecryptedName(name);
-    } catch (e: any) {
+    } catch (e: unknown) {
         // If it's a crypto operation error, it usually means the password (and thus the key) is wrong.
         // We suppress the console error to avoid alarming developers/users, as this is a handled "business logic" failure.
-        if (e.name !== 'OperationError') {
+        if (e instanceof Error && e.name !== 'OperationError') {
              console.error("Unlock failed", e);
         }
-        setError("Incorrect password. Please try again.");
+        toast.error("Incorrect password. Please try again.");
     }
   };
 
   const handleDownload = async () => {
     if (!key) return;
-    setError(null);
     setDownloading(true);
     setProgress(1);
     
@@ -207,9 +204,10 @@ export function DownloadView({ file }: { file: any }) {
            });
        }
 
-    } catch (e: any) {
+    } catch (e: unknown) {
        console.error(e);
-       setError(e.message || "Download failed. Please try again.");
+       const errorMessage = e instanceof Error ? e.message : "Download failed. Please try again.";
+       toast.error(errorMessage);
     } finally {
        setDownloading(false);
     }
@@ -311,11 +309,6 @@ export function DownloadView({ file }: { file: any }) {
                         </>
                     )}
                  </div>
-                 {error && (
-                     <div className="flex items-center text-sm text-destructive justify-center mt-2">
-                         <WarningCircle className="mr-1" /> {error}
-                     </div>
-                 )}
              </CardContent>
           </Card>
       )
@@ -377,12 +370,6 @@ export function DownloadView({ file }: { file: any }) {
                   </div>
               ) : (
                   <div className="space-y-4">
-                      {error && (
-                          <div className="flex items-center text-sm text-destructive justify-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-100 dark:border-red-900/50">
-                              <WarningCircle className="mr-2 h-5 w-5 shrink-0" weight="fill" /> 
-                              <span>{error}</span>
-                          </div>
-                      )}
                       <Button className="w-full" size="lg" onClick={handleDownload} disabled={showLimitReachedMessage}>
                           <DownloadSimple className="mr-2 text-xl" weight="bold" /> {showLimitReachedMessage ? "File Removed" : "Download File"}
                       </Button>

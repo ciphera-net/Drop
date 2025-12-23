@@ -17,6 +17,7 @@ import { CloudArrowUp, File as FileIcon, Copy, Check, X, EnvelopeSimple, LockKey
 import { QRCodeSVG } from "qrcode.react";
 import { cn } from "@/lib/utils";
 import { uploadEncryptedFile } from "@/utils/upload-manager";
+import { toast } from "sonner";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024; // 5GB
 
@@ -27,20 +28,17 @@ export function UploadBox() {
   const [progress, setProgress] = useState(0);
   const [uploadStats, setUploadStats] = useState<{ speed: number; eta: number } | null>(null);
   const [shareLink, setShareLink] = useState<string | null>(null);
-  const [magicWords, setMagicWords] = useState<string | null>(null);
   const [expiration, setExpiration] = useState("1h");
   const [maxDownloads, setMaxDownloads] = useState<number | null>(1);
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
   
   const [isDragging, setIsDragging] = useState(false);
   const dragCounter = useRef(0);
   
   const [email, setEmail] = useState("");
   const [sendingEmail, setSendingEmail] = useState(false);
-  const [emailSent, setEmailSent] = useState(false);
+  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
 
   const supabase = createClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -54,32 +52,30 @@ export function UploadBox() {
             body: JSON.stringify({ email, link: shareLink }),
         });
         if (res.ok) {
-            setEmailSent(true);
-            setTimeout(() => setEmailSent(false), 3000); // Reset after 3s
+            toast.success("Email sent successfully!");
+            setIsEmailDialogOpen(false);
+            setEmail("");
         } else {
-             // console.error("Failed to send");
+             toast.error("Failed to send email.");
         }
     } catch(e) {
         console.error(e);
+        toast.error("An error occurred while sending the email.");
     } finally {
         setSendingEmail(false);
     }
   }
 
   const processFiles = useCallback(async (fileList: FileList | File[]) => {
-    setError(null);
     if (fileList.length === 0) return;
 
     // Reset state for new upload
     setShareLink(null);
-    setMagicWords(null);
     setPassword("");
     setMessage("");
     setProgress(0);
     setUploading(false);
     setUploadStats(null);
-    setCopied(false);
-    setEmailSent(false);
 
     let totalSize = 0;
     for (let i = 0; i < fileList.length; i++) {
@@ -87,7 +83,7 @@ export function UploadBox() {
     }
 
     if (totalSize > MAX_FILE_SIZE) {
-      setError("Total file size exceeds the 5GB limit.");
+      toast.error("Total file size exceeds the 5GB limit.");
       return;
     }
 
@@ -107,14 +103,14 @@ export function UploadBox() {
       const zipFile = new File([content], `archive-${Date.now()}.zip`, { type: "application/zip" });
       
       if (zipFile.size > MAX_FILE_SIZE) {
-        setError("Resulting archive exceeds the 5GB limit.");
+        toast.error("Resulting archive exceeds the 5GB limit.");
         return;
       }
       
       setFile(zipFile);
     } catch (e) {
       console.error("Failed to zip files:", e);
-      setError("Failed to process multiple files.");
+      toast.error("Failed to process multiple files.");
     } finally {
       setZipping(false);
     }
@@ -191,7 +187,6 @@ export function UploadBox() {
   const handleUpload = async () => {
     if (!file) return;
     setUploading(true);
-    setError(null);
     setProgress(1); // Start
     setUploadStats(null);
 
@@ -273,7 +268,6 @@ export function UploadBox() {
       if (dbError) throw dbError;
 
       setProgress(100);
-      setMagicWords(generatedMagicWords);
 
       // 5. Generate Link
       const keyBase64 = await EncryptionService.exportKey(key);
@@ -286,9 +280,10 @@ export function UploadBox() {
         setShareLink(`${origin}/d/${linkId}#${keyBase64}`);
       }
 
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
-      setError(e.message || "Upload failed. Please check your connection.");
+      const errorMessage = e instanceof Error ? e.message : "Upload failed. Please check your connection.";
+      toast.error(errorMessage);
     } finally {
       setUploading(false);
       setUploadStats(null);
@@ -298,15 +293,13 @@ export function UploadBox() {
   const copyLink = () => {
     if (shareLink) {
       navigator.clipboard.writeText(shareLink);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      toast.success("Link copied to clipboard");
     }
   };
 
   const reset = () => {
     setFile(null);
     setShareLink(null);
-    setMagicWords(null);
     setPassword("");
     setMessage("");
     setMaxDownloads(1);
@@ -370,13 +363,13 @@ export function UploadBox() {
 
           <div className="flex space-x-2">
             <Input readOnly value={shareLink} className="font-mono text-xs" />
-            <Button size="icon" onClick={copyLink} className={copied ? "bg-green-600 hover:bg-green-700" : ""}>
-              {copied ? <Check weight="bold" /> : <Copy weight="bold" />}
+            <Button size="icon" onClick={copyLink}>
+              <Copy weight="bold" />
             </Button>
           </div>
           
           <div className="grid grid-cols-2 gap-2">
-            <Dialog>
+            <Dialog open={isEmailDialogOpen} onOpenChange={setIsEmailDialogOpen}>
               <DialogTrigger asChild>
                   <Button variant="outline" className="w-full">
                       <EnvelopeSimple className="mr-2" /> Email Link
@@ -389,61 +382,54 @@ export function UploadBox() {
                            We will send the secure link to the recipient using our transactional API.
                        </DialogDescription>
                    </DialogHeader>
-                   {!emailSent ? (
-                       <div className="space-y-4 pt-4">
-                           <div className="space-y-2">
-                              <Label>Recipient Email</Label>
-                              <Input 
-                                  placeholder="recipient@example.com" 
-                                  type="email"
-                                  value={email}
-                                  onChange={(e) => setEmail(e.target.value)}
-                              />
-                           </div>
-                           <DialogFooter>
-                               <Button onClick={handleSendEmail} disabled={sendingEmail || !email}>
-                                   {sendingEmail ? "Sending..." : "Send Email"}
-                               </Button>
-                           </DialogFooter>
+                   <div className="space-y-4 pt-4">
+                       <div className="space-y-2">
+                          <Label>Recipient Email</Label>
+                          <Input 
+                              placeholder="recipient@example.com" 
+                              type="email"
+                              value={email}
+                              onChange={(e) => setEmail(e.target.value)}
+                          />
                        </div>
-                   ) : (
-                       <div className="py-6 text-center text-green-600 animate-in zoom-in">
-                           <Check className="w-12 h-12 mx-auto mb-2" weight="fill" />
-                           <p className="font-medium">Email sent successfully!</p>
-                       </div>
-                   )}
+                       <DialogFooter>
+                           <Button onClick={handleSendEmail} disabled={sendingEmail || !email}>
+                               {sendingEmail ? "Sending..." : "Send Email"}
+                           </Button>
+                       </DialogFooter>
+                   </div>
               </DialogContent>
-          </Dialog>
+            </Dialog>
 
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="w-full">
-                <QrCode className="mr-2" /> Show QR
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-xs">
-              <DialogHeader>
-                <DialogTitle className="text-center">Scan to Download</DialogTitle>
-                <DialogDescription className="text-center">
-                  Scan this QR code with your mobile device to download the file.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="flex justify-center py-6 bg-white rounded-xl border-2 border-primary/10 shadow-[0_0_15px_rgba(253,94,15,0.1)]">
-                <QRCodeSVG 
-                  value={shareLink} 
-                  size={180} 
-                  level="H" 
-                  includeMargin={true} 
-                  fgColor="#111827"
-                  className="rounded-lg"
-                />
-              </div>
-            </DialogContent>
-          </Dialog>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="w-full">
+                  <QrCode className="mr-2" /> Show QR
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-xs">
+                <DialogHeader>
+                  <DialogTitle className="text-center">Scan to Download</DialogTitle>
+                  <DialogDescription className="text-center">
+                    Scan this QR code with your mobile device to download the file.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="flex justify-center py-6 bg-white rounded-xl border-2 border-primary/10 shadow-[0_0_15px_rgba(253,94,15,0.1)]">
+                  <QRCodeSVG 
+                    value={shareLink} 
+                    size={180} 
+                    level="H" 
+                    includeMargin={true} 
+                    fgColor="#111827"
+                    className="rounded-lg"
+                  />
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
 
           <p className="text-xs text-muted-foreground text-center">
-             This link contains the encryption key. Don't share it publicly.
+             This link contains the encryption key. Don&apos;t share it publicly.
           </p>
         </CardContent>
         <CardFooter>
@@ -595,7 +581,7 @@ export function UploadBox() {
                            
                            {/* Custom Switch Implementation */}
                            <div className={cn(
-                             "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                             "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                              maxDownloads === 1 ? "bg-orange-500" : "bg-input"
                            )}>
                              <span className={cn(
@@ -632,12 +618,6 @@ export function UploadBox() {
                  </div>
                </div>
              )}
-          </div>
-        )}
-        {error && (
-          <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/50 text-red-600 dark:text-red-400 text-sm rounded-lg flex items-center animate-in fade-in">
-            <X className="mr-2 flex-shrink-0" /> 
-            <span>{error}</span>
           </div>
         )}
       </CardContent>

@@ -5,6 +5,7 @@ import { Trash, Clock, File, DownloadSimple, FileText, Timer } from "@phosphor-i
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 function FileCountdown({ expiresAt }: { expiresAt: string }) {
   const [timeLeft, setTimeLeft] = useState<string>("");
@@ -95,9 +96,11 @@ export function DashboardList({ uploads }: { uploads: any[] }) {
         await supabase.from('uploads').delete().eq('id', id);
         // We try to remove from storage too just in case, it's idempotent
         await supabase.storage.from('drop-files').remove([id]);
+        toast.success("File deleted successfully");
         router.refresh();
       } catch (e) {
           console.error(e);
+          toast.error("Failed to delete file");
       } finally {
           setDeleting(null);
       }
@@ -201,4 +204,3 @@ export function DashboardList({ uploads }: { uploads: any[] }) {
      </div>
   )
 }
-

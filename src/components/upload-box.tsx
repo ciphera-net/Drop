@@ -522,7 +522,12 @@ export function UploadBox() {
         <CardDescription className="text-center">End-to-end encrypted file sharing.</CardDescription>
       </CardHeader>
       <CardContent>
-        {!file ? (
+        {zipping ? (
+          <div className="flex flex-col items-center justify-center py-12 space-y-4">
+             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+             <p className="text-muted-foreground font-medium">Zipping files...</p>
+          </div>
+        ) : !file ? (
           <div 
             className="border-2 border-dashed border-muted-foreground/20 rounded-xl p-10 text-center cursor-pointer hover:bg-orange-50/50 dark:hover:bg-primary/5 hover:border-orange-200 dark:hover:border-primary/20 transition-all duration-300 group"
             onDragOver={(e) => e.preventDefault()}
@@ -541,11 +546,6 @@ export function UploadBox() {
              </div>
              <p className="font-medium text-foreground">Click to upload or drag and drop</p>
              <p className="text-sm text-muted-foreground mt-1">Single file or multiple files (auto-zipped) up to 5GB</p>
-          </div>
-        ) : zipping ? (
-          <div className="flex flex-col items-center justify-center py-12 space-y-4">
-             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-             <p className="text-muted-foreground font-medium">Zipping files...</p>
           </div>
         ) : (
           <div className="space-y-4">

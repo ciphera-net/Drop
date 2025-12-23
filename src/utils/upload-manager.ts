@@ -23,7 +23,8 @@ export async function uploadEncryptedFile(
   const supabase = createClient();
   const { data: { session } } = await supabase.auth.getSession();
   
-  if (!session) throw new Error("No active session");
+  const token = session?.access_token || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!token) throw new Error("No authentication token available");
 
   const chunkSize = EncryptionService.CHUNK_SIZE;
   const totalChunks = Math.ceil(file.size / chunkSize);
@@ -68,9 +69,11 @@ export async function uploadEncryptedFile(
                 const xhr = new XMLHttpRequest();
                 xhr.open('POST', url);
                 
-                // Refresh token if needed? For now using session token.
-                xhr.setRequestHeader('Authorization', `Bearer ${session.access_token}`);
-                xhr.setRequestHeader('x-upsert', 'true');
+                // Refresh token if needed? For now using session token or anon key.
+                xhr.setRequestHeader('apikey', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+                xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+                // x-upsert removed to avoid 400 errors for anonymous users who lack UPDATE permissions.
+                // We handle "already exists" errors in the onload handler below.
                 
                 // Set explicit timeout (e.g., 5 minutes per chunk to allow slow uploads)
                 xhr.timeout = 300000; 
@@ -111,7 +114,28 @@ export async function uploadEncryptedFile(
                     if (xhr.status >= 200 && xhr.status < 300) {
                         resolve();
                     } else {
-                        reject(new Error(`Upload failed with status ${xhr.status}`));
+                        // Handle "already exists" for anonymous uploads/retries
+                        if (xhr.status === 400 || xhr.status === 409) {
+                            try {
+                                const response = JSON.parse(xhr.responseText);
+                                // Supabase/S3 typically returns "The resource already exists"
+                                if (response.message === "The resource already exists" || response.error === "Duplicate") {
+                                    resolve();
+                                    return;
+                                }
+                            } catch (e) {
+                                // Ignore JSON parse error
+                            }
+                        }
+
+                        let errorMessage = `Upload failed with status ${xhr.status}`;
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            if (response.message) errorMessage += `: ${response.message}`;
+                        } catch (e) {
+                            if (xhr.responseText) errorMessage += `: ${xhr.responseText.slice(0, 100)}`;
+                        }
+                        reject(new Error(errorMessage));
                     }
                 };
 

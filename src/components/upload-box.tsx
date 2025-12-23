@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { createPortal } from "react-dom";
 import JSZip from "jszip";
 import { EncryptionService } from "@/lib/encryption";
 import { createClient } from "@/utils/supabase/client";
@@ -17,6 +18,8 @@ import { QRCodeSVG } from "qrcode.react";
 import { cn } from "@/lib/utils";
 import { uploadEncryptedFile } from "@/utils/upload-manager";
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024; // 5GB
+
 export function UploadBox() {
   const [file, setFile] = useState<File | null>(null);
   const [zipping, setZipping] = useState(false);
@@ -31,6 +34,9 @@ export function UploadBox() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  
+  const [isDragging, setIsDragging] = useState(false);
+  const dragCounter = useRef(0);
   
   const [email, setEmail] = useState("");
   const [sendingEmail, setSendingEmail] = useState(false);
@@ -60,11 +66,20 @@ export function UploadBox() {
     }
   }
 
-  const MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024; // 5GB
-
-  const processFiles = async (fileList: FileList | File[]) => {
+  const processFiles = useCallback(async (fileList: FileList | File[]) => {
     setError(null);
     if (fileList.length === 0) return;
+
+    // Reset state for new upload
+    setShareLink(null);
+    setMagicWords(null);
+    setPassword("");
+    setMessage("");
+    setProgress(0);
+    setUploading(false);
+    setUploadStats(null);
+    setCopied(false);
+    setEmailSent(false);
 
     let totalSize = 0;
     for (let i = 0; i < fileList.length; i++) {
@@ -103,7 +118,50 @@ export function UploadBox() {
     } finally {
       setZipping(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const handleDragEnter = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounter.current += 1;
+      if (e.dataTransfer?.items && e.dataTransfer.items.length > 0) {
+        setIsDragging(true);
+      }
+    };
+
+    const handleDragLeave = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounter.current -= 1;
+      if (dragCounter.current === 0) {
+        setIsDragging(false);
+      }
+    };
+
+    const handleDragOver = (e: DragEvent) => {
+      e.preventDefault();
+    };
+
+    const handleDrop = (e: DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
+      dragCounter.current = 0;
+      if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+        processFiles(e.dataTransfer.files);
+      }
+    };
+
+    window.addEventListener('dragenter', handleDragEnter);
+    window.addEventListener('dragleave', handleDragLeave);
+    window.addEventListener('dragover', handleDragOver);
+    window.addEventListener('drop', handleDrop);
+
+    return () => {
+      window.removeEventListener('dragenter', handleDragEnter);
+      window.removeEventListener('dragleave', handleDragLeave);
+      window.removeEventListener('dragover', handleDragOver);
+      window.removeEventListener('drop', handleDrop);
+    };
+  }, [processFiles]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -116,7 +174,7 @@ export function UploadBox() {
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       processFiles(e.dataTransfer.files);
     }
-  }, []);
+  }, [processFiles]);
 
   const handleUpload = async () => {
     if (!file) return;
@@ -260,8 +318,23 @@ export function UploadBox() {
       return `${mins}m ${secs}s`;
   };
 
+  const overlay = isDragging && typeof document !== 'undefined' ? createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="flex flex-col items-center justify-center p-12 border-4 border-dashed border-primary rounded-3xl bg-background/50 shadow-2xl animate-in zoom-in-95 duration-300">
+        <div className="bg-primary/10 p-6 rounded-full mb-6">
+           <CloudArrowUp className="w-16 h-16 text-primary animate-bounce" weight="fill" />
+        </div>
+        <h2 className="text-3xl font-bold text-foreground">Drop files anywhere</h2>
+        <p className="text-lg text-muted-foreground mt-2">Upload your files securely</p>
+      </div>
+    </div>,
+    document.body
+  ) : null;
+
   if (shareLink) {
     return (
+      <>
+      {overlay}
       <Card className="w-full max-w-md mx-auto animate-in fade-in zoom-in duration-300">
         <CardHeader>
           <div className="mx-auto bg-green-100 dark:bg-green-900/20 p-3 rounded-full mb-2">
@@ -365,10 +438,13 @@ export function UploadBox() {
            <Button onClick={reset} variant="outline" className="w-full">Send Another</Button>
         </CardFooter>
       </Card>
+      </>
     )
   }
 
   return (
+    <>
+    {overlay}
     <Card className="w-full max-w-md mx-auto shadow-xl shadow-orange-500/5 dark:shadow-none border-orange-100 dark:border-border">
       <CardHeader>
         <CardTitle className="flex items-center justify-center gap-2">
@@ -560,6 +636,7 @@ export function UploadBox() {
            </Button>
         )}
       </CardFooter>
-    </Card>
+      </Card>
+    </>
   );
 }

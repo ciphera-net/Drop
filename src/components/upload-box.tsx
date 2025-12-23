@@ -12,7 +12,7 @@ import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Label } from "./ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "./ui/dialog";
-import { CloudArrowUp, File as FileIcon, Copy, Check, X, EnvelopeSimple, LockKey, Warning, QrCode, NotePencil } from "@phosphor-icons/react";
+import { CloudArrowUp, File as FileIcon, Copy, Check, X, EnvelopeSimple, LockKey, Warning, QrCode, NotePencil, Fire } from "@phosphor-icons/react";
 import { QRCodeSVG } from "qrcode.react";
 import { cn } from "@/lib/utils";
 import { uploadEncryptedFile } from "@/utils/upload-manager";
@@ -464,21 +464,58 @@ export function UploadBox() {
                       <div>
                         <Label className="text-xs mb-1.5 block text-muted-foreground">Max Downloads</Label>
                         <div className="flex space-x-1">
-                           {[1, 10, 100, null].map((opt) => (
+                           {[10, 100, null].map((opt) => (
                              <button 
                                key={String(opt)}
                                onClick={() => setMaxDownloads(opt)}
+                               disabled={maxDownloads === 1}
                                className={cn(
                                  "flex-1 py-1.5 text-xs rounded-md border transition-all duration-200 font-medium",
                                  maxDownloads === opt 
                                    ? "bg-primary text-white border-primary shadow-sm" 
-                                   : "bg-background text-muted-foreground border-border hover:border-primary/30"
+                                   : "bg-background text-muted-foreground border-border hover:border-primary/30",
+                                 maxDownloads === 1 && "opacity-50 cursor-not-allowed bg-muted text-muted-foreground"
                                )}
                              >
                                {opt === null ? "Unlimited" : opt}
                              </button>
                            ))}
                         </div>
+                      </div>
+                      <div className="col-span-2">
+                        <button
+                          onClick={() => setMaxDownloads(prev => prev === 1 ? null : 1)}
+                          className={cn(
+                            "w-full flex items-center justify-between p-3 rounded-lg border transition-all duration-200",
+                            maxDownloads === 1 
+                              ? "bg-orange-50 dark:bg-orange-900/10 border-orange-200 dark:border-orange-800" 
+                              : "bg-background border-border hover:border-primary/30"
+                          )}
+                        >
+                           <div className="flex items-center gap-3">
+                              <div className={cn(
+                                "p-2 rounded-full transition-colors",
+                                maxDownloads === 1 ? "bg-orange-100 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400" : "bg-muted text-muted-foreground"
+                              )}>
+                                 <Fire weight="fill" className="w-4 h-4" />
+                              </div>
+                              <div className="text-left">
+                                 <p className={cn("text-xs font-semibold", maxDownloads === 1 ? "text-orange-700 dark:text-orange-300" : "text-foreground")}>Burn after download</p>
+                                 <p className="text-[10px] text-muted-foreground">File is deleted immediately after 1 download</p>
+                              </div>
+                           </div>
+                           
+                           {/* Custom Switch Implementation */}
+                           <div className={cn(
+                             "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                             maxDownloads === 1 ? "bg-orange-500" : "bg-input"
+                           )}>
+                             <span className={cn(
+                               "pointer-events-none block h-4 w-4 rounded-full bg-background shadow-lg ring-0 transition-transform",
+                               maxDownloads === 1 ? "translate-x-4" : "translate-x-0"
+                             )} />
+                           </div>
+                        </button>
                       </div>
                       <div className="col-span-2 pt-2 border-t border-dashed border-border/60">
                          <Label className="text-xs mb-1.5 flex items-center gap-1 text-muted-foreground">

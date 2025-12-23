@@ -5,7 +5,7 @@ import { createClient } from "@/utils/supabase/client";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "./ui/card";
 import { Progress } from "./ui/progress";
-import { LockKey, DownloadSimple, File as FileIcon, WarningCircle, NotePencil } from "@phosphor-icons/react";
+import { LockKey, DownloadSimple, File as FileIcon, WarningCircle, NotePencil, Fire } from "@phosphor-icons/react";
 import { Input } from "./ui/input";
 
 export function DownloadView({ file }: { file: any }) {
@@ -329,6 +329,15 @@ export function DownloadView({ file }: { file: any }) {
               </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
+              {file.download_limit === 1 && !showLimitReachedMessage && (
+                  <div className="p-3 bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-900/30 rounded-lg flex items-center gap-3 text-orange-800 dark:text-orange-200 animate-pulse">
+                      <Fire className="w-5 h-5 flex-shrink-0 text-orange-600 dark:text-orange-400" weight="fill" />
+                      <p className="text-sm font-medium">
+                          Self-destruct mode: File will be permanently deleted after this download.
+                      </p>
+                  </div>
+              )}
+
               {showLimitReachedMessage && (
                   <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg flex items-start gap-3 text-amber-900 dark:text-amber-100 animate-in slide-in-from-top-2">
                       <WarningCircle className="w-6 h-6 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" weight="fill" />

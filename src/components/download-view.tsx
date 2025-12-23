@@ -5,12 +5,13 @@ import { createClient } from "@/utils/supabase/client";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "./ui/card";
 import { Progress } from "./ui/progress";
-import { LockKey, DownloadSimple, File as FileIcon, WarningCircle } from "@phosphor-icons/react";
+import { LockKey, DownloadSimple, File as FileIcon, WarningCircle, NotePencil } from "@phosphor-icons/react";
 import { Input } from "./ui/input";
 
 export function DownloadView({ file }: { file: any }) {
   const [key, setKey] = useState<CryptoKey | null>(null);
   const [decryptedName, setDecryptedName] = useState<string | null>(null);
+  const [decryptedMessage, setDecryptedMessage] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +37,21 @@ export function DownloadView({ file }: { file: any }) {
             file.filename_iv, 
             k
         );
+
+        // Decrypt message if present
+        if (file.message_encrypted && file.message_iv) {
+            try {
+                const msg = await EncryptionService.decryptText(
+                    file.message_encrypted,
+                    file.message_iv,
+                    k
+                );
+                setDecryptedMessage(msg);
+            } catch (e) {
+                console.error("Failed to decrypt message", e);
+            }
+        }
+
         setKey(k);
         setDecryptedName(name);
      } catch (e) {
@@ -58,6 +74,21 @@ export function DownloadView({ file }: { file: any }) {
             file.filename_iv, 
             k
         );
+
+        // Decrypt message if present
+        if (file.message_encrypted && file.message_iv) {
+            try {
+                const msg = await EncryptionService.decryptText(
+                    file.message_encrypted,
+                    file.message_iv,
+                    k
+                );
+                setDecryptedMessage(msg);
+            } catch (e) {
+                console.error("Failed to decrypt message", e);
+            }
+        }
+
         setKey(k);
         setDecryptedName(name);
     } catch (e: any) {
@@ -317,6 +348,16 @@ export function DownloadView({ file }: { file: any }) {
                    <p className="text-sm text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                 </div>
               </div>
+
+              {decryptedMessage && (
+                  <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 animate-in fade-in slide-in-from-top-2">
+                      <div className="flex items-center gap-2 mb-2 text-blue-700">
+                          <NotePencil weight="fill" className="w-4 h-4" />
+                          <span className="text-xs font-semibold uppercase tracking-wider">Secure Note</span>
+                      </div>
+                      <p className="text-sm text-blue-900 whitespace-pre-wrap">{decryptedMessage}</p>
+                  </div>
+              )}
 
               {downloading ? (
                   <div className="space-y-2">

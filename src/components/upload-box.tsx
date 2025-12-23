@@ -8,9 +8,10 @@ import { Button } from "./ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "./ui/card";
 import { Progress } from "./ui/progress";
 import { Input } from "./ui/input";
+import { Textarea } from "./ui/textarea";
 import { Label } from "./ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "./ui/dialog";
-import { CloudArrowUp, File as FileIcon, Copy, Check, X, EnvelopeSimple, LockKey, Warning, QrCode } from "@phosphor-icons/react";
+import { CloudArrowUp, File as FileIcon, Copy, Check, X, EnvelopeSimple, LockKey, Warning, QrCode, NotePencil } from "@phosphor-icons/react";
 import { QRCodeSVG } from "qrcode.react";
 import { cn } from "@/lib/utils";
 import { uploadEncryptedFile } from "@/utils/upload-manager";
@@ -25,6 +26,7 @@ export function UploadBox() {
   const [expiration, setExpiration] = useState("1h");
   const [maxDownloads, setMaxDownloads] = useState<number | null>(1);
   const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   
@@ -98,6 +100,15 @@ export function UploadBox() {
       const { encrypted: encFilename, iv: filenameIv } = await EncryptionService.encryptText(file.name, key);
       const { encrypted: encMime, iv: mimeIv } = await EncryptionService.encryptText(file.type || 'application/octet-stream', key);
 
+      // Encrypt Message
+      let encMessage = null;
+      let messageIv = null;
+      if (message) {
+          const { encrypted, iv } = await EncryptionService.encryptText(message, key);
+          encMessage = encrypted;
+          messageIv = iv;
+      }
+
       // Handle Password Protection
       let encryptedKey = null;
       let encryptedKeyIv = null;
@@ -150,6 +161,8 @@ export function UploadBox() {
         password_salt: passwordSalt,
         encrypted_key: encryptedKey,
         encrypted_key_iv: encryptedKeyIv,
+        message_encrypted: encMessage,
+        message_iv: messageIv,
         magic_words: generatedMagicWords,
         download_limit: maxDownloads
       });
@@ -192,6 +205,7 @@ export function UploadBox() {
     setShareLink(null);
     setMagicWords(null);
     setPassword("");
+    setMessage("");
     setMaxDownloads(1);
     setProgress(0);
     setUploading(false);
@@ -437,6 +451,17 @@ export function UploadBox() {
                             className="h-8 text-xs bg-background"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
+                         />
+                      </div>
+                      <div className="col-span-2 pt-2 border-t border-dashed border-border/60">
+                         <Label className="text-xs mb-1.5 flex items-center gap-1 text-muted-foreground">
+                            <NotePencil weight="fill" className="text-blue-500"/> Encrypted Note (Optional)
+                         </Label>
+                         <Textarea 
+                            placeholder="Add a secure message for the recipient..." 
+                            className="min-h-[60px] text-xs bg-background resize-none"
+                            value={message}
+                            onChange={(e) => setMessage(e.target.value)}
                          />
                       </div>
                     </div>

@@ -47,7 +47,7 @@ function FileCountdown({ expiresAt }: { expiresAt: string }) {
   if (timeLeft === "Expired" || !timeLeft) return null;
 
   return (
-      <span className="flex items-center gap-1 text-orange-600 font-medium bg-orange-50 px-1.5 py-0.5 rounded text-[10px] md:text-xs" title="Expires in">
+      <span className="flex items-center gap-1 text-orange-600 dark:text-orange-400 font-medium bg-orange-50 dark:bg-orange-900/20 px-1.5 py-0.5 rounded text-[10px] md:text-xs" title="Expires in">
           <Timer className="w-3 h-3" />
           {timeLeft}
       </span>
@@ -105,7 +105,7 @@ export function DashboardList({ uploads }: { uploads: any[] }) {
 
   if (files.length === 0) {
       return (
-          <div className="text-center py-20 text-gray-500 bg-white rounded-2xl border border-dashed">
+          <div className="text-center py-20 text-muted-foreground bg-card rounded-2xl border border-dashed">
              <p>No active transfers.</p>
              <p className="text-sm mt-2">Upload a file to see it here.</p>
           </div>
@@ -130,14 +130,14 @@ export function DashboardList({ uploads }: { uploads: any[] }) {
            }
 
            return (
-           <div key={file.id} className={`bg-white p-4 rounded-xl border flex items-center justify-between shadow-sm hover:shadow-md transition-shadow ${isDeleted ? 'opacity-75 bg-gray-50' : ''}`}>
+           <div key={file.id} className={`bg-card p-4 rounded-xl border flex items-center justify-between shadow-sm hover:shadow-md transition-shadow ${isDeleted ? 'opacity-75 bg-muted/50' : ''}`}>
               <div className="flex items-center gap-4 overflow-hidden">
-                 <div className={`p-3 rounded-lg flex-shrink-0 ${isDeleted ? 'bg-gray-100' : 'bg-orange-50'}`}>
-                    <File className={`w-6 h-6 ${isDeleted ? 'text-gray-400' : 'text-primary'}`} weight="duotone" />
+                 <div className={`p-3 rounded-lg flex-shrink-0 ${isDeleted ? 'bg-muted' : 'bg-orange-50 dark:bg-orange-900/20'}`}>
+                    <File className={`w-6 h-6 ${isDeleted ? 'text-muted-foreground' : 'text-primary'}`} weight="duotone" />
                  </div>
                  <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                        <p className={`font-medium truncate ${isDeleted ? 'text-gray-500' : 'text-gray-900'}`}>
+                        <p className={`font-medium truncate ${isDeleted ? 'text-muted-foreground' : 'text-foreground'}`}>
                         {/* We can't decrypt name, so show generic name + ID slice */}
                         <Link href={isDeleted ? '#' : `/d/${file.id}`} target={isDeleted ? undefined : "_blank"} className={isDeleted ? 'cursor-default' : 'hover:underline decoration-primary'}>
                             {file.magic_words ? (
@@ -145,11 +145,11 @@ export function DashboardList({ uploads }: { uploads: any[] }) {
                             ) : (
                                 <span>File </span>
                             )}
-                            <span className="text-gray-400 text-xs font-mono">#{file.id.slice(0, 8)}</span>
+                            <span className="text-muted-foreground/60 text-xs font-mono">#{file.id.slice(0, 8)}</span>
                         </Link>
                         </p>
                         {statusLabel && (
-                            <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-[10px] font-bold uppercase tracking-wider">
+                            <span className="px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 text-[10px] font-bold uppercase tracking-wider">
                                 {statusLabel}
                             </span>
                         )}
@@ -159,21 +159,21 @@ export function DashboardList({ uploads }: { uploads: any[] }) {
                          <Clock className="w-3.5 h-3.5" />
                          {new Date(file.created_at).toLocaleDateString()}
                       </span>
-                     <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                     <span className="w-1 h-1 rounded-full bg-border"></span>
                      <span className="flex items-center gap-1" title="File size">
                         <FileText className="w-3 h-3" />
                         {(file.size / 1024 / 1024).toFixed(2)} MB
                      </span>
                      {!isDeleted && (
                         <>
-                           <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                           <span className="w-1 h-1 rounded-full bg-border"></span>
                            <FileCountdown expiresAt={file.expiration_time} />
                         </>
                      )}
                       {/* Show download count if relevant (limit exists or count > 0) */}
                       {(file.download_limit !== null || file.download_count > 0) && (
                         <>
-                           <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                           <span className="w-1 h-1 rounded-full bg-border"></span>
                            <span className="flex items-center gap-1" title="Downloads">
                               <DownloadSimple className="w-3 h-3" />
                               {file.download_count || 0}
@@ -189,7 +189,7 @@ export function DashboardList({ uploads }: { uploads: any[] }) {
                     variant="ghost" 
                     size="icon" 
                     onClick={() => handleDelete(file.id)} 
-                    className="text-muted-foreground hover:text-destructive hover:bg-red-50"
+                    className="text-muted-foreground hover:text-destructive hover:bg-red-50 dark:hover:bg-red-900/20"
                     disabled={deleting === file.id}
                     title={isDeleted ? "Remove from History" : "Delete File"}
                   >

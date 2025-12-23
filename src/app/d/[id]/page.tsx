@@ -36,25 +36,25 @@ export default async function DownloadPage({ params }: { params: Promise<{ id: s
       }
       
       return (
-         <div className="min-h-screen flex items-center justify-center bg-gray-50">
-             <div className="text-center p-8 bg-white rounded-2xl shadow-xl max-w-md mx-4">
-                 <div className="mx-auto bg-gray-100 p-3 rounded-full w-16 h-16 flex items-center justify-center mb-4">
-                    <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+         <div className="min-h-screen flex items-center justify-center bg-background">
+             <div className="text-center p-8 bg-card rounded-2xl shadow-xl max-w-md mx-4">
+                 <div className="mx-auto bg-muted p-3 rounded-full w-16 h-16 flex items-center justify-center mb-4">
+                    <svg className="w-8 h-8 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                  </div>
-                 <h1 className="text-2xl font-bold text-gray-900 mb-2">Transfer Unavailable</h1>
-                 <p className="text-gray-600">This file is no longer available. It has expired or the download limit was reached.</p>
+                 <h1 className="text-2xl font-bold text-foreground mb-2">Transfer Unavailable</h1>
+                 <p className="text-muted-foreground">This file is no longer available. It has expired or the download limit was reached.</p>
              </div>
          </div>
      )
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50/50">
-       <header className="py-6 text-center border-b bg-white/80 backdrop-blur-sm sticky top-0 z-10">
-          <Link href="/" className="inline-flex items-center justify-center gap-2 font-bold text-xl text-gray-900 hover:opacity-80 transition-opacity">
-             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white shadow-sm">
+    <div className="min-h-screen flex flex-col bg-background">
+       <header className="py-6 text-center border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-10">
+          <Link href="/" className="inline-flex items-center justify-center gap-2 font-bold text-xl text-foreground hover:opacity-80 transition-opacity">
+             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground shadow-sm">
                D
              </div>
              <span>Drop</span>

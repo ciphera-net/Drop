@@ -231,8 +231,8 @@ export function UploadBox() {
     return (
       <Card className="w-full max-w-md mx-auto animate-in fade-in zoom-in duration-300">
         <CardHeader>
-          <div className="mx-auto bg-green-100 p-3 rounded-full mb-2">
-            <Check className="w-8 h-8 text-green-600" />
+          <div className="mx-auto bg-green-100 dark:bg-green-900/20 p-3 rounded-full mb-2">
+            <Check className="w-8 h-8 text-green-600 dark:text-green-400" />
           </div>
           <CardTitle className="text-center text-primary">Ready to Share</CardTitle>
           <CardDescription className="text-center">
@@ -240,9 +240,9 @@ export function UploadBox() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-amber-900">
+          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-amber-900 dark:text-amber-100">
             <div className="flex gap-3">
-              <Warning className="w-5 h-5 flex-shrink-0 text-amber-600" weight="fill" />
+              <Warning className="w-5 h-5 flex-shrink-0 text-amber-600 dark:text-amber-400" weight="fill" />
               <div className="text-sm space-y-1">
                 <p className="font-semibold">Save this link immediately!</p>
                 <p>For security reasons, this URL is shown only once. You will not be able to see it again after you leave this page.</p>
@@ -336,7 +336,7 @@ export function UploadBox() {
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto shadow-xl shadow-orange-500/5 border-orange-100">
+    <Card className="w-full max-w-md mx-auto shadow-xl shadow-orange-500/5 dark:shadow-none border-orange-100 dark:border-border">
       <CardHeader>
         <CardTitle className="flex items-center justify-center gap-2">
            Secure Transfer
@@ -346,7 +346,7 @@ export function UploadBox() {
       <CardContent>
         {!file ? (
           <div 
-            className="border-2 border-dashed border-muted-foreground/20 rounded-xl p-10 text-center cursor-pointer hover:bg-orange-50/50 hover:border-orange-200 transition-all duration-300 group"
+            className="border-2 border-dashed border-muted-foreground/20 rounded-xl p-10 text-center cursor-pointer hover:bg-orange-50/50 dark:hover:bg-primary/5 hover:border-orange-200 dark:hover:border-primary/20 transition-all duration-300 group"
             onDragOver={(e) => e.preventDefault()}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
@@ -357,10 +357,10 @@ export function UploadBox() {
                ref={fileInputRef} 
                onChange={handleFileSelect} 
              />
-             <div className="bg-orange-50 group-hover:bg-orange-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 transition-colors duration-300">
+             <div className="bg-orange-50 dark:bg-primary/10 group-hover:bg-orange-100 dark:group-hover:bg-primary/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 transition-colors duration-300">
                 <CloudArrowUp className="w-8 h-8 text-primary" weight="fill" />
              </div>
-             <p className="font-medium text-gray-900">Click to upload or drag and drop</p>
+             <p className="font-medium text-foreground">Click to upload or drag and drop</p>
              <p className="text-sm text-muted-foreground mt-1">Up to 5GB</p>
           </div>
         ) : (
@@ -368,7 +368,7 @@ export function UploadBox() {
              <div className="flex items-center p-3 bg-secondary/50 rounded-lg border border-border/50">
                 <FileIcon className="w-8 h-8 text-primary mr-3" weight="duotone" />
                 <div className="flex-1 min-w-0">
-                   <p className="text-sm font-medium truncate text-gray-900">{file.name}</p>
+                   <p className="text-sm font-medium truncate text-foreground">{file.name}</p>
                    <p className="text-xs text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                 </div>
                 <Button variant="ghost" size="icon" onClick={() => setFile(null)} disabled={uploading} className="text-muted-foreground hover:text-destructive">
@@ -398,7 +398,7 @@ export function UploadBox() {
              {!uploading && (
                <div className="space-y-4">
                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium text-gray-700">Transfer Settings</span>
+                    <span className="font-medium text-foreground">Transfer Settings</span>
                  </div>
                  
                  <div className="space-y-3 p-3 border rounded-lg bg-secondary/20 animate-in slide-in-from-top-2 duration-200">
@@ -414,7 +414,7 @@ export function UploadBox() {
                                  "flex-1 py-1.5 text-xs rounded-md border transition-all duration-200 font-medium",
                                  expiration === opt 
                                    ? "bg-primary text-white border-primary shadow-sm" 
-                                   : "bg-background text-gray-600 border-border hover:border-primary/30"
+                                   : "bg-background text-muted-foreground border-border hover:border-primary/30"
                                )}
                              >
                                {opt}
@@ -433,7 +433,7 @@ export function UploadBox() {
                                  "flex-1 py-1.5 text-xs rounded-md border transition-all duration-200 font-medium",
                                  maxDownloads === opt 
                                    ? "bg-primary text-white border-primary shadow-sm" 
-                                   : "bg-background text-gray-600 border-border hover:border-primary/30"
+                                   : "bg-background text-muted-foreground border-border hover:border-primary/30"
                                )}
                              >
                                {opt === null ? "Unlimited" : opt}
@@ -471,7 +471,7 @@ export function UploadBox() {
           </div>
         )}
         {error && (
-          <div className="mt-4 p-3 bg-red-50 border border-red-100 text-red-600 text-sm rounded-lg flex items-center animate-in fade-in">
+          <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/50 text-red-600 dark:text-red-400 text-sm rounded-lg flex items-center animate-in fade-in">
             <X className="mr-2 flex-shrink-0" /> 
             <span>{error}</span>
           </div>

@@ -51,14 +51,14 @@ export function MagicWordInput() {
                 isFocused && "opacity-80"
             )}></div>
             
-            <form onSubmit={handleSearch} className="relative flex items-center bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <form onSubmit={handleSearch} className="relative flex items-center bg-card rounded-xl shadow-sm border border-border overflow-hidden">
                 <div className="pl-4 text-primary animate-pulse">
                     <MagicWand size={24} weight="duotone" />
                 </div>
                 
                 <input 
                     type="text"
-                    className="w-full h-14 pl-3 pr-14 text-lg bg-transparent border-none outline-none text-gray-800 placeholder:text-gray-400 font-medium"
+                    className="w-full h-14 pl-3 pr-14 text-lg bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground/60 font-medium"
                     placeholder="Enter magic words (e.g. happy-cat-run)"
                     value={words}
                     onChange={(e) => {
@@ -82,7 +82,7 @@ export function MagicWordInput() {
                         disabled={loading || !words}
                         className={cn(
                             "h-10 w-10 rounded-lg transition-all duration-200",
-                            words ? "bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary" : "text-gray-300 hover:text-gray-400"
+                            words ? "bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary" : "text-muted-foreground hover:text-foreground"
                         )}
                     >
                         {loading ? (

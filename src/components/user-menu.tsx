@@ -18,7 +18,7 @@ export function UserMenu({ user }: { user: User | null }) {
   if (user) {
      return (
         <div className="flex items-center gap-4">
-           <Link href="/dashboard" className="text-sm font-medium text-gray-700 hover:text-primary flex items-center gap-1 transition-colors">
+           <Link href="/dashboard" className="text-sm font-medium text-foreground hover:text-primary flex items-center gap-1 transition-colors">
               <UserIcon weight="bold" /> Dashboard
            </Link>
            <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-muted-foreground hover:text-destructive">

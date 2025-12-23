@@ -269,8 +269,8 @@ export function DownloadView({ file }: { file: any }) {
       return (
           <Card className="w-full max-w-md shadow-xl">
              <CardHeader className="text-center">
-                 <div className="mx-auto bg-orange-100 p-3 rounded-full mb-2">
-                     <LockKey className="w-8 h-8 text-orange-600" weight="fill" />
+                 <div className="mx-auto bg-orange-100 dark:bg-orange-900/20 p-3 rounded-full mb-2">
+                     <LockKey className="w-8 h-8 text-orange-600 dark:text-orange-400" weight="fill" />
                  </div>
                  <CardTitle>{file.is_password_protected ? "Password Protected" : "Encrypted File"}</CardTitle>
                  <CardDescription>
@@ -330,8 +330,8 @@ export function DownloadView({ file }: { file: any }) {
           </CardHeader>
           <CardContent className="space-y-6">
               {showLimitReachedMessage && (
-                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3 text-amber-900 animate-in slide-in-from-top-2">
-                      <WarningCircle className="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" weight="fill" />
+                  <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg flex items-start gap-3 text-amber-900 dark:text-amber-100 animate-in slide-in-from-top-2">
+                      <WarningCircle className="w-6 h-6 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" weight="fill" />
                       <div>
                           <p className="font-semibold">Last Download</p>
                           <p className="text-sm mt-1">
@@ -344,18 +344,18 @@ export function DownloadView({ file }: { file: any }) {
               <div className="flex items-center p-4 bg-secondary/50 rounded-xl border border-border/50">
                 <FileIcon className="w-10 h-10 text-primary mr-4" weight="duotone" />
                 <div className="flex-1 min-w-0">
-                   <p className="font-semibold text-gray-900 truncate">{decryptedName}</p>
+                   <p className="font-semibold text-foreground truncate">{decryptedName}</p>
                    <p className="text-sm text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                 </div>
               </div>
 
               {decryptedMessage && (
-                  <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 animate-in fade-in slide-in-from-top-2">
-                      <div className="flex items-center gap-2 mb-2 text-blue-700">
+                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900/50 rounded-xl p-4 animate-in fade-in slide-in-from-top-2">
+                      <div className="flex items-center gap-2 mb-2 text-blue-700 dark:text-blue-400">
                           <NotePencil weight="fill" className="w-4 h-4" />
                           <span className="text-xs font-semibold uppercase tracking-wider">Secure Note</span>
                       </div>
-                      <p className="text-sm text-blue-900 whitespace-pre-wrap">{decryptedMessage}</p>
+                      <p className="text-sm text-blue-900 dark:text-blue-100 whitespace-pre-wrap">{decryptedMessage}</p>
                   </div>
               )}
 
@@ -369,7 +369,7 @@ export function DownloadView({ file }: { file: any }) {
               ) : (
                   <div className="space-y-4">
                       {error && (
-                          <div className="flex items-center text-sm text-destructive justify-center p-3 bg-red-50 rounded-lg border border-red-100">
+                          <div className="flex items-center text-sm text-destructive justify-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-100 dark:border-red-900/50">
                               <WarningCircle className="mr-2 h-5 w-5 shrink-0" weight="fill" /> 
                               <span>{error}</span>
                           </div>

@@ -51,18 +51,18 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
       <div className="w-full max-w-md mb-8 text-center">
          <Link href="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-6 transition-colors">
             <ArrowLeft className="mr-1" /> Back to Home
          </Link>
-         <div className="flex items-center justify-center gap-2 font-bold text-2xl text-gray-900 mb-2">
-             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white shadow-sm">
+         <div className="flex items-center justify-center gap-2 font-bold text-2xl text-foreground mb-2">
+             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground shadow-sm">
                D
              </div>
              <span>Drop</span>
           </div>
-          <h1 className="text-xl font-semibold text-gray-800">
+          <h1 className="text-xl font-semibold text-foreground">
              {isSignUp ? "Create your account" : "Welcome back"}
           </h1>
       </div>
@@ -108,7 +108,7 @@ export default function LoginPage() {
             </div>
             
             {message && (
-               <div className={`p-3 rounded-md text-sm ${message.includes("Check") ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+               <div className={`p-3 rounded-md text-sm ${message.includes("Check") ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400" : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400"}`}>
                   {message}
                </div>
             )}

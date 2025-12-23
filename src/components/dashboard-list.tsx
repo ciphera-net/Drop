@@ -1,11 +1,12 @@
 "use client";
 import { createClient } from "@/utils/supabase/client";
 import { Button } from "./ui/button";
-import { Trash, Clock, File, DownloadSimple, FileText, Timer } from "@phosphor-icons/react";
+import { Trash, Clock, DownloadSimple, FileText, Timer } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { FileIconDisplay } from "@/components/file-icon-display";
 
 function FileCountdown({ expiresAt }: { expiresAt: string }) {
   const [timeLeft, setTimeLeft] = useState<string>("");
@@ -136,7 +137,7 @@ export function DashboardList({ uploads }: { uploads: any[] }) {
            <div key={file.id} className={`bg-card p-4 rounded-xl border flex items-center justify-between shadow-sm hover:shadow-md transition-shadow ${isDeleted ? 'opacity-75 bg-muted/50' : ''}`}>
               <div className="flex items-center gap-4 overflow-hidden">
                  <div className={`p-3 rounded-lg flex-shrink-0 ${isDeleted ? 'bg-muted' : 'bg-orange-50 dark:bg-orange-900/20'}`}>
-                    <File className={`w-6 h-6 ${isDeleted ? 'text-muted-foreground' : 'text-primary'}`} weight="duotone" />
+                    <FileIconDisplay category={file.file_type} className={`w-6 h-6 ${isDeleted ? 'text-muted-foreground' : 'text-primary'}`} weight="duotone" />
                  </div>
                  <div className="min-w-0">
                     <div className="flex items-center gap-2">

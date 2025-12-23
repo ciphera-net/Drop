@@ -5,7 +5,8 @@ import { createClient } from "@/utils/supabase/client";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "./ui/card";
 import { Progress } from "./ui/progress";
-import { LockKey, DownloadSimple, File as FileIcon, WarningCircle, NotePencil, Fire } from "@phosphor-icons/react";
+import { LockKey, DownloadSimple, WarningCircle, NotePencil, Fire } from "@phosphor-icons/react";
+import { FileIconDisplay } from "@/components/file-icon-display";
 import { Input } from "./ui/input";
 import { toast } from "sonner";
 
@@ -344,7 +345,7 @@ export function DownloadView({ file }: { file: any }) {
               )}
 
               <div className="flex items-center p-4 bg-secondary/50 rounded-xl border border-border/50">
-                <FileIcon className="w-10 h-10 text-primary mr-4" weight="duotone" />
+                <FileIconDisplay category={file.file_type} className="w-10 h-10 text-primary mr-4" weight="duotone" />
                 <div className="flex-1 min-w-0">
                    <p className="font-semibold text-foreground truncate">{decryptedName}</p>
                    <p className="text-sm text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB</p>

@@ -13,11 +13,13 @@ import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Label } from "./ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "./ui/dialog";
-import { CloudArrowUp, File as FileIcon, Copy, Check, X, EnvelopeSimple, LockKey, Warning, QrCode, NotePencil, Fire, Infinity as InfinityIcon, Share } from "@phosphor-icons/react";
+import { CloudArrowUp, Copy, Check, X, EnvelopeSimple, LockKey, Warning, QrCode, NotePencil, Fire, Infinity as InfinityIcon, Share } from "@phosphor-icons/react";
 import { QRCodeSVG } from "qrcode.react";
 import { cn } from "@/lib/utils";
 import { uploadEncryptedFile } from "@/utils/upload-manager";
 import { toast } from "sonner";
+import { getFileCategory } from "@/utils/file-helpers";
+import { FileIconDisplay } from "@/components/file-icon-display";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024; // 5GB
 
@@ -267,6 +269,8 @@ export function UploadBox() {
       const generatedMagicWords = generateMagicWords();
       const { data: { user } } = await supabase.auth.getUser();
 
+      const fileType = getFileCategory(file);
+
       const { error: dbError } = await supabase.from('uploads').insert({
         id: fileId,
         user_id: user?.id,
@@ -274,6 +278,7 @@ export function UploadBox() {
         filename_iv: filenameIv,
         mime_type_encrypted: encMime,
         mime_type_iv: mimeIv,
+        file_type: fileType,
         size: file.size, // Original size
         iv: "CHUNKED_PARALLEL_V1", // Marker for parallel chunked file format
         expiration_time: expiresAt.toISOString(),
@@ -506,7 +511,7 @@ export function UploadBox() {
         ) : (
           <div className="space-y-4">
              <div className="flex items-center p-3 bg-secondary/50 rounded-lg border border-border/50">
-                <FileIcon className="w-8 h-8 text-primary mr-3" weight="duotone" />
+                <FileIconDisplay category={getFileCategory(file)} className="w-8 h-8 text-primary mr-3" weight="duotone" />
                 <div className="flex-1 min-w-0">
                    <p className="text-sm font-medium truncate text-foreground">{file.name}</p>
                    <p className="text-xs text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB</p>

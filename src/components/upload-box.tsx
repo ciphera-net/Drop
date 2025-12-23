@@ -13,7 +13,7 @@ import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Label } from "./ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "./ui/dialog";
-import { CloudArrowUp, File as FileIcon, Copy, Check, X, EnvelopeSimple, LockKey, Warning, QrCode, NotePencil, Fire, Infinity as InfinityIcon } from "@phosphor-icons/react";
+import { CloudArrowUp, File as FileIcon, Copy, Check, X, EnvelopeSimple, LockKey, Warning, QrCode, NotePencil, Fire, Infinity as InfinityIcon, Share } from "@phosphor-icons/react";
 import { QRCodeSVG } from "qrcode.react";
 import { cn } from "@/lib/utils";
 import { uploadEncryptedFile } from "@/utils/upload-manager";
@@ -39,9 +39,31 @@ export function UploadBox() {
   const [email, setEmail] = useState("");
   const [sendingEmail, setSendingEmail] = useState(false);
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
+  const [canShare, setCanShare] = useState(false);
+
+  useEffect(() => {
+    if (typeof navigator !== 'undefined' && 'share' in navigator) {
+      setCanShare(true);
+    }
+  }, []);
 
   const supabase = createClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleNativeShare = async () => {
+    if (!shareLink) return;
+    try {
+      await navigator.share({
+        title: 'Secure File Transfer',
+        text: 'Download this file securely:',
+        url: shareLink
+      });
+    } catch (err) {
+      if ((err as Error).name !== 'AbortError') {
+        console.error('Error sharing:', err);
+      }
+    }
+  };
 
   const handleSendEmail = async () => {
     if (!email || !shareLink) return;
@@ -363,9 +385,14 @@ export function UploadBox() {
 
           <div className="flex space-x-2">
             <Input readOnly value={shareLink} className="font-mono text-xs" />
-            <Button size="icon" onClick={copyLink}>
+            <Button size="icon" onClick={copyLink} title="Copy Link">
               <Copy weight="bold" />
             </Button>
+            {canShare && (
+                <Button size="icon" onClick={handleNativeShare} title="Share">
+                  <Share weight="bold" />
+                </Button>
+            )}
           </div>
           
           <div className="grid grid-cols-2 gap-2">

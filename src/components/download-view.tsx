@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { EncryptionService } from "@/lib/encryption";
 import { createClient } from "@/utils/supabase/client";
 import { Button } from "./ui/button";
@@ -18,13 +18,6 @@ export function DownloadView({ file }: { file: any }) {
   const [manualKey, setManualKey] = useState("");
   const [password, setPassword] = useState("");
   const [showLimitReachedMessage, setShowLimitReachedMessage] = useState(false);
-
-  useEffect(() => {
-    const hash = window.location.hash.substring(1);
-    if (hash && !file.is_password_protected) {
-       attemptDecryptMetadata(hash);
-    }
-  }, [file.is_password_protected, attemptDecryptMetadata]);
 
   const attemptDecryptMetadata = useCallback(async (base64Key: string) => {
      try {
@@ -58,6 +51,13 @@ export function DownloadView({ file }: { file: any }) {
         toast.error("Decryption failed. The key might be invalid.");
      }
   }, [file]);
+
+  useEffect(() => {
+    const hash = window.location.hash.substring(1);
+    if (hash && !file.is_password_protected) {
+       attemptDecryptMetadata(hash);
+    }
+  }, [file.is_password_protected, attemptDecryptMetadata]);
 
   const attemptUnlockWithPassword = async () => {
     try {

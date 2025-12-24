@@ -4,9 +4,6 @@ import { useState } from "react";
 import { DashboardList } from "./dashboard-list";
 import { RequestList } from "./request-list";
 import { CreateRequestDialog } from "./create-request-dialog";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"; // Assuming shadcn Tabs exists or I use generic logic
-// Wait, I might not have Tabs component installed. Let's check. 
-// If not, I'll build a simple switcher.
 
 export function DashboardView({ uploads, requests }: { uploads: any[], requests: any[] }) {
   const [activeTab, setActiveTab] = useState<'uploads' | 'requests'>('uploads');

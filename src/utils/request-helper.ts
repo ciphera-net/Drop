@@ -7,6 +7,7 @@ export interface CreateRequestParams {
   description: string;
   password: string;
   notifyEmail?: string;
+  expirationTime?: Date | null;
   supabase: SupabaseClient;
 }
 
@@ -15,6 +16,7 @@ export async function createFileRequest({
   description,
   password,
   notifyEmail,
+  expirationTime,
   supabase
 }: CreateRequestParams) {
     // 1. Generate RSA Key Pair
@@ -42,7 +44,8 @@ export async function createFileRequest({
         encrypted_private_key_iv: encryptedPrivateKeyIv,
         salt: saltBase64,
         status: 'active',
-        notify_email: notifyEmail || null
+        notify_email: notifyEmail || null,
+        expiration_time: expirationTime ? expirationTime.toISOString() : null
     }).select().single();
 
     if (error) throw error;

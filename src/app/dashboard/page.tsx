@@ -45,6 +45,25 @@ export default async function DashboardPage() {
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });
 
+  // Cleanup expired requests
+  if (requests) {
+      const expiredRequests = requests.filter(req => {
+          if (req.status !== 'active' || !req.expiration_time) return false;
+          return new Date(req.expiration_time) < new Date();
+      });
+
+      if (expiredRequests.length > 0) {
+          await Promise.all(expiredRequests.map(req => 
+              supabase.from('file_requests').update({ status: 'closed' }).eq('id', req.id)
+          ));
+          
+          // Update local state
+          expiredRequests.forEach(req => {
+              req.status = 'closed';
+          });
+      }
+  }
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
        <SiteHeader user={user} />

@@ -12,6 +12,7 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { EncryptionService } from "@/lib/encryption";
 import { FileIconDisplay } from "./file-icon-display";
+import { cn } from "@/lib/utils";
 
 export function RequestList({ requests: initialRequests }: { requests: any[] }) {
   const supabase = createClient();
@@ -196,12 +197,21 @@ export function RequestList({ requests: initialRequests }: { requests: any[] }) 
                 <div>
                     <h3 className="font-semibold text-foreground flex items-center gap-2">
                         {req.name}
-                        <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase tracking-wider font-bold">
+                        <span className={cn("text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider font-bold",
+                             req.status === 'active' ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-gray-100 text-gray-500"
+                        )}>
                             {req.status}
                         </span>
                     </h3>
                     {req.description && <p className="text-sm text-muted-foreground">{req.description}</p>}
-                    <p className="text-xs text-muted-foreground mt-1 font-mono">ID: {req.id.slice(0, 8)}...</p>
+                    <div className="flex gap-4 text-xs text-muted-foreground mt-1 font-mono">
+                        <span>ID: {req.id.slice(0, 8)}...</span>
+                        {req.expiration_time && (
+                            <span title={new Date(req.expiration_time).toLocaleString()}>
+                                Expires: {new Date(req.expiration_time).toLocaleDateString()}
+                            </span>
+                        )}
+                    </div>
                 </div>
                 
                 <div className="flex items-center gap-2">

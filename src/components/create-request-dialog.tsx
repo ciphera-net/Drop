@@ -22,6 +22,7 @@ export function CreateRequestDialog() {
   const [password, setPassword] = useState("");
   const [notifyEmail, setNotifyEmail] = useState("");
   const [enableNotification, setEnableNotification] = useState(false);
+  const [expiration, setExpiration] = useState("7d");
   
   const supabase = createClient();
   const router = useRouter();
@@ -39,12 +40,21 @@ export function CreateRequestDialog() {
     if (!name || !password) return;
     
     setLoading(true);
+
+    let expirationTime: Date | null = null;
+    const now = new Date();
+    if (expiration === '1d') expirationTime = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    if (expiration === '7d') expirationTime = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    if (expiration === '30d') expirationTime = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    // 'Never' stays null
+
     try {
         await createFileRequest({
             name,
             description,
             password,
             notifyEmail: enableNotification ? notifyEmail : undefined,
+            expirationTime,
             supabase
         });
 
@@ -55,6 +65,7 @@ export function CreateRequestDialog() {
         setDescription("");
         setPassword("");
         setEnableNotification(false);
+        setExpiration("7d");
 
     } catch (e) {
         console.error(e);
@@ -101,6 +112,27 @@ export function CreateRequestDialog() {
                 <p className="text-[10px] text-muted-foreground">
                     Do not lose this password. We cannot recover it.
                 </p>
+            </div>
+
+            <div className="space-y-2">
+                <Label className="text-xs mb-1.5 block text-muted-foreground">Expires In</Label>
+                <div className="flex space-x-1">
+                    {['1d', '7d', '30d', 'Never'].map((opt) => (
+                        <button 
+                            type="button"
+                            key={opt}
+                            onClick={() => setExpiration(opt)}
+                            className={cn(
+                                "flex-1 py-1.5 text-xs rounded-md border transition-all duration-200 font-medium",
+                                expiration === opt 
+                                    ? "bg-primary text-white border-primary shadow-sm" 
+                                    : "bg-background text-muted-foreground border-border hover:border-primary/30"
+                            )}
+                        >
+                            {opt}
+                        </button>
+                    ))}
+                </div>
             </div>
             
             <div className="pt-2 border-t border-dashed border-border/60">

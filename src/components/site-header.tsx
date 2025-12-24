@@ -25,7 +25,7 @@ export function SiteHeader({ user, simple = false, className }: SiteHeaderProps)
 
         <div className="flex items-center gap-4">
           <ThemeToggle />
-          {!simple && user && <UserMenu user={user} />}
+          {!simple && <UserMenu user={user ?? null} />}
         </div>
       </div>
     </header>

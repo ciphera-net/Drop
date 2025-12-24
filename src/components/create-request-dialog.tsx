@@ -6,11 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, LockKey } from "@phosphor-icons/react";
+import { Plus, LockKey, Bell } from "@phosphor-icons/react";
 import { EncryptionService } from "@/lib/encryption";
 import { createClient } from "@/utils/supabase/client";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 export function CreateRequestDialog() {
   const [open, setOpen] = useState(false);
@@ -123,26 +124,41 @@ export function CreateRequestDialog() {
                 </p>
             </div>
             
-            <div className="pt-2 border-t border-dashed">
+            <div className="pt-2 border-t border-dashed border-border/60">
                 <div className="flex items-center space-x-2 mb-2">
-                    <input 
-                        type="checkbox" 
-                        id="notify" 
-                        checked={enableNotification}
-                        onChange={(e) => setEnableNotification(e.target.checked)}
-                        className="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4"
-                    />
-                    <Label htmlFor="notify" className="cursor-pointer font-normal text-sm">Notify me when files are uploaded</Label>
+                    <button
+                        type="button"
+                        onClick={() => setEnableNotification(!enableNotification)}
+                        className={cn(
+                            "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                            enableNotification ? "bg-primary" : "bg-input"
+                        )}
+                    >
+                        <span className={cn(
+                            "pointer-events-none block h-4 w-4 rounded-full bg-background shadow-lg ring-0 transition-transform",
+                            enableNotification ? "translate-x-4" : "translate-x-0"
+                        )} />
+                    </button>
+                    <Label 
+                        onClick={() => setEnableNotification(!enableNotification)}
+                        className="text-xs flex items-center gap-1 cursor-pointer select-none"
+                    >
+                        <Bell weight="fill" className={cn("w-4 h-4", enableNotification ? "text-primary" : "text-muted-foreground")} />
+                        <span>Notify me when files are uploaded</span>
+                    </Label>
                 </div>
                 {enableNotification && (
-                    <div className="pl-6 animate-in slide-in-from-top-1 fade-in">
+                    <div className="animate-in slide-in-from-top-1 fade-in duration-200">
                         <Input 
                             type="email" 
-                            placeholder="your@email.com" 
+                            placeholder="your-email@example.com" 
                             value={notifyEmail}
                             onChange={(e) => setNotifyEmail(e.target.value)}
-                            className="h-8 text-xs"
+                            className="h-8 text-xs bg-background"
                         />
+                        <p className="text-[10px] text-muted-foreground mt-1 ml-1">
+                            We&apos;ll send you an email when someone uploads files to this request.
+                        </p>
                     </div>
                 )}
             </div>

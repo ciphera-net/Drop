@@ -114,3 +114,60 @@ export async function sendDownloadNotification(email: string, fileId: string, ip
   });
 }
 
+export async function sendUploadNotification(email: string, requestName: string, fileName: string) {
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error("Missing RESEND_API_KEY");
+  }
+
+  const dashboardUrl = process.env.NEXT_PUBLIC_APP_URL ? `${process.env.NEXT_PUBLIC_APP_URL}/dashboard` : '#';
+
+  return await resend.emails.send({
+    from: FROM_EMAIL,
+    to: [email],
+    subject: `New File Uploaded: ${requestName}`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <title>New File Received</title>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .info-box { background-color: #fff7ed; border: 1px solid #fed7aa; padding: 20px; border-radius: 8px; margin: 25px 0; }
+            .footer { margin-top: 30px; font-size: 12px; color: #666; border-top: 1px solid #eee; padding-top: 20px; }
+            h2 { color: #111; margin-bottom: 20px; }
+            .label { color: #666; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+            .value { color: #111; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 14px; }
+            .button { display: inline-block; padding: 12px 24px; background-color: #f97316; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h2 style="color: #f97316;">New File Received</h2>
+            <p>A new file has been uploaded to your request <strong>"${requestName}"</strong>.</p>
+            
+            <div class="info-box">
+              <div style="margin-bottom: 15px;">
+                <div class="label">File Name</div>
+                <div class="value">${fileName || 'Encrypted File'}</div>
+              </div>
+            </div>
+
+            <p style="text-align: center; margin: 30px 0;">
+               <a href="${dashboardUrl}" class="button">Go to Dashboard</a>
+            </p>
+            <p style="text-align: center; font-size: 14px; color: #666;">
+               Log in to your dashboard to decrypt and download it.
+            </p>
+
+            <div class="footer">
+              <p>You are receiving this email because you enabled notifications for this file request.</p>
+              <p>© ${new Date().getFullYear()} Ciphera Drop. End-to-end encrypted file sharing.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `
+  });
+}

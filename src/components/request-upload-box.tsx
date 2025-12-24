@@ -7,11 +7,14 @@ import { createClient } from "@/utils/supabase/client";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "./ui/card";
 import { Progress } from "./ui/progress";
-import { CloudArrowUp, Check, X, LockKey } from "@phosphor-icons/react";
+import { CloudArrowUp, Check, X, LockKey, Bell } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { getFileCategory, calculateFileHash } from "@/utils/file-helpers";
 import { FileIconDisplay } from "@/components/file-icon-display";
 import { uploadEncryptedFile } from "@/utils/upload-manager";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { cn } from "@/lib/utils";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024; // 5GB
 
@@ -21,12 +24,22 @@ export function RequestUploadBox({ request }: { request: any }) {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [completed, setCompleted] = useState(false);
+  const [notifyOnDownload, setNotifyOnDownload] = useState(false);
+  const [senderEmail, setSenderEmail] = useState("");
   
   const [isDragging, setIsDragging] = useState(false);
   const dragCounter = useRef(0);
   
   const supabase = createClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+        if (user?.email) {
+            setSenderEmail(user.email);
+        }
+    });
+  }, [supabase]);
 
   const processFiles = useCallback(async (fileList: FileList | File[]) => {
     if (fileList.length === 0) return;
@@ -119,6 +132,12 @@ export function RequestUploadBox({ request }: { request: any }) {
 
   const handleUpload = async () => {
     if (!file) return;
+
+    if (notifyOnDownload && !senderEmail) {
+        toast.error("Please enter your email to receive download notifications.");
+        return;
+    }
+
     setUploading(true);
     setProgress(1);
 
@@ -177,7 +196,9 @@ export function RequestUploadBox({ request }: { request: any }) {
         encrypted_key: encryptedAesKeyBase64, // Storing RSA-Wrapped AES Key here
         // No password protection for requests (Access is controlled by Request Owner)
         is_password_protected: false, 
-        file_hash: fileHash
+        file_hash: fileHash,
+        notify_on_download: notifyOnDownload,
+        sender_email: notifyOnDownload ? senderEmail : null
       });
 
       if (dbError) throw dbError;
@@ -274,6 +295,48 @@ export function RequestUploadBox({ request }: { request: any }) {
                 </Button>
              </div>
              
+             {!uploading && (
+               <div className="pt-2 border-t border-dashed border-border/60">
+                   <div className="flex items-center space-x-2 mb-2">
+                       <button
+                          type="button"
+                          onClick={() => setNotifyOnDownload(!notifyOnDownload)}
+                          className={cn(
+                              "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                              notifyOnDownload ? "bg-primary" : "bg-input"
+                          )}
+                       >
+                          <span className={cn(
+                              "pointer-events-none block h-4 w-4 rounded-full bg-background shadow-lg ring-0 transition-transform",
+                              notifyOnDownload ? "translate-x-4" : "translate-x-0"
+                          )} />
+                       </button>
+                       <Label 
+                          onClick={() => setNotifyOnDownload(!notifyOnDownload)}
+                          className="text-xs flex items-center gap-1 cursor-pointer select-none"
+                       >
+                          <Bell weight="fill" className={cn("w-4 h-4", notifyOnDownload ? "text-primary" : "text-muted-foreground")} />
+                          <span>Notify me when downloaded</span>
+                       </Label>
+                   </div>
+                   
+                   {notifyOnDownload && (
+                       <div className="animate-in slide-in-from-top-1 fade-in duration-200">
+                           <Input 
+                              type="email" 
+                              placeholder="your-email@example.com" 
+                              className="h-8 text-xs bg-background"
+                              value={senderEmail}
+                              onChange={(e) => setSenderEmail(e.target.value)}
+                           />
+                           <p className="text-[10px] text-muted-foreground mt-1 ml-1">
+                               We&apos;ll send you an email when the requester downloads this file.
+                           </p>
+                       </div>
+                   )}
+               </div>
+             )}
+
              {uploading && (
                <div className="space-y-2">
                  <Progress value={progress} className="h-2" />

@@ -182,6 +182,15 @@ export function RequestUploadBox({ request }: { request: any }) {
 
       if (dbError) throw dbError;
 
+      // Trigger notification email (fire and forget)
+      fetch('/api/notify-upload', {
+        method: 'POST',
+        body: JSON.stringify({
+            requestId: request.id,
+            fileName: file.name
+        })
+      }).catch(console.error);
+
       setProgress(100);
       setCompleted(true);
       toast.success("File uploaded securely!");

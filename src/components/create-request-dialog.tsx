@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,9 +18,20 @@ export function CreateRequestDialog() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [password, setPassword] = useState("");
+  const [notifyEmail, setNotifyEmail] = useState("");
+  const [enableNotification, setEnableNotification] = useState(false);
   
   const supabase = createClient();
   const router = useRouter();
+
+  // Pre-fill email from user session
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+        if (user?.email) {
+            setNotifyEmail(user.email);
+        }
+    });
+  }, [supabase]);
 
   const handleCreate = async () => {
     if (!name || !password) return;
@@ -51,7 +62,8 @@ export function CreateRequestDialog() {
             encrypted_private_key: encryptedPrivateKey,
             encrypted_private_key_iv: encryptedPrivateKeyIv,
             salt: saltBase64,
-            status: 'active'
+            status: 'active',
+            notify_email: enableNotification ? notifyEmail : null
         });
 
         if (error) throw error;
@@ -62,6 +74,7 @@ export function CreateRequestDialog() {
         setName("");
         setDescription("");
         setPassword("");
+        setEnableNotification(false);
 
     } catch (e) {
         console.error(e);
@@ -108,6 +121,30 @@ export function CreateRequestDialog() {
                 <p className="text-[10px] text-muted-foreground">
                     Do not lose this password. We cannot recover it.
                 </p>
+            </div>
+            
+            <div className="pt-2 border-t border-dashed">
+                <div className="flex items-center space-x-2 mb-2">
+                    <input 
+                        type="checkbox" 
+                        id="notify" 
+                        checked={enableNotification}
+                        onChange={(e) => setEnableNotification(e.target.checked)}
+                        className="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4"
+                    />
+                    <Label htmlFor="notify" className="cursor-pointer font-normal text-sm">Notify me when files are uploaded</Label>
+                </div>
+                {enableNotification && (
+                    <div className="pl-6 animate-in slide-in-from-top-1 fade-in">
+                        <Input 
+                            type="email" 
+                            placeholder="your@email.com" 
+                            value={notifyEmail}
+                            onChange={(e) => setNotifyEmail(e.target.value)}
+                            className="h-8 text-xs"
+                        />
+                    </div>
+                )}
             </div>
         </div>
         <DialogFooter>

@@ -132,36 +132,20 @@ export function RequestList({ requests: initialRequests }: { requests: any[] }) 
   const downloadFile = async (file: any) => {
       if (!file.aesKey) return;
       
-      const toastId = toast.loading("Downloading & Decrypting...");
+      const toastId = toast.loading("Preparing secure download...");
       try {
-          const { data, error } = await supabase.storage.from('drop-files').download(`${file.id}`);
-          if (error) throw error;
-
-          // Decrypt
-          // We need to read the IV from the blob? 
-          // Wait, uploadEncryptedFile uses a specific format.
-          // "CHUNKED_PARALLEL_V1" iv means it's chunked.
-          // Or is it?
-          // If the file was uploaded via the "Request" page, we need to ensure we used a format compatible here.
-          // If we use `uploadEncryptedFile` in the Request Page, it uses the chunked uploader.
-          
-          // Let's assume for V1 of this feature, we implement the Request Upload to standard single-blob if small, or reuse the chunk logic.
-          // If we reuse `uploadEncryptedFile`, we need to use the `DownloadView` logic for decryption.
-          // `DownloadView` handles chunked downloads.
-          
-          // Re-implementing full download logic here is complex.
-          // EASIER: Generate a temporary link to `/d/<id>#<key>` locally?
-          // No, `/d/<id>` expects the key in the hash. 
-          // YES! We have the `aesKey`. We can export it to base64 and open `/d/<id>#<exportedKey>`!
-          // This reuses the existing `DownloadView` component which already handles chunked decryption, streaming, etc.
-          
+          // Export the AES key to base64
           const keyBase64 = await EncryptionService.exportKey(file.aesKey);
+          
+          // Open the download page with the key in the hash
+          // The DownloadView component will handle the chunked download and decryption
           window.open(`/d/${file.id}#${keyBase64}`, '_blank');
+          
           toast.dismiss(toastId);
-
       } catch (e) {
           console.error(e);
           toast.error("Download failed");
+          toast.dismiss(toastId);
       }
   };
 

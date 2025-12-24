@@ -13,7 +13,7 @@ import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Label } from "./ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "./ui/dialog";
-import { CloudArrowUp, Copy, Check, X, EnvelopeSimple, LockKey, Warning, QrCode, NotePencil, Fire, Infinity as InfinityIcon, Share, CaretDown, CaretUp } from "@phosphor-icons/react";
+import { CloudArrowUp, Copy, Check, X, EnvelopeSimple, LockKey, Warning, QrCode, NotePencil, Fire, Infinity as InfinityIcon, Share, CaretDown, CaretUp, Bell } from "@phosphor-icons/react";
 import { QRCodeSVG } from "qrcode.react";
 import { cn } from "@/lib/utils";
 import { uploadEncryptedFile } from "@/utils/upload-manager";
@@ -46,6 +46,9 @@ export function UploadBox() {
   const [uploadedFileHash, setUploadedFileHash] = useState<string | null>(null);
   const [showHash, setShowHash] = useState(false);
 
+  const [notifyOnDownload, setNotifyOnDownload] = useState(false);
+  const [senderEmail, setSenderEmail] = useState("");
+
   useEffect(() => {
     if (typeof navigator !== 'undefined' && 'share' in navigator) {
       setCanShare(true);
@@ -53,6 +56,14 @@ export function UploadBox() {
   }, []);
 
   const supabase = createClient();
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+        if (user?.email) {
+            setSenderEmail(user.email);
+        }
+    });
+  }, [supabase]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleNativeShare = async () => {
@@ -213,6 +224,12 @@ export function UploadBox() {
 
   const handleUpload = async () => {
     if (!file) return;
+
+    if (notifyOnDownload && !senderEmail) {
+        toast.error("Please enter your email to receive download notifications.");
+        return;
+    }
+
     setUploading(true);
     setProgress(1); // Start
     setUploadStats(null);
@@ -300,7 +317,9 @@ export function UploadBox() {
         message_iv: messageIv,
         magic_words: generatedMagicWords,
         download_limit: maxDownloads,
-        file_hash: fileHash
+        file_hash: fileHash,
+        notify_on_download: notifyOnDownload,
+        sender_email: notifyOnDownload ? senderEmail : null
       });
 
       if (dbError) throw dbError;
@@ -346,6 +365,13 @@ export function UploadBox() {
     setProgress(0);
     setUploading(false);
     setUploadStats(null);
+    setNotifyOnDownload(false);
+    // Keep email if it was auto-filled from auth
+    supabase.auth.getUser().then(({ data: { user } }) => {
+        if (!user?.email) {
+             setSenderEmail("");
+        }
+    });
   };
 
   const formatSpeed = (bytesPerSec: number) => {
@@ -684,6 +710,46 @@ export function UploadBox() {
                             value={message}
                             onChange={(e) => setMessage(e.target.value)}
                          />
+                      </div>
+                      
+                      <div className="col-span-2 pt-2 border-t border-dashed border-border/60">
+                         <div className="flex items-center space-x-2 mb-2">
+                             <button
+                                type="button"
+                                onClick={() => setNotifyOnDownload(!notifyOnDownload)}
+                                className={cn(
+                                    "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                                    notifyOnDownload ? "bg-primary" : "bg-input"
+                                )}
+                             >
+                                <span className={cn(
+                                    "pointer-events-none block h-4 w-4 rounded-full bg-background shadow-lg ring-0 transition-transform",
+                                    notifyOnDownload ? "translate-x-4" : "translate-x-0"
+                                )} />
+                             </button>
+                             <Label 
+                                onClick={() => setNotifyOnDownload(!notifyOnDownload)}
+                                className="text-xs flex items-center gap-1 cursor-pointer select-none"
+                             >
+                                <Bell weight="fill" className={cn("w-4 h-4", notifyOnDownload ? "text-primary" : "text-muted-foreground")} />
+                                <span>Notify me when downloaded</span>
+                             </Label>
+                         </div>
+                         
+                         {notifyOnDownload && (
+                             <div className="animate-in slide-in-from-top-1 fade-in duration-200">
+                                 <Input 
+                                    type="email" 
+                                    placeholder="your-email@example.com" 
+                                    className="h-8 text-xs bg-background"
+                                    value={senderEmail}
+                                    onChange={(e) => setSenderEmail(e.target.value)}
+                                 />
+                                 <p className="text-[10px] text-muted-foreground mt-1 ml-1">
+                                     We&apos;ll send you an email when someone downloads this file.
+                                 </p>
+                             </div>
+                         )}
                       </div>
                     </div>
                  </div>

@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/utils/supabase/admin";
 import { NextRequest, NextResponse } from "next/server";
+import { sendDownloadNotification } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   try {
@@ -31,6 +32,28 @@ export async function POST(req: NextRequest) {
             error: "This file has reached its download limit and is no longer available.",
             limitReached: true 
         }, { status: 410 }); // 410 Gone
+    }
+
+    // Check for notification preferences
+    try {
+        const { data: uploadData, error: uploadError } = await supabase
+            .from('uploads')
+            .select('notify_on_download, sender_email')
+            .eq('id', id)
+            .single();
+        
+        if (!uploadError && uploadData?.notify_on_download && uploadData.sender_email) {
+            // Send notification
+            const ip = req.headers.get('x-forwarded-for') || 'Unknown IP';
+            const userAgent = req.headers.get('user-agent') || 'Unknown Client';
+            
+            // Fire and forget - don't block the download response
+            sendDownloadNotification(uploadData.sender_email, id, ip, userAgent)
+                .catch(err => console.error("Failed to send notification email:", err));
+        }
+    } catch (e) {
+        console.error("Error checking notification prefs:", e);
+        // Don't fail the request if notification fails
     }
 
     return NextResponse.json({ 

@@ -12,6 +12,7 @@ import { createClient } from "@/utils/supabase/client";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { createFileRequest } from "@/utils/request-helper";
 
 export function CreateRequestDialog() {
   const [open, setOpen] = useState(false);
@@ -39,35 +40,13 @@ export function CreateRequestDialog() {
     
     setLoading(true);
     try {
-        // 1. Generate RSA Key Pair
-        const keyPair = await EncryptionService.generateKeyPair();
-        const publicKeyJwk = await EncryptionService.exportPublicKey(keyPair.publicKey);
-        const privateKeyJwk = await EncryptionService.exportPrivateKey(keyPair.privateKey);
-
-        // 2. Encrypt Private Key with Password
-        const salt = window.crypto.getRandomValues(new Uint8Array(16));
-        const saltBase64 = EncryptionService.ivToBase64(salt);
-        
-        const wrappingKey = await EncryptionService.deriveKeyFromPassword(password, saltBase64);
-        const { encrypted: encryptedPrivateKey, iv: encryptedPrivateKeyIv } = await EncryptionService.encryptText(privateKeyJwk, wrappingKey);
-
-        // 3. Insert into DB
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error("Not authenticated");
-
-        const { error } = await supabase.from('file_requests').insert({
-            user_id: user.id,
+        await createFileRequest({
             name,
             description,
-            public_key: publicKeyJwk,
-            encrypted_private_key: encryptedPrivateKey,
-            encrypted_private_key_iv: encryptedPrivateKeyIv,
-            salt: saltBase64,
-            status: 'active',
-            notify_email: enableNotification ? notifyEmail : null
+            password,
+            notifyEmail: enableNotification ? notifyEmail : undefined,
+            supabase
         });
-
-        if (error) throw error;
 
         toast.success("File Request created successfully!");
         setOpen(false);

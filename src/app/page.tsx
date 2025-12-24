@@ -1,9 +1,8 @@
-import { UploadBox } from "@/components/upload-box";
 import { FeatureSection } from "@/components/feature-section";
-import { MagicWordInput } from "@/components/magic-word-input";
 import { createClient } from "@/utils/supabase/server";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { HomeView } from "@/components/home-view";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -32,10 +31,7 @@ export default async function Home() {
             </p>
          </div>
 
-         <div className="w-full max-w-md animate-in fade-in slide-in-from-bottom-8 duration-700 delay-150">
-           <MagicWordInput />
-           <UploadBox />
-         </div>
+         <HomeView user={user} />
          
          {/* Features Grid */}
          <div className="mt-24 w-full animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-300">

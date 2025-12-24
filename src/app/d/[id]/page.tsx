@@ -1,8 +1,9 @@
 import { createClient } from "@/utils/supabase/server";
 import { notFound } from "next/navigation";
 import { DownloadView } from "@/components/download-view";
-import Link from "next/link";
 import { cleanupExpiredOrLimitReachedFile } from "@/lib/cleanup";
+import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
 
 export default async function DownloadPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -52,17 +53,11 @@ export default async function DownloadPage({ params }: { params: Promise<{ id: s
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-       <header className="py-6 text-center border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-10">
-          <Link href="/" className="inline-flex items-center justify-center gap-2 font-bold text-xl text-foreground hover:opacity-80 transition-opacity">
-             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground shadow-sm">
-               D
-             </div>
-             <span>Drop</span>
-          </Link>
-       </header>
+       <SiteHeader simple={true} />
        <main className="flex-1 flex items-center justify-center p-4">
           <DownloadView file={file} />
        </main>
+       <SiteFooter simple={true} />
     </div>
   );
 }

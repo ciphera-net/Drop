@@ -222,5 +222,83 @@ export class EncryptionService {
           ["encrypt", "decrypt"]
       );
   }
+
+  // --- RSA (Asymmetric) Support for File Requests ---
+
+  static async generateKeyPair(): Promise<CryptoKeyPair> {
+    return window.crypto.subtle.generateKey(
+      {
+        name: "RSA-OAEP",
+        modulusLength: 2048,
+        publicExponent: new Uint8Array([1, 0, 1]),
+        hash: "SHA-256",
+      },
+      true,
+      ["encrypt", "decrypt", "wrapKey", "unwrapKey"]
+    );
+  }
+
+  static async exportPublicKey(key: CryptoKey): Promise<string> {
+    const exported = await window.crypto.subtle.exportKey("jwk", key);
+    return JSON.stringify(exported);
+  }
+
+  static async importPublicKey(jwkStr: string): Promise<CryptoKey> {
+    const jwk = JSON.parse(jwkStr);
+    return window.crypto.subtle.importKey(
+      "jwk",
+      jwk,
+      {
+        name: "RSA-OAEP",
+        hash: "SHA-256",
+      },
+      true,
+      ["encrypt", "wrapKey"]
+    );
+  }
+
+  static async exportPrivateKey(key: CryptoKey): Promise<string> {
+      const exported = await window.crypto.subtle.exportKey("jwk", key);
+      return JSON.stringify(exported);
+  }
+
+  static async importPrivateKey(jwkStr: string): Promise<CryptoKey> {
+      const jwk = JSON.parse(jwkStr);
+      return window.crypto.subtle.importKey(
+          "jwk",
+          jwk,
+          {
+              name: "RSA-OAEP",
+              hash: "SHA-256",
+          },
+          true,
+          ["decrypt", "unwrapKey"]
+      );
+  }
+
+  // Wrap an AES key with an RSA Public Key
+  static async wrapKeyWithPublicKey(keyToWrap: CryptoKey, publicKey: CryptoKey): Promise<string> {
+      const wrapped = await window.crypto.subtle.wrapKey(
+          "raw",
+          keyToWrap,
+          publicKey,
+          { name: "RSA-OAEP" }
+      );
+      return this.arrayBufferToBase64(wrapped);
+  }
+
+  // Unwrap an AES key with an RSA Private Key
+  static async unwrapKeyWithPrivateKey(wrappedKeyBase64: string, privateKey: CryptoKey): Promise<CryptoKey> {
+      const wrappedBuffer = this.base64ToArrayBuffer(wrappedKeyBase64);
+      return window.crypto.subtle.unwrapKey(
+          "raw",
+          wrappedBuffer,
+          privateKey,
+          { name: "RSA-OAEP" },
+          { name: "AES-GCM", length: 256 },
+          true,
+          ["encrypt", "decrypt"]
+      );
+  }
 }
 

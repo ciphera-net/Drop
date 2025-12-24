@@ -1,0 +1,261 @@
+"use client";
+
+import { createClient } from "@/utils/supabase/client";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { Button } from "./ui/button";
+import { Copy, Trash, FolderOpen, ArrowRight } from "@phosphor-icons/react";
+import Link from "next/link";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "./ui/dialog";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { EncryptionService } from "@/lib/encryption";
+import { FileIconDisplay } from "./file-icon-display";
+
+export function RequestList({ requests: initialRequests }: { requests: any[] }) {
+  const supabase = createClient();
+  const router = useRouter();
+  const [requests, setRequests] = useState(initialRequests);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  
+  // Inbox State
+  const [selectedRequest, setSelectedRequest] = useState<any | null>(null);
+  const [inboxPassword, setInboxPassword] = useState("");
+  const [unlocking, setUnlocking] = useState(false);
+  const [unlockedFiles, setUnlockedFiles] = useState<any[] | null>(null);
+  const [unlockedKey, setUnlockedKey] = useState<CryptoKey | null>(null); // The private key
+
+  useEffect(() => {
+    setRequests(initialRequests);
+  }, [initialRequests]);
+
+  const handleDelete = async (id: string) => {
+      setDeleting(id);
+      try {
+          // Cascade delete should handle uploads, but let's be safe if we didn't set it up
+          // Actually, we should probably delete the uploads first or rely on Postgres
+          // For now, simple delete
+          const { error } = await supabase.from('file_requests').delete().eq('id', id);
+          if (error) throw error;
+          
+          toast.success("Request deleted");
+          router.refresh();
+      } catch (e) {
+          console.error(e);
+          toast.error("Failed to delete request");
+      } finally {
+          setDeleting(null);
+      }
+  };
+
+  const copyLink = (id: string) => {
+      const url = `${window.location.origin}/r/${id}`;
+      navigator.clipboard.writeText(url);
+      toast.success("Request link copied!");
+  };
+
+  const handleOpenInbox = (req: any) => {
+      setSelectedRequest(req);
+      setInboxPassword("");
+      setUnlockedFiles(null);
+      setUnlockedKey(null);
+  };
+
+  const unlockInbox = async () => {
+      if (!selectedRequest || !inboxPassword) return;
+      setUnlocking(true);
+      try {
+          // 1. Derive Key from Password
+          const wrappingKey = await EncryptionService.deriveKeyFromPassword(inboxPassword, selectedRequest.salt);
+          
+          // 2. Decrypt Private Key
+          const privateKeyJwkStr = await EncryptionService.decryptText(
+              selectedRequest.encrypted_private_key,
+              selectedRequest.encrypted_private_key_iv,
+              wrappingKey
+          );
+
+          // 3. Import Private Key
+          const privateKey = await EncryptionService.importPrivateKey(privateKeyJwkStr);
+          setUnlockedKey(privateKey);
+
+          // 4. Fetch Files
+          const { data: uploads, error } = await supabase
+            .from('uploads')
+            .select('*')
+            .eq('request_id', selectedRequest.id)
+            .eq('file_deleted', false);
+          
+          if (error) throw error;
+
+          // 5. Decrypt File Metadata (Filename)
+          // To decrypt filename, we need the AES key.
+          // The AES key is encrypted with the Public Key.
+          // So we need to decrypt the AES key with our Private Key first.
+          
+          const decryptedFiles = await Promise.all(uploads.map(async (file: any) => {
+              try {
+                  // The AES Key is stored in `encrypted_key` (reused column)
+                  // It was wrapped using RSA-OAEP
+                  if (!file.encrypted_key) return { ...file, name: "Unknown (No Key)" };
+
+                  const aesKey = await EncryptionService.unwrapKeyWithPrivateKey(
+                      file.encrypted_key,
+                      privateKey
+                  );
+
+                  // Now decrypt metadata
+                  const name = await EncryptionService.decryptText(
+                      file.filename_encrypted,
+                      file.filename_iv,
+                      aesKey
+                  );
+                  
+                  return { ...file, name, aesKey };
+              } catch (e) {
+                  console.error("Failed to decrypt file metadata", e);
+                  return { ...file, name: "Decryption Failed" };
+              }
+          }));
+
+          setUnlockedFiles(decryptedFiles);
+
+      } catch (e) {
+          console.error(e);
+          toast.error("Incorrect password or corruption.");
+      } finally {
+          setUnlocking(false);
+      }
+  };
+
+  const downloadFile = async (file: any) => {
+      if (!file.aesKey) return;
+      
+      const toastId = toast.loading("Downloading & Decrypting...");
+      try {
+          const { data, error } = await supabase.storage.from('drop-files').download(`${file.id}`);
+          if (error) throw error;
+
+          // Decrypt
+          // We need to read the IV from the blob? 
+          // Wait, uploadEncryptedFile uses a specific format.
+          // "CHUNKED_PARALLEL_V1" iv means it's chunked.
+          // Or is it?
+          // If the file was uploaded via the "Request" page, we need to ensure we used a format compatible here.
+          // If we use `uploadEncryptedFile` in the Request Page, it uses the chunked uploader.
+          
+          // Let's assume for V1 of this feature, we implement the Request Upload to standard single-blob if small, or reuse the chunk logic.
+          // If we reuse `uploadEncryptedFile`, we need to use the `DownloadView` logic for decryption.
+          // `DownloadView` handles chunked downloads.
+          
+          // Re-implementing full download logic here is complex.
+          // EASIER: Generate a temporary link to `/d/<id>#<key>` locally?
+          // No, `/d/<id>` expects the key in the hash. 
+          // YES! We have the `aesKey`. We can export it to base64 and open `/d/<id>#<exportedKey>`!
+          // This reuses the existing `DownloadView` component which already handles chunked decryption, streaming, etc.
+          
+          const keyBase64 = await EncryptionService.exportKey(file.aesKey);
+          window.open(`/d/${file.id}#${keyBase64}`, '_blank');
+          toast.dismiss(toastId);
+
+      } catch (e) {
+          console.error(e);
+          toast.error("Download failed");
+      }
+  };
+
+  if (requests.length === 0) {
+      return (
+          <div className="text-center py-12 text-muted-foreground bg-card rounded-2xl border border-dashed">
+             <p>No active file requests.</p>
+             <p className="text-sm mt-2">Create a request to receive files securely.</p>
+          </div>
+      );
+  }
+
+  return (
+    <div className="space-y-4">
+        {requests.map(req => (
+            <div key={req.id} className="bg-card p-4 rounded-xl border flex flex-col md:flex-row md:items-center justify-between shadow-sm gap-4">
+                <div>
+                    <h3 className="font-semibold text-foreground flex items-center gap-2">
+                        {req.name}
+                        <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase tracking-wider font-bold">
+                            {req.status}
+                        </span>
+                    </h3>
+                    {req.description && <p className="text-sm text-muted-foreground">{req.description}</p>}
+                    <p className="text-xs text-muted-foreground mt-1 font-mono">ID: {req.id.slice(0, 8)}...</p>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => copyLink(req.id)}>
+                        <Copy className="mr-2" /> Copy Link
+                    </Button>
+                    <Button variant="default" size="sm" onClick={() => handleOpenInbox(req)}>
+                        <FolderOpen className="mr-2" /> Inbox
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(req.id)} disabled={deleting === req.id}>
+                        <Trash className="text-muted-foreground hover:text-destructive" />
+                    </Button>
+                </div>
+            </div>
+        ))}
+
+        <Dialog open={!!selectedRequest} onOpenChange={(o) => !o && setSelectedRequest(null)}>
+            <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle>{selectedRequest?.name} - Inbox</DialogTitle>
+                    <DialogDescription>
+                        Enter your Access Password to decrypt and view the received files.
+                    </DialogDescription>
+                </DialogHeader>
+                
+                {!unlockedFiles ? (
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label>Access Password</Label>
+                            <Input 
+                                type="password" 
+                                value={inboxPassword} 
+                                onChange={e => setInboxPassword(e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && unlockInbox()}
+                            />
+                        </div>
+                        <Button className="w-full" onClick={unlockInbox} disabled={unlocking || !inboxPassword}>
+                            {unlocking ? "Decrypting Keys..." : "Unlock Inbox"}
+                        </Button>
+                    </div>
+                ) : (
+                    <div className="py-4 space-y-4">
+                        <div className="flex justify-between items-center pb-2 border-b">
+                            <h4 className="font-semibold">{unlockedFiles.length} Files Received</h4>
+                        </div>
+                        <div className="max-h-[300px] overflow-y-auto space-y-2">
+                            {unlockedFiles.length === 0 && (
+                                <p className="text-center text-muted-foreground py-8">No files received yet.</p>
+                            )}
+                            {unlockedFiles.map(file => (
+                                <div key={file.id} className="flex items-center justify-between p-3 bg-secondary/20 rounded-lg border">
+                                    <div className="flex items-center gap-3 overflow-hidden">
+                                        <FileIconDisplay category={file.file_type} className="w-5 h-5 text-primary" />
+                                        <div className="min-w-0">
+                                            <p className="text-sm font-medium truncate">{file.name}</p>
+                                            <p className="text-xs text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB • {new Date(file.created_at).toLocaleDateString()}</p>
+                                        </div>
+                                    </div>
+                                    <Button size="sm" variant="secondary" onClick={() => downloadFile(file)}>
+                                        <ArrowRight className="mr-2" /> Open
+                                    </Button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </DialogContent>
+        </Dialog>
+    </div>
+  );
+}
+

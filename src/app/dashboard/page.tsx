@@ -1,11 +1,9 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
-import { DashboardList } from "@/components/dashboard-list";
+import { DashboardView } from "@/components/dashboard-view";
 import { UserMenu } from "@/components/user-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
 import Link from "next/link";
-import { ArrowLeft } from "@phosphor-icons/react/dist/ssr";
-import { Button } from "@/components/ui/button";
 import { cleanupExpiredOrLimitReachedFile } from "@/lib/cleanup";
 
 export default async function DashboardPage() {
@@ -41,6 +39,13 @@ export default async function DashboardPage() {
       }
   }
 
+  // Fetch Requests
+  const { data: requests } = await supabase
+    .from('file_requests')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
+
   return (
     <div className="min-h-screen bg-background">
        <header className="bg-background/80 backdrop-blur-sm border-b border-border py-4 px-4 md:px-8 sticky top-0 z-10">
@@ -60,21 +65,8 @@ export default async function DashboardPage() {
           </div>
        </header>
        <main className="max-w-4xl mx-auto p-4 py-8 md:p-8">
-          <div className="mb-6 flex justify-between items-end">
-              <div>
-                 <h2 className="text-2xl font-bold text-foreground">Active Transfers</h2>
-                 <p className="text-muted-foreground text-sm mt-1">Manage your active file shares.</p>
-              </div>
-              <Link href="/">
-                 <Button variant="default" size="sm" className="shadow-sm">
-                    New Transfer
-                 </Button>
-              </Link>
-          </div>
-          <DashboardList uploads={uploads || []} />
+          <DashboardView uploads={uploads || []} requests={requests || []} />
        </main>
     </div>
   )
 }
-
-

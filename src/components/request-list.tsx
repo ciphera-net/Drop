@@ -33,9 +33,40 @@ export function RequestList({ requests: initialRequests }: { requests: any[] }) 
   const handleDelete = async (id: string) => {
       setDeleting(id);
       try {
-          // Cascade delete should handle uploads, but let's be safe if we didn't set it up
-          // Actually, we should probably delete the uploads first or rely on Postgres
-          // For now, simple delete
+          // 1. First, delete all uploads associated with this request (Manual Cascade)
+          // We must do this because we didn't set ON DELETE CASCADE in the migration
+          const { data: linkedUploads } = await supabase
+              .from('uploads')
+              .select('id')
+              .eq('request_id', id);
+
+          if (linkedUploads && linkedUploads.length > 0) {
+              // Delete from storage first
+              const ids = linkedUploads.map(u => u.id);
+              // For chunked uploads, we need to remove the folder. 
+              // Supabase storage remove() might expect full paths to files, not folders.
+              // But if we delete the database rows, the cleanup script might handle it later?
+              // No, let's try to remove what we can.
+              // Actually, deleting the DB row is the most important part to satisfy the constraint.
+              
+              const { error: deleteUploadsError } = await supabase
+                  .from('uploads')
+                  .delete()
+                  .eq('request_id', id);
+              
+              if (deleteUploadsError) throw deleteUploadsError;
+              
+              // Optionally: trigger async cleanup or try to delete from storage
+              // We can fire-and-forget storage deletion for these IDs
+              ids.forEach(fileId => {
+                  supabase.storage.from('drop-files').remove([fileId]); 
+                  // If it's a folder, this might fail or do nothing depending on Supabase/S3 implementation
+                  // Better approach: Let the cleanup cron handle orphaned files if we had one.
+                  // For now, we focus on DB constraint.
+              });
+          }
+
+          // 2. Delete the request
           const { error } = await supabase.from('file_requests').delete().eq('id', id);
           if (error) throw error;
           

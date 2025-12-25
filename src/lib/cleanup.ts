@@ -66,3 +66,63 @@ export async function cleanupExpiredOrLimitReachedFile(fileId: string) {
     }
   }
 }
+
+export async function cleanupAllExpiredFiles() {
+    const supabase = createAdminClient();
+    const now = new Date().toISOString();
+
+    // Find all files that are expired OR (limit reached AND not yet marked deleted)
+    // Note: It's hard to query "download_count >= download_limit" directly in Supabase simple query syntax without RPC.
+    // So we fetch files that are either expired OR have a limit set.
+    
+    // 1. Fetch Expired Files
+    const { data: expiredFiles, error: expiredError } = await supabase
+        .from('uploads')
+        .select('id')
+        .lt('expiration_time', now)
+        .eq('file_deleted', false); // Only active ones need logical deletion first
+
+    if (expiredError) {
+        console.error("Cleanup: Failed to fetch expired files", expiredError);
+        return { error: expiredError };
+    }
+
+    // 2. Fetch Files with Limits (Potentially reached)
+    // We can't easily do `where download_count >= download_limit` in standard PostgREST without a computed column or RPC.
+    // For now, let's just iterate over active files that HAVE a limit.
+    const { data: limitedFiles, error: limitedError } = await supabase
+        .from('uploads')
+        .select('id')
+        .not('download_limit', 'is', null)
+        .eq('file_deleted', false);
+
+    if (limitedError) {
+         console.error("Cleanup: Failed to fetch limited files", limitedError);
+    }
+
+    // Combine lists (Set to avoid duplicates)
+    const filesToCheck = new Set<string>();
+    expiredFiles?.forEach(f => filesToCheck.add(f.id));
+    limitedFiles?.forEach(f => filesToCheck.add(f.id));
+
+    // Also fetch ALREADY deleted files that might still have storage (Optional, but good for hygiene)
+    // For this MVP cron, let's focus on logic deletion + immediate storage cleanup via the single file function.
+
+    const results = {
+        processed: 0,
+        errors: 0
+    };
+
+    // Process sequentially to avoid overwhelming DB/Storage
+    for (const fileId of filesToCheck) {
+        try {
+            await cleanupExpiredOrLimitReachedFile(fileId);
+            results.processed++;
+        } catch (e) {
+            console.error(`Cleanup: Error processing ${fileId}`, e);
+            results.errors++;
+        }
+    }
+
+    return results;
+}

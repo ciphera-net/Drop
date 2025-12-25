@@ -2,9 +2,22 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { sendUploadNotification } from '@/lib/email';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { createClient } from '@/utils/supabase/server';
+import { requireVerifiedUser, UserNotVerifiedError } from '@/lib/auth-check';
 
 export async function POST(request: Request) {
   try {
+    // Check verification status if logged in
+    const supabaseClient = await createClient();
+    try {
+      await requireVerifiedUser(supabaseClient);
+    } catch (e) {
+      if (e instanceof UserNotVerifiedError) {
+        return NextResponse.json({ error: 'User must be verified to perform this action.' }, { status: 403 });
+      }
+      throw e;
+    }
+
     // Rate Limit Check
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown';
     const { allowed } = await checkRateLimit(ip, 'notify-upload', 5, 3600); // 5 requests per hour

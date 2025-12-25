@@ -1,9 +1,22 @@
 import { NextResponse } from 'next/server';
 import { sendShareEmail } from '@/lib/email';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { createClient } from '@/utils/supabase/server';
+import { requireVerifiedUser, UserNotVerifiedError } from '@/lib/auth-check';
 
 export async function POST(request: Request) {
   try {
+    // Check verification status if logged in
+    const supabase = await createClient();
+    try {
+      await requireVerifiedUser(supabase);
+    } catch (e) {
+      if (e instanceof UserNotVerifiedError) {
+        return NextResponse.json({ error: 'User must be verified to send emails.' }, { status: 403 });
+      }
+      throw e;
+    }
+
     // Rate Limit Check
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown';
     const { allowed } = await checkRateLimit(ip, 'send-email', 10, 3600); // 10 requests per hour

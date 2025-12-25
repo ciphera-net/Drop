@@ -8,10 +8,8 @@ if (!globalThis.crypto) {
 }
 
 if (typeof window !== 'undefined' && !window.crypto) {
-    Object.defineProperty(window, 'crypto', {
-        value: globalThis.crypto,
-        writable: true
-    });
+    // @ts-ignore
+    window.crypto = globalThis.crypto;
 }
 
 // Polyfill TextEncoder/TextDecoder if missing
@@ -20,6 +18,18 @@ if (typeof globalThis.TextEncoder === 'undefined') {
     globalThis.TextEncoder = TextEncoder;
     // @ts-ignore
     globalThis.TextDecoder = TextDecoder;
+}
+
+// Ensure ArrayBuffer and Uint8Array are consistent globally
+// This fixes issues where "instanceof ArrayBuffer" checks fail inside node:crypto
+// when objects are created in JSDOM context
+const { webcrypto } = require('node:crypto');
+if (webcrypto) {
+   Object.defineProperty(globalThis, 'crypto', {
+       value: webcrypto,
+       writable: true,
+       configurable: true,
+   });
 }
 
 // Polyfill Blob/File methods if missing in JSDOM

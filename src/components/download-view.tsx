@@ -5,7 +5,7 @@ import { createClient } from "@/utils/supabase/client";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "./ui/card";
 import { Progress } from "./ui/progress";
-import { LockKey, DownloadSimple, WarningCircle, NotePencil, Fire, Fingerprint, CaretDown, CaretUp } from "@phosphor-icons/react";
+import { LockKey, DownloadSimple, WarningCircle, NotePencil, Fire, Fingerprint, CaretDown, CaretUp, Timer } from "@phosphor-icons/react";
 import { FileIconDisplay } from "@/components/file-icon-display";
 import { Input } from "./ui/input";
 import { toast } from "sonner";
@@ -21,6 +21,39 @@ export function DownloadView({ file }: { file: FileUpload }) {
   const [password, setPassword] = useState("");
   const [showLimitReachedMessage, setShowLimitReachedMessage] = useState(false);
   const [showHash, setShowHash] = useState(false);
+  const [timeLeft, setTimeLeft] = useState<string>("");
+  const [isExpiredLocal, setIsExpiredLocal] = useState(false);
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const expirationDate = new Date(file.expiration_time);
+      const now = new Date();
+      const difference = expirationDate.getTime() - now.getTime();
+
+      if (difference <= 0) {
+        setIsExpiredLocal(true);
+        setTimeLeft("Expired");
+        return;
+      }
+
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
+      const minutes = Math.floor((difference / 1000 / 60) % 60);
+      const seconds = Math.floor((difference / 1000) % 60);
+
+      let formatted = "";
+      if (days > 0) formatted += `${days}d `;
+      if (hours > 0 || days > 0) formatted += `${hours}h `;
+      formatted += `${minutes}m ${seconds}s`;
+
+      setTimeLeft(formatted);
+    };
+
+    calculateTimeLeft();
+    const timer = setInterval(calculateTimeLeft, 1000);
+
+    return () => clearInterval(timer);
+  }, [file.expiration_time]);
 
   const attemptDecryptMetadata = useCallback(async (base64Key: string) => {
      try {
@@ -270,12 +303,35 @@ export function DownloadView({ file }: { file: FileUpload }) {
         return new Blob(decryptedChunks);
   }
 
+  if (isExpiredLocal) {
+    return (
+        <Card className="w-full max-w-md shadow-xl animate-in fade-in duration-300">
+             <CardContent className="pt-6 text-center">
+                 <div className="mx-auto bg-muted p-3 rounded-full w-16 h-16 flex items-center justify-center mb-4">
+                    <Timer className="w-8 h-8 text-muted-foreground" weight="duotone" />
+                 </div>
+                 <h1 className="text-2xl font-bold text-foreground mb-2">Time Expired</h1>
+                 <p className="text-muted-foreground mb-6">This file has expired and is no longer available.</p>
+                 <Button variant="outline" onClick={() => window.location.reload()}>
+                    Refresh Page
+                 </Button>
+             </CardContent>
+        </Card>
+    )
+  }
+
   if (!key) {
       return (
           <Card className="w-full max-w-md shadow-xl">
              <CardHeader className="text-center">
                  <div className="mx-auto bg-orange-100 dark:bg-orange-900/20 p-3 rounded-full mb-2">
                      <LockKey className="w-8 h-8 text-orange-600 dark:text-orange-400" weight="fill" />
+                 </div>
+                 <div className="flex items-center justify-center gap-2 mb-1">
+                    <span className="text-xs font-medium px-2 py-1 rounded-full bg-secondary text-secondary-foreground flex items-center gap-1">
+                        <Timer className="w-3 h-3" weight="bold" />
+                        {timeLeft}
+                    </span>
                  </div>
                  <CardTitle>{file.is_password_protected ? "Password Protected" : "Encrypted File"}</CardTitle>
                  <CardDescription>
@@ -327,6 +383,12 @@ export function DownloadView({ file }: { file: FileUpload }) {
               <CardTitle className="flex items-center justify-center gap-2">
                   Ready to Download
               </CardTitle>
+              <div className="flex justify-center mt-2">
+                <div className="flex items-center gap-2 text-xs font-medium px-2 py-1 rounded-full bg-secondary text-secondary-foreground">
+                    <Timer className="w-3.5 h-3.5" weight="bold" />
+                    <span>Expires in: <span className="font-mono">{timeLeft}</span></span>
+                </div>
+              </div>
           </CardHeader>
           <CardContent className="space-y-6">
               {file.download_limit === 1 && !showLimitReachedMessage && (

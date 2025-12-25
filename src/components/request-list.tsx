@@ -14,6 +14,7 @@ import { EncryptionService } from "@/lib/encryption";
 import { FileIconDisplay } from "./file-icon-display";
 import { cn } from "@/lib/utils";
 import { FileRequest, DecryptedFile, FileUpload } from "@/types";
+import { deleteFileFromStorage } from "@/utils/file-helpers";
 
 export function RequestList({ requests: initialRequests }: { requests: FileRequest[] }) {
   const supabase = createClient();
@@ -60,11 +61,8 @@ export function RequestList({ requests: initialRequests }: { requests: FileReque
               
               // Optionally: trigger async cleanup or try to delete from storage
               // We can fire-and-forget storage deletion for these IDs
-              ids.forEach(fileId => {
-                  supabase.storage.from('drop-files').remove([fileId]); 
-                  // If it's a folder, this might fail or do nothing depending on Supabase/S3 implementation
-                  // Better approach: Let the cleanup cron handle orphaned files if we had one.
-                  // For now, we focus on DB constraint.
+              ids.forEach(async (fileId) => {
+                  await deleteFileFromStorage(supabase, fileId);
               });
           }
 

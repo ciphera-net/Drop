@@ -1,4 +1,5 @@
 import { createSHA256 } from 'hash-wasm';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 export type FileCategory = 'image' | 'video' | 'audio' | 'pdf' | 'archive' | 'code' | 'text' | 'other';
 
@@ -51,3 +52,30 @@ export function getFileCategory(file: File): FileCategory {
   return 'other';
 }
 
+export async function deleteFileFromStorage(supabase: SupabaseClient, fileId: string) {
+  // 1. Try to remove as a single file (Legacy/Fallback)
+  await supabase.storage.from('drop-files').remove([fileId]);
+
+  // 2. List files inside the "folder" named fileId (Chunked)
+  const { data: chunks, error: listError } = await supabase.storage
+      .from('drop-files')
+      .list(fileId, {
+          limit: 1000, 
+      });
+
+  if (listError) {
+      console.error(`Failed to list chunks for ${fileId}`, listError);
+      return;
+  }
+
+  if (chunks && chunks.length > 0) {
+      const pathsToRemove = chunks.map(chunk => `${fileId}/${chunk.name}`);
+      const { error: chunkRemoveError } = await supabase.storage
+          .from('drop-files')
+          .remove(pathsToRemove);
+      
+      if (chunkRemoveError) {
+           console.error(`Failed to remove chunks for ${fileId}`, chunkRemoveError);
+      }
+  }
+}

@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { FileIconDisplay } from "@/components/file-icon-display";
 import { FileUpload } from "@/types";
+import { deleteFileFromStorage } from "@/utils/file-helpers";
 
 function FileCountdown({ expiresAt }: { expiresAt: string }) {
   const [timeLeft, setTimeLeft] = useState<string>("");
@@ -96,8 +97,9 @@ export function DashboardList({ uploads }: { uploads: FileUpload[] }) {
       setDeleting(id);
       try {
         await supabase.from('uploads').delete().eq('id', id);
-        // We try to remove from storage too just in case, it's idempotent
-        await supabase.storage.from('drop-files').remove([id]);
+        // Remove from storage using helper that handles chunks
+        await deleteFileFromStorage(supabase, id);
+        
         toast.success("File deleted successfully");
         router.refresh();
       } catch (e) {

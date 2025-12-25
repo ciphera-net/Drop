@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { LockKey, Envelope, ArrowLeft } from "@phosphor-icons/react";
+import { toast } from "sonner";
 import Link from "next/link";
 
 export default function LoginPage() {
@@ -35,8 +36,11 @@ export default function LoginPage() {
         if (error) throw error;
         
         if (data.session) {
-          router.push("/");
-          router.refresh();
+          // Prevent auto-login: Sign out immediately
+          await supabase.auth.signOut();
+          setIsSignUp(false); // Switch to Sign In mode
+          toast.success("Account created! Please sign in.");
+          setPassword(""); // Clear password
         } else {
           setMessage("Check your email for the confirmation link.");
         }

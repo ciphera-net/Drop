@@ -55,6 +55,12 @@ export function OtpVerificationModal() {
   };
 
   useEffect(() => {
+    // Don't show modal on login page
+    if (pathname === '/login') {
+        setIsOpen(false);
+        return;
+    }
+
     const checkVerificationStatus = async () => {
         try {
           const { data: { user } } = await supabase.auth.getUser();

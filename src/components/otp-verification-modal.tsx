@@ -71,7 +71,7 @@ export function OtpVerificationModal() {
     
           const { data: verification, error } = await supabase
             .from("user_verifications")
-            .select("is_verified")
+            .select("is_verified, otp_expires_at")
             .eq("user_id", user.id)
             .single();
     
@@ -83,10 +83,19 @@ export function OtpVerificationModal() {
     
           // If unverified, open modal.
           setIsOpen(true);
+
+          const now = new Date();
+          const expiresAt = verification?.otp_expires_at ? new Date(verification.otp_expires_at) : null;
+          const hasValidOtp = expiresAt && expiresAt.getTime() > now.getTime();
           
-          // Auto send if not sent yet and we just opened it
-          if (!hasSentCode && !sendingRef.current) {
+          // Auto send if not sent yet and we just opened it, and no valid OTP exists
+          if (!hasSentCode && !sendingRef.current && !hasValidOtp) {
              await sendOtp();
+          } else if (hasValidOtp && !hasSentCode) {
+            // If we have a valid OTP but didn't just send it in this session, 
+            // mark it as "sent" so we don't auto-send again, 
+            // but let the user resend if they need to.
+             setHasSentCode(true);
           }
     
         } catch (e) {

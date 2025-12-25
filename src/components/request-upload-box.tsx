@@ -15,10 +15,11 @@ import { uploadEncryptedFile } from "@/utils/upload-manager";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { cn } from "@/lib/utils";
+import { FileRequest } from "@/types";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024; // 5GB
 
-export function RequestUploadBox({ request }: { request: any }) {
+export function RequestUploadBox({ request }: { request: FileRequest }) {
   const [file, setFile] = useState<File | null>(null);
   const [zipping, setZipping] = useState(false);
   const [uploading, setUploading] = useState(false);

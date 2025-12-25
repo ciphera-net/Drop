@@ -22,8 +22,6 @@ export async function cleanupExpiredOrLimitReachedFile(fileId: string) {
   const isLimitReached = file.download_limit !== null && file.download_count >= file.download_limit;
 
   if (isExpired || isLimitReached || file.file_deleted) {
-    console.log(`Cleaning up file ${fileId} (Expired: ${isExpired}, Limit Reached: ${isLimitReached}, Deleted Flag: ${file.file_deleted})`);
-    
     // 2. Remove from Storage
     
     // Strategy A: Try to remove as a single file (Legacy)
@@ -54,8 +52,6 @@ export async function cleanupExpiredOrLimitReachedFile(fileId: string) {
         
         if (chunkRemoveError) {
             console.error(`Cleanup: Failed to remove chunks for ${fileId}`, chunkRemoveError);
-        } else {
-            console.log(`Cleanup: Removed ${chunks.length} chunks for ${fileId}`);
         }
     }
 

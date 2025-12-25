@@ -49,10 +49,10 @@ export async function POST(req: NextRequest) {
             
             // Fire and forget - don't block the download response
             sendDownloadNotification(uploadData.sender_email, id, ip, userAgent)
-                .catch(err => console.error("Failed to send notification email:", err));
+                .catch(err => console.warn("Failed to send notification email:", err));
         }
     } catch (e) {
-        console.error("Error checking notification prefs:", e);
+        console.warn("Error checking notification prefs:", e);
         // Don't fail the request if notification fails
     }
 
@@ -62,8 +62,9 @@ export async function POST(req: NextRequest) {
         limitReached: limit_reached 
     });
 
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(e);
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    const message = e instanceof Error ? e.message : "Unknown error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

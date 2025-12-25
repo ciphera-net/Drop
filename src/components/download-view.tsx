@@ -9,8 +9,9 @@ import { LockKey, DownloadSimple, WarningCircle, NotePencil, Fire, Fingerprint, 
 import { FileIconDisplay } from "@/components/file-icon-display";
 import { Input } from "./ui/input";
 import { toast } from "sonner";
+import { FileUpload } from "@/types";
 
-export function DownloadView({ file }: { file: any }) {
+export function DownloadView({ file }: { file: FileUpload }) {
   const [key, setKey] = useState<CryptoKey | null>(null);
   const [decryptedName, setDecryptedName] = useState<string | null>(null);
   const [decryptedMessage, setDecryptedMessage] = useState<string | null>(null);
@@ -42,14 +43,14 @@ export function DownloadView({ file }: { file: any }) {
                 );
                 setDecryptedMessage(msg);
             } catch (e) {
-                console.error("Failed to decrypt message", e);
+                // console.error("Failed to decrypt message", e);
             }
         }
 
         setKey(k);
         setDecryptedName(name);
      } catch (e) {
-        console.error("Invalid key", e);
+        // console.error("Invalid key", e);
         toast.error("Decryption failed. The key might be invalid.");
      }
   }, [file]);
@@ -85,7 +86,7 @@ export function DownloadView({ file }: { file: any }) {
                 );
                 setDecryptedMessage(msg);
             } catch (e) {
-                console.error("Failed to decrypt message", e);
+                // console.error("Failed to decrypt message", e);
             }
         }
 

@@ -10,8 +10,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Request ID is required' }, { status: 400 });
     }
 
-    console.log(`[Notify] Sending email for Request ID: ${requestId}`);
-
     // Use Admin Client to bypass RLS and read notify_email
     const supabase = createAdminClient();
 
@@ -27,16 +25,12 @@ export async function POST(request: Request) {
     }
     
     if (!reqData) {
-         console.log("[Notify] Request not found");
          return NextResponse.json({ success: true }); // Silent fail
     }
 
     if (!reqData.notify_email) {
-        console.log("[Notify] No notification email configured for this request.");
         return NextResponse.json({ success: true });
     }
-
-    console.log(`[Notify] Sending to ${reqData.notify_email}`);
 
     const { data, error } = await sendUploadNotification(reqData.notify_email, reqData.name, fileName);
 
@@ -45,8 +39,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
     
-    console.log("[Notify] Email sent successfully:", data?.id);
-
     return NextResponse.json({ success: true, id: data?.id });
 
   } catch (error: any) {

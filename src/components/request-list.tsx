@@ -13,18 +13,19 @@ import { Label } from "./ui/label";
 import { EncryptionService } from "@/lib/encryption";
 import { FileIconDisplay } from "./file-icon-display";
 import { cn } from "@/lib/utils";
+import { FileRequest, DecryptedFile, FileUpload } from "@/types";
 
-export function RequestList({ requests: initialRequests }: { requests: any[] }) {
+export function RequestList({ requests: initialRequests }: { requests: FileRequest[] }) {
   const supabase = createClient();
   const router = useRouter();
-  const [requests, setRequests] = useState(initialRequests);
+  const [requests, setRequests] = useState<FileRequest[]>(initialRequests);
   const [deleting, setDeleting] = useState<string | null>(null);
   
   // Inbox State
-  const [selectedRequest, setSelectedRequest] = useState<any | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<FileRequest | null>(null);
   const [inboxPassword, setInboxPassword] = useState("");
   const [unlocking, setUnlocking] = useState(false);
-  const [unlockedFiles, setUnlockedFiles] = useState<any[] | null>(null);
+  const [unlockedFiles, setUnlockedFiles] = useState<DecryptedFile[] | null>(null);
   const [unlockedKey, setUnlockedKey] = useState<CryptoKey | null>(null); // The private key
 
   useEffect(() => {
@@ -87,7 +88,7 @@ export function RequestList({ requests: initialRequests }: { requests: any[] }) 
       toast.success("Request link copied!");
   };
 
-  const handleOpenInbox = (req: any) => {
+  const handleOpenInbox = (req: FileRequest) => {
       setSelectedRequest(req);
       setInboxPassword("");
       setUnlockedFiles(null);
@@ -126,11 +127,11 @@ export function RequestList({ requests: initialRequests }: { requests: any[] }) 
           // The AES key is encrypted with the Public Key.
           // So we need to decrypt the AES key with our Private Key first.
           
-          const decryptedFiles = await Promise.all(uploads.map(async (file: any) => {
+          const decryptedFiles = await Promise.all(uploads.map(async (file: FileUpload) => {
               try {
                   // The AES Key is stored in `encrypted_key` (reused column)
                   // It was wrapped using RSA-OAEP
-                  if (!file.encrypted_key) return { ...file, name: "Unknown (No Key)" };
+                  if (!file.encrypted_key) return { ...file, name: "Unknown (No Key)" } as DecryptedFile;
 
                   const aesKey = await EncryptionService.unwrapKeyWithPrivateKey(
                       file.encrypted_key,
@@ -144,10 +145,10 @@ export function RequestList({ requests: initialRequests }: { requests: any[] }) 
                       aesKey
                   );
                   
-                  return { ...file, name, aesKey };
+                  return { ...file, name, aesKey } as DecryptedFile;
               } catch (e) {
-                  console.error("Failed to decrypt file metadata", e);
-                  return { ...file, name: "Decryption Failed" };
+                  // console.error("Failed to decrypt file metadata", e);
+                  return { ...file, name: "Decryption Failed" } as DecryptedFile;
               }
           }));
 
@@ -161,7 +162,7 @@ export function RequestList({ requests: initialRequests }: { requests: any[] }) 
       }
   };
 
-  const downloadFile = async (file: any) => {
+  const downloadFile = async (file: DecryptedFile) => {
       if (!file.aesKey) return;
       
       const toastId = toast.loading("Preparing secure download...");

@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { FileIconDisplay } from "@/components/file-icon-display";
+import { FileUpload } from "@/types";
 
 function FileCountdown({ expiresAt }: { expiresAt: string }) {
   const [timeLeft, setTimeLeft] = useState<string>("");
@@ -56,11 +57,11 @@ function FileCountdown({ expiresAt }: { expiresAt: string }) {
   );
 }
 
-export function DashboardList({ uploads }: { uploads: any[] }) {
+export function DashboardList({ uploads }: { uploads: FileUpload[] }) {
   const supabase = createClient();
   const router = useRouter();
   const [deleting, setDeleting] = useState<string | null>(null);
-  const [files, setFiles] = useState(uploads);
+  const [files, setFiles] = useState<FileUpload[]>(uploads);
 
   useEffect(() => {
     setFiles(uploads);
@@ -76,7 +77,7 @@ export function DashboardList({ uploads }: { uploads: any[] }) {
           schema: 'public',
           table: 'uploads',
         },
-        (payload) => {
+        (payload: any) => {
           setFiles((currentFiles) =>
             currentFiles.map((file) =>
               file.id === payload.new.id ? { ...file, ...payload.new } : file
@@ -100,7 +101,7 @@ export function DashboardList({ uploads }: { uploads: any[] }) {
         toast.success("File deleted successfully");
         router.refresh();
       } catch (e) {
-          console.error(e);
+          // console.error(e);
           toast.error("Failed to delete file");
       } finally {
           setDeleting(null);

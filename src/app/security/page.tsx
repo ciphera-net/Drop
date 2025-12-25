@@ -196,7 +196,11 @@ export default async function SecurityPage() {
                     <ul className="space-y-2 text-muted-foreground text-sm">
                          <li className="flex items-start gap-2">
                             <CheckCircle weight="fill" className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
-                            <span><strong>TLS 1.2+ / HTTPS:</strong> All data in transit is encrypted using standard transport layer security.</span>
+                            <span>
+                                <strong>TLS 1.3 / HTTPS:</strong> We score an 
+                                <a href="https://www.ssllabs.com/ssltest/analyze.html?d=drop.ciphera.net" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline mx-1 font-bold">A+ on SSL Labs</a>.
+                                All data in transit is encrypted using standard transport layer security.
+                            </span>
                         </li>
                         <li className="flex items-start gap-2">
                             <CheckCircle weight="fill" className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />

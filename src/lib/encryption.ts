@@ -42,10 +42,10 @@ export class EncryptionService {
     const encryptedBuffer = await window.crypto.subtle.encrypt(
       {
         name: this.ALGORITHM,
-        iv: iv as any,
+        iv: new Uint8Array(iv),
       },
       key,
-      arrayBuffer
+      new Uint8Array(arrayBuffer)
     );
 
     return {
@@ -61,10 +61,10 @@ export class EncryptionService {
     const decryptedBuffer = await window.crypto.subtle.decrypt(
       {
         name: this.ALGORITHM,
-        iv: iv as any,
+        iv: new Uint8Array(iv),
       },
       key,
-      arrayBuffer
+      new Uint8Array(arrayBuffer)
     );
 
     return new Blob([decryptedBuffer]);
@@ -109,9 +109,9 @@ export class EncryptionService {
     const iv = window.crypto.getRandomValues(new Uint8Array(12));
     const encoded = new TextEncoder().encode(text);
     const encryptedBuffer = await window.crypto.subtle.encrypt(
-      { name: this.ALGORITHM, iv: iv as any },
+      { name: this.ALGORITHM, iv: new Uint8Array(iv) },
       key,
-      encoded
+      new Uint8Array(encoded)
     );
     return {
       encrypted: this.arrayBufferToBase64(encryptedBuffer),
@@ -122,12 +122,12 @@ export class EncryptionService {
   static async decryptText(encryptedBase64: string, ivBase64: string, key: CryptoKey): Promise<string> {
     const encrypted = this.base64ToArrayBuffer(encryptedBase64);
     const iv = this.base64ToIv(ivBase64);
-    const decryptedBuffer = await window.crypto.subtle.decrypt(
-      { name: this.ALGORITHM, iv: iv as any },
+    const encryptedBuffer = await window.crypto.subtle.decrypt(
+      { name: this.ALGORITHM, iv: new Uint8Array(iv) },
       key,
-      encrypted
+      new Uint8Array(encrypted)
     );
-    return new TextDecoder().decode(decryptedBuffer);
+    return new TextDecoder().decode(encryptedBuffer);
   }
 
   // Derive key from password using PBKDF2

@@ -83,10 +83,11 @@ create policy "Secure public download"
         exists (
           select 1 from public.uploads
           where id::text = split_part(storage.objects.name, '/', 1)
+          and file_deleted = false
           and (
-            file_deleted = false
+            download_limit is null
             or
-            (download_limit is not null and download_count <= download_limit)
+            download_count < download_limit
           )
         )
     )
@@ -445,3 +446,32 @@ create policy "Verified users or anon can upload file"
     and 
     public.is_verified_or_anon()
   );
+
+-- 25_fix_secure_download_policy.sql
+-- Fix the logic in "Secure public download" storage policy
+-- The previous logic allowed deleted files to be downloaded if they had a download limit,
+-- because the OR condition short-circuited or was evaluated incorrectly relative to file_deleted.
+-- The new logic enforces file_deleted = false AND (limit check).
+
+drop policy "Secure public download" on storage.objects;
+
+create policy "Secure public download"
+  on storage.objects for select
+  using (
+    bucket_id = 'drop-files'
+    and (
+        (auth.uid() = owner)
+        or
+        exists (
+          select 1 from public.uploads
+          where id::text = split_part(storage.objects.name, '/', 1)
+          and file_deleted = false
+          and (
+            download_limit is null
+            or
+            download_count < download_limit
+          )
+        )
+    )
+  );
+

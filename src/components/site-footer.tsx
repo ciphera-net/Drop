@@ -19,7 +19,6 @@ export function SiteFooter({ className, simple = false }: SiteFooterProps) {
              <Link href="/security" className="hover:text-primary transition-colors">Security</Link>
              <Link href="/privacy" className="hover:text-primary transition-colors">Privacy</Link>
              <Link href="/terms" className="hover:text-primary transition-colors">Terms</Link>
-             <Link href="https://github.com/Ciphera/Drop" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Open Source</Link>
           </div>
         )}
         

@@ -144,6 +144,12 @@ export function OtpVerificationModal() {
     }
   }, [resendCountdown, hasSentCode]);
 
+  useEffect(() => {
+    if (!isOpen) {
+        setOtp("");
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (

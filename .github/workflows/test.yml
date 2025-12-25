@@ -22,5 +22,24 @@ jobs:
         run: npm ci
 
       - name: Run Tests
+        id: vitest
         run: npm test
+
+      - name: Notify Slack on Success
+        if: success()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_COLOR: '#36a64f'
+          SLACK_TITLE: 'Tests Passed'
+          SLACK_MESSAGE: 'All tests passed successfully on branch ${{ github.ref_name }}'
+
+      - name: Notify Slack on Failure
+        if: failure()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_COLOR: '#ff0000'
+          SLACK_TITLE: 'Tests Failed'
+          SLACK_MESSAGE: 'Tests failed on branch ${{ github.ref_name }}. Please check the logs.'
 

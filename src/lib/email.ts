@@ -2,7 +2,56 @@ import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const FROM_EMAIL = 'Drop <drop@operational.ciphera.net>';
+const NOTIFICATION_EMAIL = 'Drop <drop@operational.ciphera.net>';
+const AUTH_EMAIL = 'Drop <drop@auth.ciphera.net>';
+
+export async function sendOtpEmail(email: string, otp: string) {
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error("Missing RESEND_API_KEY");
+  }
+
+  return await resend.emails.send({
+    from: AUTH_EMAIL,
+    to: [email],
+    subject: 'Your Verification Code',
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <title>Your Verification Code</title>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .otp-box { background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 25px 0; text-align: center; }
+            .otp-code { font-family: monospace; font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #f97316; }
+            .footer { margin-top: 30px; font-size: 12px; color: #666; border-top: 1px solid #eee; padding-top: 20px; }
+            h2 { color: #111; margin-bottom: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h2 style="color: #f97316;">Verify Your Account</h2>
+            <p>Please use the verification code below to complete your sign-in.</p>
+            
+            <div class="otp-box">
+              <div class="otp-code">${otp}</div>
+            </div>
+
+            <p style="text-align: center; font-size: 14px; color: #666;">
+               This code will expire in 10 minutes.
+            </p>
+
+            <div class="footer">
+              <p>If you didn't request this code, you can safely ignore this email.</p>
+              <p>© ${new Date().getFullYear()} Ciphera Drop. End-to-end encrypted file sharing.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `
+  });
+}
 
 export async function sendShareEmail(email: string, link: string) {
   if (!process.env.RESEND_API_KEY) {
@@ -10,7 +59,7 @@ export async function sendShareEmail(email: string, link: string) {
   }
 
   return await resend.emails.send({
-    from: FROM_EMAIL,
+    from: NOTIFICATION_EMAIL,
     to: [email],
     subject: 'A secure file has been shared with you',
     html: `
@@ -57,7 +106,7 @@ export async function sendDownloadNotification(email: string, fileId: string, ip
   const time = new Date().toLocaleString('en-US', { timeZone: 'UTC', timeZoneName: 'short' });
 
   return await resend.emails.send({
-    from: FROM_EMAIL,
+    from: NOTIFICATION_EMAIL,
     to: [email],
     subject: 'Your file has been downloaded',
     html: `
@@ -122,7 +171,7 @@ export async function sendUploadNotification(email: string, requestName: string,
   const dashboardUrl = process.env.NEXT_PUBLIC_APP_URL ? `${process.env.NEXT_PUBLIC_APP_URL}/dashboard` : '#';
 
   return await resend.emails.send({
-    from: FROM_EMAIL,
+    from: NOTIFICATION_EMAIL,
     to: [email],
     subject: `New File Uploaded: ${requestName}`,
     html: `

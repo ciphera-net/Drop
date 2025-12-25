@@ -41,6 +41,7 @@ export const metadata: Metadata = {
 };
 
 import { ThemeProvider } from "@/components/theme-provider";
+import { OtpVerificationModal } from "@/components/otp-verification-modal";
 
 export default function RootLayout({
   children,
@@ -58,6 +59,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <OtpVerificationModal />
           {children}
           <Toaster richColors position="top-center" />
         </ThemeProvider>

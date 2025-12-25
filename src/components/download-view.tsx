@@ -66,6 +66,10 @@ export function DownloadView({ file }: { file: FileUpload }) {
     try {
         if (!password) return;
 
+        if (!file.password_salt || !file.encrypted_key || !file.encrypted_key_iv) {
+             throw new Error("Missing encryption parameters");
+        }
+
         const passwordKey = await EncryptionService.deriveKeyFromPassword(password, file.password_salt);
         const k = await EncryptionService.decryptKey(file.encrypted_key, file.encrypted_key_iv, passwordKey);
 

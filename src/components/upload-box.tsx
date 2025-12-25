@@ -1,5 +1,6 @@
 "use client";
 
+import { User } from "@supabase/supabase-js";
 import { useState, useRef, useCallback, useEffect } from "react";
 import { createPortal } from "react-dom";
 import JSZip from "jszip";
@@ -48,6 +49,7 @@ export function UploadBox() {
 
   const [notifyOnDownload, setNotifyOnDownload] = useState(false);
   const [senderEmail, setSenderEmail] = useState("");
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     if (typeof navigator !== 'undefined' && 'share' in navigator) {
@@ -59,11 +61,19 @@ export function UploadBox() {
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
+        setUser(user);
         if (user?.email) {
             setSenderEmail(user.email);
         }
     });
   }, [supabase]);
+
+  useEffect(() => {
+    if (!user && maxDownloads === null) {
+      setMaxDownloads(1);
+    }
+  }, [user, maxDownloads]);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleNativeShare = async () => {
@@ -634,28 +644,63 @@ export function UploadBox() {
                       </div>
                       <div>
                         <Label className="text-xs mb-1.5 block text-muted-foreground">Max Downloads</Label>
+                        {user ? (
                         <div className="flex space-x-1">
-                           {[10, 100, null].map((opt) => (
+                           {[10, 100, null].map((opt) => {
+                             const isInfinite = opt === null;
+                             const isLocked = isInfinite && !user;
+                             const isBurnMode = maxDownloads === 1;
+                             
+                             return (
                              <button 
                                key={String(opt)}
-                               onClick={() => setMaxDownloads(opt)}
-                               disabled={maxDownloads === 1}
+                               onClick={() => {
+                                 if (isLocked) {
+                                   toast.error("Log in to create unlimited download links", {
+                                     action: {
+                                       label: "Log in",
+                                       onClick: () => window.location.href = "/login"
+                                     }
+                                   });
+                                   return;
+                                 }
+                                 setMaxDownloads(opt);
+                               }}
+                               disabled={isBurnMode}
                                className={cn(
-                                 "flex-1 py-1.5 text-xs rounded-md border transition-all duration-200 font-medium flex items-center justify-center",
+                                 "flex-1 py-1.5 text-xs rounded-md border transition-all duration-200 font-medium flex items-center justify-center gap-1",
                                  maxDownloads === opt 
                                    ? "bg-primary text-white border-primary shadow-sm" 
                                    : "bg-background text-muted-foreground border-border hover:border-primary/30",
-                                 maxDownloads === 1 && "opacity-50 cursor-not-allowed bg-muted text-muted-foreground"
+                                 isBurnMode && "opacity-50 cursor-not-allowed bg-muted text-muted-foreground",
+                                 isLocked && !isBurnMode && "opacity-60 cursor-not-allowed bg-muted/50 text-muted-foreground"
                                )}
                              >
-                               {opt === null ? <InfinityIcon weight="bold" className="w-4 h-4" /> : opt}
+                               {isInfinite ? <InfinityIcon weight="bold" className="w-4 h-4" /> : opt}
+                               {isLocked && <LockKey weight="fill" className="w-3 h-3" />}
                              </button>
-                           ))}
+                           )})}
                         </div>
+                        ) : (
+                          <div className="h-8 flex items-center justify-center border border-dashed border-border rounded-md bg-muted/30 text-xs text-muted-foreground gap-2 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => window.location.href = "/login"}>
+                             <LockKey className="w-3 h-3" />
+                             <span>Log in to set limit</span>
+                          </div>
+                        )}
                       </div>
                       <div className="col-span-2">
                         <button
-                          onClick={() => setMaxDownloads(prev => prev === 1 ? null : 1)}
+                          onClick={() => {
+                            if (maxDownloads === 1) {
+                              // If currently 1 (Burn), toggle OFF.
+                              // If user is logged in, default to Infinite (null).
+                              // If user is NOT logged in, default to 10.
+                              setMaxDownloads(user ? null : 10);
+                            } else {
+                              // If currently NOT 1, toggle ON (set to 1).
+                              setMaxDownloads(1);
+                            }
+                          }}
                           className={cn(
                             "w-full flex items-center justify-between p-3 rounded-lg border transition-all duration-200",
                             maxDownloads === 1 

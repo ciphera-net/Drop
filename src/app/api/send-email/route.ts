@@ -1,8 +1,17 @@
 import { NextResponse } from 'next/server';
 import { sendShareEmail } from '@/lib/email';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export async function POST(request: Request) {
   try {
+    // Rate Limit Check
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown';
+    const { allowed } = await checkRateLimit(ip, 'send-email', 10, 3600); // 10 requests per hour
+
+    if (!allowed) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+    }
+
     const { email, link } = await request.json();
 
     if (!email || !link) {

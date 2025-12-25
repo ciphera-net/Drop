@@ -9,9 +9,35 @@ const plusJakarta = Plus_Jakarta_Sans({
   weight: ["400", "500", "600", "700"],
 });
 
+const baseUrl = process.env.NEXT_PUBLIC_APP_URL 
+  ? `https://${process.env.NEXT_PUBLIC_APP_URL}` 
+  : "https://drop.ciphera.net";
+
 export const metadata: Metadata = {
-  title: "Drop - Secure File Sharing by Ciphera",
+  metadataBase: new URL(baseUrl),
+  title: {
+    default: "Drop - Secure File Sharing by Ciphera",
+    template: "%s | Drop"
+  },
   description: "End-to-end encrypted file sharing. Private, secure, and open-source.",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: baseUrl,
+    siteName: "Drop",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Drop - Secure File Sharing",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    creator: "@Ciphera",
+  },
 };
 
 import { ThemeProvider } from "@/components/theme-provider";

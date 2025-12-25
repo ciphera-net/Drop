@@ -1,8 +1,18 @@
 import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export async function POST(request: Request) {
   try {
+    // Rate Limit Check
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown';
+    // Allow 20 attempts per hour (generous for typos, tight for brute force)
+    const { allowed } = await checkRateLimit(ip, 'resolve-magic-words', 20, 3600); 
+
+    if (!allowed) {
+      return NextResponse.json({ error: 'Too many attempts. Please try again later.' }, { status: 429 });
+    }
+
     const { words } = await request.json();
     
     if (!words) {

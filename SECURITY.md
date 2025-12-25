@@ -12,6 +12,5 @@ You should expect to receive a response within 24 hours. If for some reason you 
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 1.x.x   | :white_check_mark: |
-| < 1.0   | :x:                |
+| 0.x.x   | :white_check_mark: |
 

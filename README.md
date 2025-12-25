@@ -51,9 +51,16 @@
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
    - `SUPABASE_SERVICE_ROLE_KEY`
+   - `RESEND_API_KEY` (for email notifications)
+   - `CRON_SECRET` (for cleanup jobs)
+   - `SLACK_WEBHOOK_URL` (optional, for monitoring alerts)
+   - `NEXT_PUBLIC_APP_URL` (e.g. http://localhost:3000)
 
 4. **Run Database Migrations**
-   Copy the contents of `supabase/schema.sql` and execute it in your Supabase SQL Editor to set up the schema, policies, and functions.
+   The database schema is managed via Supabase migrations.
+   
+   1. Execute `supabase/schema.sql` in your Supabase SQL Editor to set up the base schema.
+   2. Apply all SQL files from the `migrations/` directory in sequential order to bring the database up to date.
 
 5. **Start the Development Server**
    ```bash

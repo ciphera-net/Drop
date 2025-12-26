@@ -28,7 +28,7 @@ export function HomeView({ user }: { user: User | null }) {
                         )}
                     >
                         <PaperPlaneTilt weight={mode === 'send' ? "fill" : "regular"} className="w-4 h-4" />
-                        Send File
+                        Send
                     </button>
                     <button
                         onClick={() => setMode('request')}
@@ -40,7 +40,7 @@ export function HomeView({ user }: { user: User | null }) {
                         )}
                     >
                         <ShareNetwork weight={mode === 'request' ? "fill" : "bold"} className="w-4 h-4" />
-                        Request File
+                        Request
                     </button>
                 </div>
              </div>

@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { PGPService } from './pgp';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -56,6 +57,46 @@ export async function sendOtpEmail(email: string, otp: string) {
 export async function sendShareEmail(email: string, link: string) {
   if (!process.env.RESEND_API_KEY) {
     throw new Error("Missing RESEND_API_KEY");
+  }
+
+  // Attempt PGP Encryption for WKD-enabled addresses (e.g. Proton Mail)
+  const publicKey = await PGPService.lookupPublicKey(email);
+
+  if (publicKey) {
+    const plainTextBody = `
+You have received a secure file via Drop.
+
+Download Link:
+${link}
+
+Security Notice: This link contains the decryption key fragment. Do not share it.
+
+----------------------------------------------------------------------
+This email was automatically encrypted because we found a public key 
+associated with your email address via Web Key Directory (WKD).
+----------------------------------------------------------------------
+`;
+    
+    // Encrypt the message
+    const encryptedBody = await PGPService.encrypt(plainTextBody, publicKey);
+    
+    // Send encrypted email
+    return await resend.emails.send({
+      from: NOTIFICATION_EMAIL,
+      to: [email],
+      subject: 'Encrypted: A secure file has been shared with you',
+      // We provide both text and HTML versions of the encrypted block.
+      // Proton Mail and others often scan the body for the PGP block.
+      text: encryptedBody,
+      html: `
+        <!DOCTYPE html>
+        <html>
+          <body>
+            <pre style="white-space: pre-wrap; word-wrap: break-word; font-family: monospace; color: #333;">${encryptedBody}</pre>
+          </body>
+        </html>
+      `
+    });
   }
 
   return await resend.emails.send({

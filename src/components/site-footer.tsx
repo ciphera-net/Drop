@@ -14,7 +14,7 @@ export function SiteFooter({ className, simple = false }: SiteFooterProps) {
         
         {!simple && (
           <div className="flex gap-4 mt-4 md:mt-0">
-             <Link href="/about" className="hover:text-primary transition-colors">Why Drop</Link>
+             <Link href="/why" className="hover:text-primary transition-colors">Why Drop</Link>
              <Link href="/faq" className="hover:text-primary transition-colors">FAQ</Link>
              <Link href="/security" className="hover:text-primary transition-colors">Security</Link>
              <Link href="/privacy" className="hover:text-primary transition-colors">Privacy</Link>

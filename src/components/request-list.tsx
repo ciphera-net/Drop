@@ -129,7 +129,7 @@ export function RequestList({ requests: initialRequests }: { requests: FileReque
               try {
                   // The AES Key is stored in `encrypted_key` (reused column)
                   // It was wrapped using RSA-OAEP
-                  if (!file.encrypted_key) return { ...file, name: "Unknown (No Key)" } as DecryptedFile;
+                  if (!file.encrypted_key) return { ...file, filename: "Unknown (No Key)" } as DecryptedFile;
 
                   const aesKey = await EncryptionService.unwrapKeyWithPrivateKey(
                       file.encrypted_key,
@@ -143,10 +143,10 @@ export function RequestList({ requests: initialRequests }: { requests: FileReque
                       aesKey
                   );
                   
-                  return { ...file, name, aesKey } as DecryptedFile;
+                  return { ...file, filename: name, aesKey } as DecryptedFile;
               } catch (e) {
                   // console.error("Failed to decrypt file metadata", e);
-                  return { ...file, name: "Decryption Failed" } as DecryptedFile;
+                  return { ...file, filename: "Decryption Failed" } as DecryptedFile;
               }
           }));
 
@@ -265,7 +265,7 @@ export function RequestList({ requests: initialRequests }: { requests: FileReque
                                     <div className="flex items-center gap-3 overflow-hidden">
                                         <FileIconDisplay category={file.file_type} className="w-5 h-5 text-primary" />
                                         <div className="min-w-0">
-                                            <p className="text-sm font-medium truncate">{file.name}</p>
+                                            <p className="text-sm font-medium truncate">{file.filename}</p>
                                             <p className="text-xs text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB • {new Date(file.created_at).toLocaleDateString()}</p>
                                         </div>
                                     </div>

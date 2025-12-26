@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/user-menu";
 import { User } from "@supabase/supabase-js";
 import { cn } from "@/lib/utils";
@@ -24,7 +23,6 @@ export function SiteHeader({ user, simple = false, className }: SiteHeaderProps)
         </div>
 
         <div className="flex items-center gap-2 md:gap-4">
-          <ThemeToggle />
           {!simple && <UserMenu user={user ?? null} />}
         </div>
       </div>

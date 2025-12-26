@@ -14,7 +14,7 @@ import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Label } from "./ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "./ui/dialog";
-import { CloudArrowUp, Copy, Check, X, EnvelopeSimple, LockKey, Warning, QrCode, NotePencil, Fire, Infinity as InfinityIcon, Share, CaretDown, CaretUp, Bell } from "@phosphor-icons/react";
+import { CloudArrowUp, Copy, Check, X, EnvelopeSimple, LockKey, Warning, QrCode, NotePencil, Fire, Infinity as InfinityIcon, Share, CaretDown, CaretUp, Bell, ShieldCheck } from "@phosphor-icons/react";
 import { QRCodeSVG } from "qrcode.react";
 import { cn } from "@/lib/utils";
 import { uploadEncryptedFile } from "@/utils/upload-manager";
@@ -48,6 +48,9 @@ export function UploadBox() {
   const [uploadedFileHash, setUploadedFileHash] = useState<string | null>(null);
   const [showHash, setShowHash] = useState(false);
 
+  const [recipientHasKey, setRecipientHasKey] = useState(false);
+  const [checkingKey, setCheckingKey] = useState(false);
+
   const [notifyOnDownload, setNotifyOnDownload] = useState(false);
   const [senderEmail, setSenderEmail] = useState("");
   const [user, setUser] = useState<User | null>(null);
@@ -74,6 +77,33 @@ export function UploadBox() {
       setMaxDownloads(1);
     }
   }, [user, maxDownloads]);
+
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+        if (!email || !email.includes('@')) {
+            setRecipientHasKey(false);
+            return;
+        }
+
+        setCheckingKey(true);
+        try {
+            const res = await fetch('/api/check-wkd', {
+                method: 'POST',
+                body: JSON.stringify({ email }),
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setRecipientHasKey(data.hasKey);
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setCheckingKey(false);
+        }
+    }, 600);
+
+    return () => clearTimeout(timer);
+  }, [email]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -493,12 +523,27 @@ export function UploadBox() {
                    <div className="space-y-4 pt-4">
                        <div className="space-y-2">
                           <Label>Recipient Email</Label>
-                          <Input 
-                              placeholder="recipient@example.com" 
-                              type="email"
-                              value={email}
-                              onChange={(e) => setEmail(e.target.value)}
-                          />
+                          <div className="relative">
+                            <Input 
+                                placeholder="recipient@example.com" 
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                className={recipientHasKey ? "border-green-500 focus-visible:ring-green-500 pr-8" : ""}
+                            />
+                             {checkingKey && (
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                    <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                                </div>
+                             )}
+                          </div>
+                          
+                          {recipientHasKey && (
+                              <div className="flex items-center gap-2 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 p-2 rounded-md text-xs animate-in fade-in slide-in-from-top-1">
+                                  <ShieldCheck weight="fill" className="w-4 h-4 flex-shrink-0" />
+                                  <span className="font-medium">End-to-end encryption enabled (Proton / PGP compatible).</span>
+                              </div>
+                          )}
                        </div>
                        <DialogFooter>
                            <Button onClick={handleSendEmail} disabled={sendingEmail || !email}>

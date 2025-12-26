@@ -28,6 +28,7 @@ import { PasswordStrengthMeter } from "@/components/password-strength-meter";
 import { updatePGPKey, deleteAccount } from "@/app/settings/actions";
 import { CheckCircle, XCircle } from "@phosphor-icons/react";
 import { QRCodeSVG } from "qrcode.react";
+import { SessionsList } from "./sessions-list";
 
 interface SecurityFormProps {
   user: User;
@@ -375,6 +376,8 @@ export function SecurityForm({ user }: SecurityFormProps) {
             </Dialog>
         </CardContent>
     </Card>
+
+    <SessionsList />
 
     <Card>
         <CardHeader>

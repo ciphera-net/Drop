@@ -58,3 +58,12 @@ export interface UserProfile {
   pgp_public_key?: string | null;
   storage_limit?: number | null; // Added storage limit
 }
+
+export interface Session {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  ip: string | null;
+  user_agent: string | null;
+  is_current: boolean;
+}

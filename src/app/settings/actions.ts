@@ -4,6 +4,7 @@ import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { PGPService } from "@/lib/pgp";
 import { cleanupExpiredOrLimitReachedFile, forceDeleteFile } from "@/lib/cleanup";
+import { Session } from "@/types";
 
 export async function updatePGPKey(key: string) {
   const supabase = await createClient();
@@ -129,6 +130,48 @@ export async function deleteExpiredFiles() {
     }
 
     return { success: true, count: deletedCount };
+}
+
+export async function getSessions() {
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error("Unauthorized");
+  }
+
+  const { data, error } = await supabase.rpc('get_active_sessions');
+  if (error) {
+     console.error("Error fetching sessions:", error);
+     return []; 
+  }
+  return data as Session[];
+}
+
+export async function revokeSession(sessionId: string) {
+   const supabase = await createClient();
+   const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+   if (authError || !user) {
+      throw new Error("Unauthorized");
+   }
+
+   const { error } = await supabase.rpc('revoke_session', { session_id: sessionId });
+   if (error) throw new Error(error.message);
+   return { success: true };
+}
+
+export async function revokeAllOtherSessions() {
+   const supabase = await createClient();
+   const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+   if (authError || !user) {
+      throw new Error("Unauthorized");
+   }
+
+   const { error } = await supabase.rpc('revoke_all_other_sessions');
+   if (error) throw new Error(error.message);
+   return { success: true };
 }
 
 export async function deleteAccount() {

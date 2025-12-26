@@ -19,7 +19,34 @@ export const metadata: Metadata = {
     default: "Drop - Secure File Sharing by Ciphera",
     template: "%s | Drop"
   },
-  description: "End-to-end encrypted file sharing. Private, secure, and open-source.",
+  description: "End-to-end encrypted file sharing. Private, secure, and open-source. Share files with confidence using AES-256-GCM encryption.",
+  keywords: [
+    "secure file sharing", 
+    "encrypted file transfer", 
+    "end-to-end encryption", 
+    "privacy focused", 
+    "open source", 
+    "file sharing", 
+    "AES-256", 
+    "Ciphera"
+  ],
+  authors: [{ name: "Ciphera", url: "https://ciphera.net" }],
+  creator: "Ciphera",
+  publisher: "Ciphera",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  alternates: {
+    canonical: '/',
+  },
   openGraph: {
     type: "website",
     locale: "en_US",

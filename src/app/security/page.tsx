@@ -2,6 +2,15 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { createClient } from "@/utils/supabase/server";
 import { ShieldCheck, LockKey, EyeSlash, FileLock, Bug, NumberCircleOne, NumberCircleTwo, NumberCircleThree, NumberCircleFour, CheckCircle } from "@phosphor-icons/react/dist/ssr";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Security Architecture - Zero Knowledge Encryption",
+  description: "Learn how Drop uses AES-256-GCM, client-side encryption, and zero-knowledge architecture to keep your files safe.",
+  alternates: {
+    canonical: '/security',
+  },
+};
 
 export default async function SecurityPage() {
   const supabase = await createClient();

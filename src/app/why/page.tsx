@@ -1,6 +1,15 @@
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { createClient } from "@/utils/supabase/server";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Why Drop? - Privacy as a Human Right",
+  description: "We built Drop because we believe in digital sovereignty. No tracking, no ads, just secure file sharing.",
+  alternates: {
+    canonical: '/why',
+  },
+};
 
 export default async function AboutPage() {
   const supabase = await createClient();

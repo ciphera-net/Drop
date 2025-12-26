@@ -1,6 +1,15 @@
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { createClient } from "@/utils/supabase/server";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "FAQ - Secure File Sharing Questions",
+  description: "Frequently asked questions about Drop's security, encryption, file expiry, and privacy policies.",
+  alternates: {
+    canonical: '/faq',
+  },
+};
 
 export default async function FaqPage() {
   const supabase = await createClient();
@@ -73,8 +82,25 @@ export default async function FaqPage() {
     }
   ];
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": faqs.map((faq) => ({
+      "@type": "Question",
+      "name": faq.question,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": faq.answer
+      }
+    }))
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background font-sans">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <SiteHeader user={user} />
       
       <main className="flex-1 w-full max-w-4xl mx-auto px-6 py-16 md:py-24">

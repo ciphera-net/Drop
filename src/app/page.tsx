@@ -3,13 +3,45 @@ import { createClient } from "@/utils/supabase/server";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { HomeView } from "@/components/home-view";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Drop - Secure, Encrypted File Sharing",
+  description: "Share files securely with end-to-end encryption. No signup required for basic sharing. Zero-knowledge architecture ensures only you hold the keys.",
+  alternates: {
+    canonical: '/',
+  },
+};
 
 export default async function Home() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Drop",
+    "applicationCategory": "UtilitiesApplication",
+    "operatingSystem": "Any",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "description": "End-to-end encrypted file sharing application.",
+    "author": {
+      "@type": "Organization",
+      "name": "Ciphera",
+      "url": "https://ciphera.net"
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <SiteHeader user={user} />
 
       {/* Main Content */}

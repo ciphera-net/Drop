@@ -16,35 +16,29 @@ export async function POST(request: Request) {
     const results = await identifyAndCleanupOrphans(dryRun);
 
     // 2. Send Slack Alert (to separate channel if configured)
-    // We use a specific environment variable for this webhook
     const orphanWebhookUrl = process.env.SLACK_ORPHAN_CLEANUP_WEBHOOK_URL;
     
     if (orphanWebhookUrl) {
-        // Only alert if action was taken or it's a dry run that found something?
-        // Usually, we want to know it ran.
-        // But if it runs daily and finds nothing, maybe silence is golden?
-        // User asked for a separate channel, implying they want visibility.
-        // Let's report if found > 0 OR if errors > 0.
+        // User requested notifications even if nothing found
+        const title = dryRun ? '🔍 Orphan Scan Report (Dry Run)' : '🧹 Storage Orphan Cleanup';
+        const color = results.errors_count > 0 ? '#ff0000' : (results.found_orphans > 0 ? '#ffcc00' : '#36a64f');
         
-        const hasIssues = results.found_orphans > 0 || results.errors_count > 0;
-        
-        if (hasIssues) {
-            const title = dryRun ? '🔍 Orphan Scan Report (Dry Run)' : '🧹 Storage Orphan Cleanup';
-            const color = results.errors_count > 0 ? '#ff0000' : (results.found_orphans > 0 ? '#ffcc00' : '#36a64f');
-            
-            await sendSlackAlert(
-                title,
-                `Identified ${results.found_orphans} orphans. Deleted: ${results.deleted_count}. Errors: ${results.errors_count}.`,
-                color,
-                [
-                    { title: 'Found', value: results.found_orphans.toString(), short: true },
-                    { title: 'Deleted', value: results.deleted_count.toString(), short: true },
-                    { title: 'Errors', value: results.errors_count.toString(), short: true },
-                    { title: 'Mode', value: dryRun ? 'Dry Run' : 'Live', short: true }
-                ],
-                orphanWebhookUrl
-            );
-        }
+        const message = results.found_orphans > 0 
+            ? `Identified ${results.found_orphans} orphans. Deleted: ${results.deleted_count}. Errors: ${results.errors_count}.`
+            : `System Healthy: No orphan files found in storage bucket.`;
+
+        await sendSlackAlert(
+            title,
+            message,
+            color,
+            [
+                { title: 'Found', value: results.found_orphans.toString(), short: true },
+                { title: 'Deleted', value: results.deleted_count.toString(), short: true },
+                { title: 'Errors', value: results.errors_count.toString(), short: true },
+                { title: 'Mode', value: dryRun ? 'Dry Run' : 'Live', short: true }
+            ],
+            orphanWebhookUrl
+        );
     }
 
     return NextResponse.json({ success: true, ...results });

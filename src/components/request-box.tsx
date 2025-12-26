@@ -11,6 +11,7 @@ import { createClient } from "@/utils/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { createFileRequest } from "@/utils/request-helper";
+import { SimpleLoginButton } from "@/components/simple-login-button";
 
 export function RequestBox() {
   const [loading, setLoading] = useState(false);
@@ -236,13 +237,17 @@ export function RequestBox() {
                     </Label>
                 </div>
                 {enableNotification && (
-                    <div className="animate-in slide-in-from-top-1 fade-in duration-200">
+                    <div className="animate-in slide-in-from-top-1 fade-in duration-200 flex gap-2">
                         <Input 
                             type="email" 
                             placeholder="your-email@example.com" 
-                            value={notifyEmail}
+                            value={notifyEmail || ""}
                             onChange={(e) => setNotifyEmail(e.target.value)}
-                            className="h-8 text-xs bg-background"
+                            className="h-8 text-xs bg-background flex-1"
+                        />
+                        <SimpleLoginButton 
+                            onAliasGenerated={setNotifyEmail} 
+                            className="h-8 px-2 text-xs"
                         />
                     </div>
                 )}

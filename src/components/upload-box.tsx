@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { getFileCategory, calculateFileHash } from "@/utils/file-helpers";
 import { FileIconDisplay } from "@/components/file-icon-display";
 import { Fingerprint } from "@phosphor-icons/react";
+import { SimpleLoginButton } from "@/components/simple-login-button";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024; // 5GB
 
@@ -782,15 +783,21 @@ export function UploadBox() {
                          </div>
                          
                          {notifyOnDownload && (
-                             <div className="animate-in slide-in-from-top-1 fade-in duration-200">
-                                 <Input 
-                                    type="email" 
-                                    placeholder="your-email@example.com" 
-                                    className="h-8 text-xs bg-background"
-                                    value={senderEmail}
-                                    onChange={(e) => setSenderEmail(e.target.value)}
-                                 />
-                                 <p className="text-[10px] text-muted-foreground mt-1 ml-1">
+                             <div className="animate-in slide-in-from-top-1 fade-in duration-200 space-y-2">
+                                 <div className="flex gap-2">
+                                     <Input 
+                                        type="email" 
+                                        placeholder="your-email@example.com" 
+                                        className="h-8 text-xs bg-background flex-1"
+                                        value={senderEmail || ""}
+                                        onChange={(e) => setSenderEmail(e.target.value)}
+                                     />
+                                     <SimpleLoginButton 
+                                        onAliasGenerated={setSenderEmail} 
+                                        className="h-8 px-2 text-xs"
+                                     />
+                                 </div>
+                                 <p className="text-[10px] text-muted-foreground ml-1">
                                      We&apos;ll send you an email when someone downloads this file.
                                  </p>
                              </div>

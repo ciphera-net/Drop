@@ -170,7 +170,7 @@ export function DownloadView({ file }: { file: FileUpload }) {
     }
   };
 
-  const fetchAndDecryptFile = async (): Promise<Blob> => {
+  const fetchAndDecryptFile = async (): Promise<{ blob: Blob, limitReached: boolean }> => {
        if (!key) throw new Error("No key available");
        
        // Increment download count first
@@ -341,10 +341,10 @@ export function DownloadView({ file }: { file: FileUpload }) {
            });
        }
 
-       return decryptedBlob;
+       return { blob: decryptedBlob, limitReached: isLimitReached };
   };
 
-  const saveBlob = (blob: Blob, filename: string) => {
+  const saveBlob = (blob: Blob, filename: string, limitReached: boolean = false) => {
        const url = URL.createObjectURL(blob);
        const a = document.createElement('a');
        a.href = url;
@@ -355,7 +355,7 @@ export function DownloadView({ file }: { file: FileUpload }) {
        URL.revokeObjectURL(url);
        
        // If strict limit is reached, wipe memory to prevent re-saving
-       if (showLimitReachedMessage) {
+       if (limitReached || showLimitReachedMessage) {
            setTimeout(() => {
                setFileBlob(null);
                setPreviewUrl(null);
@@ -369,7 +369,7 @@ export function DownloadView({ file }: { file: FileUpload }) {
     
     // If we already have the blob (from preview), just save it
     if (fileBlob) {
-        saveBlob(fileBlob, decryptedName || 'downloaded-file');
+        saveBlob(fileBlob, decryptedName || 'downloaded-file', showLimitReachedMessage);
         return;
     }
 
@@ -377,9 +377,9 @@ export function DownloadView({ file }: { file: FileUpload }) {
     setProgress(1);
     
     try {
-       const blob = await fetchAndDecryptFile();
+       const { blob, limitReached } = await fetchAndDecryptFile();
        setFileBlob(blob);
-       saveBlob(blob, decryptedName || 'downloaded-file');
+       saveBlob(blob, decryptedName || 'downloaded-file', limitReached);
     } catch (e: unknown) {
        console.error(e);
        const errorMessage = e instanceof Error ? e.message : "Download failed. Please try again.";
@@ -403,7 +403,7 @@ export function DownloadView({ file }: { file: FileUpload }) {
     setProgress(1);
     
     try {
-        const blob = await fetchAndDecryptFile();
+        const { blob } = await fetchAndDecryptFile();
         setFileBlob(blob);
         const url = URL.createObjectURL(blob);
         setPreviewUrl(url);

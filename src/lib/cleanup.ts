@@ -1,5 +1,14 @@
 import { createAdminClient } from "@/utils/supabase/admin";
 
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+      promise,
+      new Promise<T>((_, reject) => 
+          setTimeout(() => reject(new Error(`Timeout: ${label} took longer than ${ms}ms`)), ms)
+      )
+  ]);
+}
+
 export async function cleanupExpiredOrLimitReachedFile(fileId: string) {
   const supabase = createAdminClient();
 
@@ -18,41 +27,58 @@ export async function cleanupExpiredOrLimitReachedFile(fileId: string) {
   // Note: We don't return early if file.file_deleted is true because we might still need to clean up storage
   // if it was only marked logically deleted by the increment API.
 
-  const isExpired = new Date(file.expiration_time) < new Date();
+  const now = new Date();
+  const expTime = new Date(file.expiration_time);
+  // If date is invalid, treat as expired to be safe (or it will never be cleaned)
+  const isInvalidDate = isNaN(expTime.getTime());
+  const isExpired = isInvalidDate || expTime < now;
+  
   const isLimitReached = file.download_limit !== null && file.download_count >= file.download_limit;
+  
+  // Debug log for troubleshooting stuck files
+  if (!isExpired && !isLimitReached && !file.file_deleted) {
+      console.log(`Cleanup: Skipping active file ${fileId}. Exp: ${file.expiration_time} (Invalid: ${isInvalidDate}), Limit: ${file.download_limit} (Count: ${file.download_count})`);
+  }
 
   if (isExpired || isLimitReached || file.file_deleted) {
     // 2. Remove from Storage
-    
-    // Strategy A: Try to remove as a single file (Legacy)
-    const { error: legacyError } = await supabase.storage
-        .from('drop-files')
-        .remove([fileId]);
+    try {
+        // Strategy A: Try to remove as a single file (Legacy)
+        const { error: legacyError } = await withTimeout(
+            supabase.storage.from('drop-files').remove([fileId]),
+            5000, 
+            `Legacy remove ${fileId}`
+        );
 
-    if (legacyError) {
-         console.warn(`Cleanup: Legacy remove failed for ${fileId}`, legacyError);
-    }
-
-    // Strategy B: Check for chunks (Folder structure)
-    // We list files inside the "folder" named fileId
-    const { data: chunks, error: listError } = await supabase.storage
-        .from('drop-files')
-        .list(fileId, {
-            limit: 1000, // Should cover most files. For huge files > 20GB (1000 * 20MB), might need pagination, but fine for now.
-        });
-
-    if (listError) {
-        console.error(`Cleanup: Failed to list chunks for ${fileId}`, listError);
-    } else if (chunks && chunks.length > 0) {
-        // Construct paths: {fileId}/{chunkName}
-        const pathsToRemove = chunks.map(chunk => `${fileId}/${chunk.name}`);
-        const { error: chunkRemoveError } = await supabase.storage
-            .from('drop-files')
-            .remove(pathsToRemove);
-        
-        if (chunkRemoveError) {
-            console.error(`Cleanup: Failed to remove chunks for ${fileId}`, chunkRemoveError);
+        if (legacyError) {
+             console.warn(`Cleanup: Legacy remove failed for ${fileId}`, legacyError);
         }
+
+        // Strategy B: Check for chunks (Folder structure)
+        // We list files inside the "folder" named fileId
+        const { data: chunks, error: listError } = await withTimeout(
+            supabase.storage.from('drop-files').list(fileId, { limit: 1000 }),
+            10000,
+            `List chunks ${fileId}`
+        );
+
+        if (listError) {
+            console.error(`Cleanup: Failed to list chunks for ${fileId}`, listError);
+        } else if (chunks && chunks.length > 0) {
+            // Construct paths: {fileId}/{chunkName}
+            const pathsToRemove = chunks.map(chunk => `${fileId}/${chunk.name}`);
+            const { error: chunkRemoveError } = await withTimeout(
+                supabase.storage.from('drop-files').remove(pathsToRemove),
+                15000,
+                `Remove chunks ${fileId}`
+            );
+            
+            if (chunkRemoveError) {
+                console.error(`Cleanup: Failed to remove chunks for ${fileId}`, chunkRemoveError);
+            }
+        }
+    } catch (storageError) {
+        console.error(`Cleanup: Storage operations failed for ${fileId} (proceeding to logical deletion)`, storageError);
     }
 
     // 3. Update DB
@@ -80,7 +106,9 @@ export async function cleanupAllExpiredFiles() {
         .from('uploads')
         .select('id')
         .lt('expiration_time', now)
-        .eq('file_deleted', false); // Only active ones need logical deletion first
+        .eq('file_deleted', false)
+        .order('expiration_time', { ascending: true })
+        .limit(50); // Process oldest first, limit batch size to avoid timeouts // Only active ones need logical deletion first
 
     if (expiredError) {
         console.error("Cleanup: Failed to fetch expired files", expiredError);

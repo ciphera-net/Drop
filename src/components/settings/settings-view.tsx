@@ -36,8 +36,10 @@ export function SettingsView({ user, profile }: SettingsViewProps) {
               key={tab.id}
               variant={activeTab === tab.id ? "secondary" : "ghost"}
               className={cn(
-                "justify-start gap-2",
-                activeTab === tab.id ? "bg-muted hover:bg-muted" : "hover:bg-transparent hover:underline"
+                "justify-start gap-2 w-full",
+                activeTab === tab.id 
+                  ? "bg-muted font-medium" 
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
               )}
               onClick={() => setActiveTab(tab.id)}
             >

@@ -6,6 +6,14 @@ import { createClient } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { toast } from "sonner";
 import { PasswordStrengthMeter } from "@/components/password-strength-meter";
 
@@ -51,43 +59,44 @@ export function SecurityForm({ user }: SecurityFormProps) {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium">Security Settings</h3>
-        <p className="text-sm text-muted-foreground">
+    <Card>
+      <CardHeader>
+        <CardTitle>Security Settings</CardTitle>
+        <CardDescription>
           Manage your password and security preferences.
-        </p>
-      </div>
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handlePasswordUpdate} className="space-y-4 max-w-sm">
+          <div className="space-y-2">
+            <Label htmlFor="new-password">New Password</Label>
+            <Input
+              id="new-password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="New password"
+            />
+            <PasswordStrengthMeter password={password} />
+          </div>
 
-      <form onSubmit={handlePasswordUpdate} className="space-y-4 max-w-sm">
-        <div className="space-y-2">
-          <Label htmlFor="new-password">New Password</Label>
-          <Input
-            id="new-password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="New password"
-          />
-          <PasswordStrengthMeter password={password} />
-        </div>
+          <div className="space-y-2">
+            <Label htmlFor="confirm-password">Confirm New Password</Label>
+            <Input
+              id="confirm-password"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirm new password"
+            />
+          </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="confirm-password">Confirm New Password</Label>
-          <Input
-            id="confirm-password"
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="Confirm new password"
-          />
-        </div>
-
-        <Button type="submit" disabled={loading || !password}>
-          {loading ? "Updating..." : "Update Password"}
-        </Button>
-      </form>
-    </div>
+          <Button type="submit" disabled={loading || !password}>
+            {loading ? "Updating..." : "Update Password"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }
 

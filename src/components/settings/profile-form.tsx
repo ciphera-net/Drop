@@ -7,6 +7,14 @@ import { createClient } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -56,15 +64,15 @@ export function ProfileForm({ user, profile }: ProfileFormProps) {
   };
 
   return (
-    <div className="space-y-8">
-      <div className="space-y-6">
-        <div>
-          <h3 className="text-lg font-medium">Profile Settings</h3>
-          <p className="text-sm text-muted-foreground">
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Profile Settings</CardTitle>
+          <CardDescription>
             Manage your public profile information.
-          </p>
-        </div>
-        <div className="space-y-4">
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
           <div className="grid w-full max-w-sm items-center gap-1.5">
             <Label htmlFor="email">Email</Label>
             <Input type="email" id="email" value={user.email} disabled />
@@ -89,46 +97,47 @@ export function ProfileForm({ user, profile }: ProfileFormProps) {
               {loading ? "Saving..." : "Save Changes"}
             </Button>
           </form>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      <div className="space-y-6">
-        <div>
-          <h3 className="text-lg font-medium">Appearance</h3>
-          <p className="text-sm text-muted-foreground">
+      <Card>
+        <CardHeader>
+          <CardTitle>Appearance</CardTitle>
+          <CardDescription>
             Customize the interface color theme.
-          </p>
-        </div>
-        
-        {mounted && (
-          <div className="flex items-center gap-4">
-            <Button
-              variant="outline"
-              size="sm"
-              className={cn("gap-2", theme === "light" && "border-primary bg-primary/10")}
-              onClick={() => setTheme("light")}
-            >
-              <Sun weight="bold" /> Light
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className={cn("gap-2", theme === "dark" && "border-primary bg-primary/10")}
-              onClick={() => setTheme("dark")}
-            >
-              <Moon weight="bold" /> Dark
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className={cn("gap-2", theme === "system" && "border-primary bg-primary/10")}
-              onClick={() => setTheme("system")}
-            >
-              <Desktop weight="bold" /> System
-            </Button>
-          </div>
-        )}
-      </div>
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {mounted && (
+            <div className="flex items-center gap-4">
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn("gap-2", theme === "light" && "border-primary bg-primary/10")}
+                onClick={() => setTheme("light")}
+              >
+                <Sun weight="bold" /> Light
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn("gap-2", theme === "dark" && "border-primary bg-primary/10")}
+                onClick={() => setTheme("dark")}
+              >
+                <Moon weight="bold" /> Dark
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn("gap-2", theme === "system" && "border-primary bg-primary/10")}
+                onClick={() => setTheme("system")}
+              >
+                <Desktop weight="bold" /> System
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

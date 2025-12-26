@@ -31,6 +31,55 @@ async function sha1(str: string): Promise<Uint8Array> {
   return new Uint8Array(hashBuffer);
 }
 
+/**
+ * Basic email validation and domain sanitization for WKD lookups.
+ * Returns null if the email/domain is not acceptable for making outbound requests.
+ */
+function sanitizeEmailForWkd(email: string): { localPart: string; domain: string } | null {
+  // Simple but strict email pattern: one "@" and at least one dot in the domain part.
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (typeof email !== 'string' || !EMAIL_REGEX.test(email)) {
+    return null;
+  }
+
+  const [localPart, rawDomain] = email.split('@');
+  const domain = rawDomain.toLowerCase().trim();
+
+  // Disallow obvious SSRF vectors: ports, paths, query, spaces, control chars.
+  if (
+    domain.includes('/') ||
+    domain.includes('\\') ||
+    domain.includes('?') ||
+    domain.includes('#') ||
+    domain.includes('%') ||
+    domain.includes('@') ||
+    domain.includes(':') || // prevent "host:port"
+    /\s/.test(domain)
+  ) {
+    return null;
+  }
+
+  // Disallow localhost and numeric IP literals (both IPv4 and simple IPv6 forms).
+  const lower = domain.toLowerCase();
+  const ipv4Regex = /^(?:\d{1,3}\.){3}\d{1,3}$/;
+  const ipv6Regex = /^\[?[0-9a-f:]+\]?$/i;
+  if (
+    lower === 'localhost' ||
+    ipv4Regex.test(lower) ||
+    ipv6Regex.test(lower)
+  ) {
+    return null;
+  }
+
+  // Optionally, disallow obvious internal-only suffixes.
+  const forbiddenSuffixes = ['.local', '.localhost', '.internal', '.intranet'];
+  if (forbiddenSuffixes.some(suffix => lower.endsWith(suffix))) {
+    return null;
+  }
+
+  return { localPart, domain };
+}
+
 export class PGPService {
   /**
    * Encrypts a message using the recipient's public key.
@@ -56,10 +105,10 @@ export class PGPService {
    */
   static async lookupPublicKey(email: string): Promise<string | null> {
     try {
-      const parts = email.split('@');
-      if (parts.length !== 2) return null;
+      const sanitized = sanitizeEmailForWkd(email);
+      if (!sanitized) return null;
 
-      const [localPart, domain] = parts;
+      const { localPart, domain } = sanitized;
       const lowerLocal = localPart.toLowerCase();
       const hash = await sha1(lowerLocal);
       const encodedHash = zBase32Encode(hash);
@@ -71,7 +120,7 @@ export class PGPService {
       if (advancedKey) return advancedKey;
 
       // 2. Try Direct Method (Fallback)
-      // Format: https://domain/.well-known/openpgpkey/hu/hash
+      // Format: https://${domain}/.well-known/openpgpkey/hu/hash
       const directUrl = `https://${domain}/.well-known/openpgpkey/hu/${encodedHash}`;
       const directKey = await PGPService.fetchKey(directUrl);
       if (directKey) return directKey;
@@ -79,7 +128,7 @@ export class PGPService {
       // 3. Try Proton Mail API (Specific to Proton users)
       // This is a backup because WKD might fail or not be enabled for all custom domains hosted on Proton
       if (domain.includes('proton') || domain === 'pm.me') {
-        const protonUrl = `https://mail-api.proton.me/pks/lookup?op=get&search=${email}`;
+        const protonUrl = `https://mail-api.proton.me/pks/lookup?op=get&search=${encodeURIComponent(email)}`;
         const protonKey = await PGPService.fetchKey(protonUrl);
         if (protonKey) return protonKey;
       }

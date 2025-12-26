@@ -1,13 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SimpleLoginService } from "@/lib/simplelogin";
 import { toast } from "sonner";
-import { MaskHappy, Spinner, Check } from "@phosphor-icons/react";
+import { MaskHappy, Spinner, Check, LockKey } from "@phosphor-icons/react";
+import { createClient } from "@/utils/supabase/client";
+import { User } from "@supabase/supabase-js";
 
 interface SimpleLoginButtonProps {
   onAliasGenerated: (alias: string) => void;
@@ -18,9 +21,18 @@ export function SimpleLoginButton({ onAliasGenerated, className }: SimpleLoginBu
   const [isOpen, setIsOpen] = useState(false);
   const [apiKey, setApiKey] = useState("");
   const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const router = useRouter();
+  const supabase = createClient();
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+    });
+  }, [supabase]);
 
   const handleGenerate = async () => {
-    const storedKey = SimpleLoginService.getApiKey();
+    const storedKey = await SimpleLoginService.getApiKey();
     
     if (!storedKey) {
       setIsOpen(true);
@@ -42,7 +54,7 @@ export function SimpleLoginButton({ onAliasGenerated, className }: SimpleLoginBu
       toast.error("Failed to generate alias. Check your API key.");
       // If error is 401/403, maybe clear key?
       if (error instanceof Error && error.message.includes("401")) {
-          SimpleLoginService.clearApiKey();
+          await SimpleLoginService.clearApiKey();
           setApiKey(""); // Reset local state
           setIsOpen(true); // Re-open dialog
       }
@@ -53,9 +65,30 @@ export function SimpleLoginButton({ onAliasGenerated, className }: SimpleLoginBu
 
   const saveAndGenerate = async () => {
     if (!apiKey.trim()) return;
-    SimpleLoginService.setApiKey(apiKey.trim());
-    await generateAlias(apiKey.trim());
+    setLoading(true); // Show loading state while saving
+    try {
+        await SimpleLoginService.setApiKey(apiKey.trim());
+        await generateAlias(apiKey.trim());
+    } catch (e) {
+        toast.error("Failed to save API key.");
+        console.error(e);
+    } finally {
+        setLoading(false);
+    }
   };
+
+  if (!user) {
+    return (
+        <div 
+            onClick={() => router.push("/login")}
+            className="h-8 flex items-center justify-center border border-dashed border-border rounded-md bg-muted/30 text-[10px] text-muted-foreground gap-1 cursor-pointer hover:bg-muted/50 transition-colors px-3 whitespace-nowrap"
+            title="Log in to use SimpleLogin aliases"
+        >
+            <LockKey className="w-3 h-3" />
+            <span>Log in to hide email</span>
+        </div>
+    )
+  }
 
   return (
     <>
@@ -110,4 +143,3 @@ export function SimpleLoginButton({ onAliasGenerated, className }: SimpleLoginBu
     </>
   );
 }
-

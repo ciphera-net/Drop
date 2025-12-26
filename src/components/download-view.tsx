@@ -5,7 +5,7 @@ import { createClient } from "@/utils/supabase/client";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "./ui/card";
 import { Progress } from "./ui/progress";
-import { LockKey, DownloadSimple, WarningCircle, NotePencil, Fire, Fingerprint, CaretDown, CaretUp, Timer } from "@phosphor-icons/react";
+import { LockKey, DownloadSimple, WarningCircle, NotePencil, Fire, Fingerprint, CaretDown, CaretUp, Timer, Eye, X } from "@phosphor-icons/react";
 import { FileIconDisplay } from "@/components/file-icon-display";
 import { Input } from "./ui/input";
 import { toast } from "sonner";
@@ -15,6 +15,9 @@ export function DownloadView({ file }: { file: FileUpload }) {
   const [key, setKey] = useState<CryptoKey | null>(null);
   const [decryptedName, setDecryptedName] = useState<string | null>(null);
   const [decryptedMessage, setDecryptedMessage] = useState<string | null>(null);
+  const [decryptedMimeType, setDecryptedMimeType] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [fileBlob, setFileBlob] = useState<Blob | null>(null);
   const [downloading, setDownloading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [manualKey, setManualKey] = useState("");
@@ -80,6 +83,20 @@ export function DownloadView({ file }: { file: FileUpload }) {
             }
         }
 
+        // Decrypt mime type if present
+        if (file.mime_type_encrypted && file.mime_type_iv) {
+            try {
+                const mime = await EncryptionService.decryptText(
+                    file.mime_type_encrypted,
+                    file.mime_type_iv,
+                    k
+                );
+                setDecryptedMimeType(mime);
+            } catch (e) {
+                // console.error("Failed to decrypt mime type", e);
+            }
+        }
+
         setKey(k);
         setDecryptedName(name);
      } catch (e) {
@@ -127,6 +144,20 @@ export function DownloadView({ file }: { file: FileUpload }) {
             }
         }
 
+        // Decrypt mime type if present
+        if (file.mime_type_encrypted && file.mime_type_iv) {
+            try {
+                const mime = await EncryptionService.decryptText(
+                    file.mime_type_encrypted,
+                    file.mime_type_iv,
+                    k
+                );
+                setDecryptedMimeType(mime);
+            } catch (e) {
+                // console.error("Failed to decrypt mime type", e);
+            }
+        }
+
         setKey(k);
         setDecryptedName(name);
     } catch (e: unknown) {
@@ -139,12 +170,9 @@ export function DownloadView({ file }: { file: FileUpload }) {
     }
   };
 
-  const handleDownload = async () => {
-    if (!key) return;
-    setDownloading(true);
-    setProgress(1);
-    
-    try {
+  const fetchAndDecryptFile = async (): Promise<Blob> => {
+       if (!key) throw new Error("No key available");
+       
        // Increment download count first
        const incRes = await fetch('/api/increment', {
             method: 'POST',
@@ -164,6 +192,7 @@ export function DownloadView({ file }: { file: FileUpload }) {
 
        const incData = await incRes.json();
        const isLimitReached = incData.limitReached;
+       const signedUrls: string[] = incData.signedUrls || [];
 
        const supabase = createClient();
        let decryptedBlob: Blob;
@@ -171,14 +200,19 @@ export function DownloadView({ file }: { file: FileUpload }) {
        if (file.iv === "CHUNKED_V1") {
            // --- Legacy TUS Chunked Download Logic ---
            // We keep this for backward compatibility with the previous implementation
-           const { data: signedData, error: urlError } = await supabase.storage
-              .from('drop-files')
-              .createSignedUrl(file.id, 60 * 60);
-           
-           if (urlError) throw urlError;
-           if (!signedData?.signedUrl) throw new Error("Failed to get download URL");
+           let downloadUrl = signedUrls.length > 0 ? signedUrls[0] : null;
 
-           decryptedBlob = await downloadStream(signedData.signedUrl, file.size, key);
+           if (!downloadUrl) {
+                const { data: signedData, error: urlError } = await supabase.storage
+                    .from('drop-files')
+                    .createSignedUrl(file.id, 60 * 60);
+                
+                if (urlError) throw urlError;
+                if (!signedData?.signedUrl) throw new Error("Failed to get download URL");
+                downloadUrl = signedData.signedUrl;
+           }
+
+           decryptedBlob = await downloadStream(downloadUrl, file.size, key);
 
        } else if (file.iv === "CHUNKED_PARALLEL_V1") {
            // --- Parallel Chunked Download Logic ---
@@ -187,17 +221,55 @@ export function DownloadView({ file }: { file: FileUpload }) {
            const decryptedChunks: BlobPart[] = [];
            let totalBytesDecrypted = 0;
 
+           // Helper to fetch chunk with fallback
+           const fetchChunk = async (path: string, index: number) => {
+               try {
+                   // Priority 1: Use Signed URL from API if available
+                   if (signedUrls[index]) {
+                       const res = await fetch(signedUrls[index]);
+                       if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
+                       return await res.blob();
+                   }
+
+                   // Priority 2: Direct Download (will fail if RLS blocks it)
+                   const { data, error } = await supabase.storage
+                        .from('drop-files')
+                        .download(path);
+                   
+                   if (error) {
+                       throw error;
+                   }
+                   
+                   return data;
+               } catch (e) {
+                   // Priority 3: Client-side Signed URL (Fallback)
+                   // Only works if the user has permission (which they might not if limit reached)
+                   console.warn(`Direct/Signed download failed for chunk ${index}, trying client-side sign`, e);
+                   try {
+                       const { data: signed, error: signError } = await supabase.storage
+                            .from('drop-files')
+                            .createSignedUrl(path, 60);
+                       
+                       if (signError || !signed?.signedUrl) throw signError || new Error("Sign failed");
+
+                       const res = await fetch(signed.signedUrl);
+                       if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
+                       return await res.blob();
+                   } catch (finalError) {
+                       console.error(`Final fallback failed for chunk ${index}`, finalError);
+                       throw finalError;
+                   }
+               }
+           };
+
+           // We process chunks sequentially to avoid flooding the network/server
+           // but we could parallelize this slightly if needed.
            for (let i = 0; i < totalChunks; i++) {
-                // Fetch each chunk
                 const chunkPath = `${file.id}/${i}`;
-                const { data: chunkData, error: chunkError } = await supabase.storage
-                    .from('drop-files')
-                    .download(chunkPath);
-                
-                if (chunkError) throw chunkError;
+                const chunkBlob = await fetchChunk(chunkPath, i);
                 
                 // Decrypt
-                const buffer = await chunkData.arrayBuffer();
+                const buffer = await chunkBlob.arrayBuffer();
                 const decryptedChunk = await EncryptionService.decryptChunk(buffer, key);
                 decryptedChunks.push(decryptedChunk);
 
@@ -206,33 +278,58 @@ export function DownloadView({ file }: { file: FileUpload }) {
                 setProgress(percent);
            }
            
-           decryptedBlob = new Blob(decryptedChunks);
+           decryptedBlob = new Blob(decryptedChunks, { type: decryptedMimeType || 'application/octet-stream' });
 
        } else {
            // --- Legacy Single File Download Logic ---
            setProgress(10);
-           const { data: fileData, error } = await supabase.storage
-              .from('drop-files')
-              .download(file.id);
+           
+           let fileData: Blob | null = null;
+           
+           // Priority 1: Signed URL
+           if (signedUrls.length > 0) {
+                const res = await fetch(signedUrls[0]);
+                if (res.ok) {
+                    fileData = await res.blob();
+                }
+           }
+           
+           if (!fileData) {
+               // Priority 2: Direct Download
+               const { data, error } = await supabase.storage
+                  .from('drop-files')
+                  .download(file.id);
 
-           if (error) throw error;
+               if (error) {
+                   // Fallback: Client-side sign
+                   const { data: signed, error: signError } = await supabase.storage
+                        .from('drop-files')
+                        .createSignedUrl(file.id, 60);
+                   if (!signError && signed?.signedUrl) {
+                        const res = await fetch(signed.signedUrl);
+                        if (res.ok) fileData = await res.blob();
+                   }
+                   
+                   if (!fileData) throw error;
+               } else {
+                   fileData = data;
+               }
+           }
+           
+           if (!fileData) throw new Error("Failed to download file data");
+
            setProgress(60);
 
            const iv = EncryptionService.base64ToIv(file.iv);
            decryptedBlob = await EncryptionService.decryptFile(fileData, key, iv);
        }
        
+       // Force correct mime type on the blob if we have it
+       if (decryptedMimeType && decryptedBlob.type !== decryptedMimeType) {
+           decryptedBlob = new Blob([decryptedBlob], { type: decryptedMimeType });
+       }
+       
        setProgress(100);
-
-       // Trigger browser download
-       const url = URL.createObjectURL(decryptedBlob);
-       const a = document.createElement('a');
-       a.href = url;
-       a.download = decryptedName || 'downloaded-file';
-       document.body.appendChild(a);
-       a.click();
-       document.body.removeChild(a);
-       URL.revokeObjectURL(url);
 
        if (isLimitReached) {
            setShowLimitReachedMessage(true);
@@ -244,6 +341,45 @@ export function DownloadView({ file }: { file: FileUpload }) {
            });
        }
 
+       return decryptedBlob;
+  };
+
+  const saveBlob = (blob: Blob, filename: string) => {
+       const url = URL.createObjectURL(blob);
+       const a = document.createElement('a');
+       a.href = url;
+       a.download = filename;
+       document.body.appendChild(a);
+       a.click();
+       document.body.removeChild(a);
+       URL.revokeObjectURL(url);
+       
+       // If strict limit is reached, wipe memory to prevent re-saving
+       if (showLimitReachedMessage) {
+           setTimeout(() => {
+               setFileBlob(null);
+               setPreviewUrl(null);
+               toast.success("File saved. Self-destruct complete.");
+           }, 1000); // Small delay to allow download to start
+       }
+  };
+
+  const handleDownload = async () => {
+    if (!key) return;
+    
+    // If we already have the blob (from preview), just save it
+    if (fileBlob) {
+        saveBlob(fileBlob, decryptedName || 'downloaded-file');
+        return;
+    }
+
+    setDownloading(true);
+    setProgress(1);
+    
+    try {
+       const blob = await fetchAndDecryptFile();
+       setFileBlob(blob);
+       saveBlob(blob, decryptedName || 'downloaded-file');
     } catch (e: unknown) {
        console.error(e);
        const errorMessage = e instanceof Error ? e.message : "Download failed. Please try again.";
@@ -252,6 +388,39 @@ export function DownloadView({ file }: { file: FileUpload }) {
        setDownloading(false);
     }
   };
+
+  const handlePreview = async () => {
+    if (!key) return;
+    
+    // If we already have the blob, just show it
+    if (fileBlob) {
+        const url = URL.createObjectURL(fileBlob);
+        setPreviewUrl(url);
+        return;
+    }
+
+    setDownloading(true);
+    setProgress(1);
+    
+    try {
+        const blob = await fetchAndDecryptFile();
+        setFileBlob(blob);
+        const url = URL.createObjectURL(blob);
+        setPreviewUrl(url);
+    } catch (e: unknown) {
+        console.error(e);
+        const errorMessage = e instanceof Error ? e.message : "Preview failed. Please try again.";
+        toast.error(errorMessage);
+    } finally {
+        setDownloading(false);
+    }
+  };
+  
+  useEffect(() => {
+      return () => {
+          if (previewUrl) URL.revokeObjectURL(previewUrl);
+      };
+  }, [previewUrl]);
 
   // Helper for TUS stream
   async function downloadStream(url: string, originalSize: number, key: CryptoKey): Promise<Blob> {
@@ -302,6 +471,12 @@ export function DownloadView({ file }: { file: FileUpload }) {
         }
         return new Blob(decryptedChunks);
   }
+
+  const isPreviewSupported = decryptedMimeType && (
+      decryptedMimeType.startsWith('image/') || 
+      decryptedMimeType === 'application/pdf' || 
+      decryptedMimeType.startsWith('text/')
+  );
 
   if (isExpiredLocal) {
     return (
@@ -456,6 +631,25 @@ export function DownloadView({ file }: { file: FileUpload }) {
                   </div>
               )}
 
+              {previewUrl && (
+                  <div className="border rounded-xl overflow-hidden bg-background relative animate-in zoom-in-95 duration-200 mb-4">
+                      <div className="absolute top-2 right-2 z-10">
+                          <Button size="icon" variant="secondary" className="h-8 w-8 rounded-full opacity-70 hover:opacity-100" onClick={() => setPreviewUrl(null)}>
+                              <X weight="bold" />
+                          </Button>
+                      </div>
+                      {decryptedMimeType?.startsWith('image/') && (
+                          <img src={previewUrl} alt="Preview" className="w-full h-auto max-h-[500px] object-contain bg-neutral-100 dark:bg-neutral-900" />
+                      )}
+                      {decryptedMimeType === 'application/pdf' && (
+                          <iframe src={previewUrl} className="w-full h-[500px]" title="PDF Preview"></iframe>
+                      )}
+                      {decryptedMimeType?.startsWith('text/') && (
+                          <iframe src={previewUrl} className="w-full h-[400px] bg-white" title="Text Preview"></iframe>
+                      )}
+                  </div>
+              )}
+
               {downloading ? (
                   <div className="space-y-2">
                       <Progress value={progress} className="h-2" />
@@ -464,10 +658,24 @@ export function DownloadView({ file }: { file: FileUpload }) {
                       </p>
                   </div>
               ) : (
-                  <div className="space-y-4">
-                      <Button className="w-full" size="lg" onClick={handleDownload} disabled={showLimitReachedMessage}>
-                          <DownloadSimple className="mr-2 text-xl" weight="bold" /> {showLimitReachedMessage ? "File Removed" : "Download File"}
-                      </Button>
+                  <div className="space-y-3">
+                      <div className={isPreviewSupported ? "grid grid-cols-2 gap-3" : "space-y-4"}>
+                           {isPreviewSupported && (
+                               <Button variant="outline" className="w-full" size="lg" onClick={handlePreview} disabled={showLimitReachedMessage && !fileBlob}>
+                                   <Eye className="mr-2 text-lg" weight="bold" /> Preview
+                               </Button>
+                           )}
+                           <Button className={isPreviewSupported && !showLimitReachedMessage ? "w-full" : "w-full"} size="lg" onClick={handleDownload} disabled={showLimitReachedMessage && !fileBlob}>
+                               <DownloadSimple className="mr-2 text-xl" weight="bold" /> 
+                               {showLimitReachedMessage && !fileBlob ? "File Removed" : (fileBlob ? "Save File" : "Download File")}
+                           </Button>
+                      </div>
+                      
+                      {file.download_limit !== null && isPreviewSupported && !showLimitReachedMessage && !fileBlob && (
+                          <p className="text-[10px] text-center text-muted-foreground">
+                              Previewing counts as a download.
+                          </p>
+                      )}
                   </div>
               )}
           </CardContent>

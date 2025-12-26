@@ -2,6 +2,7 @@ import { createAdminClient } from "@/utils/supabase/admin";
 import { NextRequest, NextResponse } from "next/server";
 import { sendDownloadNotification } from "@/lib/email";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { EncryptionService } from "@/lib/encryption";
 
 export async function POST(req: NextRequest) {
   try {
@@ -45,6 +46,72 @@ export async function POST(req: NextRequest) {
         }, { status: 410 }); // 410 Gone
     }
 
+    // --- Generate Signed URLs for Access ---
+    // Because RLS prevents public access once limit is reached (or count > limit),
+    // and we just incremented, we MUST provide a Signed URL which bypasses RLS.
+    
+    // First, fetch file metadata to determine structure (chunks vs single)
+    const { data: fileData, error: fileError } = await supabase
+        .from('uploads')
+        .select('iv, size')
+        .eq('id', id)
+        .single();
+    
+    if (fileError || !fileData) {
+        console.error("Failed to fetch file metadata for signing", fileError);
+        return NextResponse.json({ error: "Failed to prepare download" }, { status: 500 });
+    }
+
+    let downloadUrls: string[] = [];
+    const EXPIRES_IN = 60 * 60; // 1 hour
+
+    if (fileData.iv === "CHUNKED_PARALLEL_V1") {
+        const CHUNK_SIZE = EncryptionService.CHUNK_SIZE;
+        const totalChunks = Math.ceil(fileData.size / CHUNK_SIZE);
+        const paths = [];
+        for (let i = 0; i < totalChunks; i++) {
+            paths.push(`${id}/${i}`);
+        }
+        
+        // createSignedUrls returns { data, error } where data is array of objects { path, signedUrl }
+        // Note: supabase-js v2
+        const { data: signedData, error: signError } = await supabase.storage
+            .from('drop-files')
+            .createSignedUrls(paths, EXPIRES_IN);
+            
+        if (signError || !signedData) {
+             console.error("Failed to sign URLs", signError);
+             return NextResponse.json({ error: "Failed to sign download URLs" }, { status: 500 });
+        }
+        
+        // Ensure order matches index
+        // The response usually matches the order of input paths, but let's be safe if possible.
+        // Actually for this array map, we can just map the results.
+        downloadUrls = signedData.map(d => d.signedUrl);
+
+    } else {
+        // Legacy Single File or CHUNKED_V1 (TUS)
+        // For TUS, the signed URL is for the whole file ID usually? 
+        // Or CHUNKED_V1 implies a folder... 
+        // Wait, TUS uploads are usually single objects in S3 if they are finalized?
+        // Let's assume standard download logic for single file.
+        // If it's CHUNKED_V1 (Legacy), we might need to handle it differently, 
+        // but the client logic uses `downloadStream` with a single signed URL for `file.id`.
+        
+        const { data: signedData, error: signError } = await supabase.storage
+            .from('drop-files')
+            .createSignedUrl(id, EXPIRES_IN);
+
+        if (signError || !signedData) {
+             console.error("Failed to sign URL", signError);
+             return NextResponse.json({ error: "Failed to sign download URL" }, { status: 500 });
+        }
+        
+        downloadUrls = [signedData.signedUrl];
+    }
+
+    // --- End Signed URLs ---
+
     // Check for notification preferences
     try {
         const { data: uploadData, error: uploadError } = await supabase
@@ -70,7 +137,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ 
         success: true, 
         count: new_count, 
-        limitReached: limit_reached 
+        limitReached: limit_reached,
+        signedUrls: downloadUrls
     });
 
   } catch (e: unknown) {

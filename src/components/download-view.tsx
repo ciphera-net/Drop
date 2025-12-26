@@ -642,10 +642,10 @@ export function DownloadView({ file }: { file: FileUpload }) {
                           <img src={previewUrl} alt="Preview" className="w-full h-auto max-h-[500px] object-contain bg-neutral-100 dark:bg-neutral-900" />
                       )}
                       {decryptedMimeType === 'application/pdf' && (
-                          <iframe src={previewUrl} className="w-full h-[500px]" title="PDF Preview"></iframe>
+                          <iframe src={previewUrl} className="w-full h-[500px]" title="PDF Preview" sandbox="allow-scripts"></iframe>
                       )}
                       {decryptedMimeType?.startsWith('text/') && (
-                          <iframe src={previewUrl} className="w-full h-[400px] bg-white" title="Text Preview"></iframe>
+                          <iframe src={previewUrl} className="w-full h-[400px] bg-white" title="Text Preview" sandbox=""></iframe>
                       )}
                   </div>
               )}

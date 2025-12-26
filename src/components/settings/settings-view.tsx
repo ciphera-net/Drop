@@ -5,18 +5,19 @@ import { User } from "@supabase/supabase-js";
 import { UserProfile } from "@/types";
 import { ProfileForm } from "./profile-form";
 import { PreferencesForm } from "./preferences-form";
+import { StorageForm } from "./storage-form";
 import { SecurityForm } from "./security-form";
 import { IntegrationsForm } from "./integrations-form";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { User as UserIcon, LockKey, Plug, Sliders } from "@phosphor-icons/react";
+import { User as UserIcon, LockKey, Plug, Sliders, HardDrives } from "@phosphor-icons/react";
 
 interface SettingsViewProps {
   user: User;
   profile: UserProfile | null;
 }
 
-type Tab = "general" | "preferences" | "security" | "integrations";
+type Tab = "general" | "preferences" | "storage" | "security" | "integrations";
 
 export function SettingsView({ user, profile }: SettingsViewProps) {
   const [activeTab, setActiveTab] = useState<Tab>("general");
@@ -24,6 +25,7 @@ export function SettingsView({ user, profile }: SettingsViewProps) {
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: "general", label: "General", icon: <UserIcon weight="bold" /> },
     { id: "preferences", label: "Preferences", icon: <Sliders weight="bold" /> },
+    { id: "storage", label: "Storage", icon: <HardDrives weight="bold" /> },
     { id: "security", label: "Security", icon: <LockKey weight="bold" /> },
     { id: "integrations", label: "Integrations", icon: <Plug weight="bold" /> },
   ];
@@ -56,6 +58,7 @@ export function SettingsView({ user, profile }: SettingsViewProps) {
       <div className="flex-1 lg:max-w-2xl">
         {activeTab === "general" && <ProfileForm user={user} profile={profile} />}
         {activeTab === "preferences" && <PreferencesForm user={user} profile={profile} />}
+        {activeTab === "storage" && <StorageForm user={user} />}
         {activeTab === "security" && <SecurityForm user={user} />}
         {activeTab === "integrations" && <IntegrationsForm user={user} profile={profile} />}
       </div>

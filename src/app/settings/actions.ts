@@ -3,6 +3,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { PGPService } from "@/lib/pgp";
+import { cleanupExpiredOrLimitReachedFile } from "@/lib/cleanup";
 
 export async function updatePGPKey(key: string) {
   const supabase = await createClient();
@@ -30,6 +31,93 @@ export async function updatePGPKey(key: string) {
   }
 
   return { success: true };
+}
+
+export async function getStorageStats() {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+  
+    if (authError || !user) {
+      throw new Error("Unauthorized");
+    }
+
+    // Get all active files
+    const { data: files, error } = await supabase
+        .from('uploads')
+        .select('size')
+        .eq('user_id', user.id)
+        .eq('file_deleted', false);
+
+    if (error) {
+        console.error("Error fetching storage stats:", error);
+        throw new Error("Failed to fetch storage stats");
+    }
+
+    const fileCount = files?.length || 0;
+    const totalBytes = files?.reduce((acc, file) => acc + (file.size || 0), 0) || 0;
+
+    return { fileCount, totalBytes };
+}
+
+export async function deleteAllFiles() {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+  
+    if (authError || !user) {
+      throw new Error("Unauthorized");
+    }
+
+    // Get all active files for user
+    const { data: files } = await supabase
+        .from('uploads')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('file_deleted', false);
+
+    if (!files || files.length === 0) {
+        return { success: true, count: 0 };
+    }
+
+    // Process deletion
+    let deletedCount = 0;
+    for (const file of files) {
+        await cleanupExpiredOrLimitReachedFile(file.id);
+        deletedCount++;
+    }
+
+    return { success: true, count: deletedCount };
+}
+
+export async function deleteExpiredFiles() {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+  
+    if (authError || !user) {
+      throw new Error("Unauthorized");
+    }
+
+    const now = new Date().toISOString();
+
+    // Get expired files for user
+    const { data: files } = await supabase
+        .from('uploads')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('file_deleted', false)
+        .lt('expiration_time', now);
+
+    if (!files || files.length === 0) {
+        return { success: true, count: 0 };
+    }
+
+    // Process deletion
+    let deletedCount = 0;
+    for (const file of files) {
+        await cleanupExpiredOrLimitReachedFile(file.id);
+        deletedCount++;
+    }
+
+    return { success: true, count: deletedCount };
 }
 
 export async function deleteAccount() {
@@ -94,4 +182,3 @@ export async function deleteAccount() {
   
   return { success: true };
 }
-

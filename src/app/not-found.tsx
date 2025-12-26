@@ -8,9 +8,19 @@ export default async function NotFound() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
+  let profile = null;
+  if (user) {
+    const { data } = await supabase
+      .from('user_profiles')
+      .select('display_name')
+      .eq('id', user.id)
+      .single();
+    profile = data;
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-background font-sans">
-      <SiteHeader user={user} />
+      <SiteHeader user={user} displayName={profile?.display_name} />
       <main className="flex-1 flex flex-col items-center justify-center text-center px-4">
         <div className="w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center mb-6">
            <span className="text-4xl font-bold text-primary">404</span>

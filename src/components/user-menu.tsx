@@ -13,10 +13,40 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useEffect, useState } from "react";
 
-export function UserMenu({ user }: { user: User | null }) {
+export function UserMenu({ user, displayName: initialDisplayName }: { user: User | null, displayName?: string | null }) {
   const router = useRouter();
   const supabase = createClient();
+  const [displayName, setDisplayName] = useState<string | null>(initialDisplayName || null);
+
+  // Sync prop changes (e.g. after router.refresh())
+  useEffect(() => {
+    if (initialDisplayName !== undefined) {
+      setDisplayName(initialDisplayName);
+    }
+  }, [initialDisplayName]);
+
+  useEffect(() => {
+    async function getProfile() {
+      if (!user) return;
+      
+      // If we have a display name from props, we rely on it and don't fetch
+      if (initialDisplayName !== undefined) return;
+      
+      const { data } = await supabase
+        .from('user_profiles')
+        .select('display_name')
+        .eq('id', user.id)
+        .single();
+        
+      if (data?.display_name) {
+        setDisplayName(data.display_name);
+      }
+    }
+    
+    getProfile();
+  }, [user, supabase, initialDisplayName]);
 
   const handleSignOut = async () => {
      await supabase.auth.signOut();
@@ -32,7 +62,7 @@ export function UserMenu({ user }: { user: User | null }) {
                     <UserCircle className="w-5 h-5" weight="duotone" />
                  </div>
                  <span className="text-sm font-medium hidden sm:inline-block max-w-[150px] truncate">
-                    {user.email?.split('@')[0]}
+                    {displayName || user.email?.split('@')[0]}
                  </span>
                  <CaretDown className="w-4 h-4 text-muted-foreground" />
               </Button>
@@ -40,7 +70,7 @@ export function UserMenu({ user }: { user: User | null }) {
            <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel className="font-normal">
                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">Account</p>
+                    <p className="text-sm font-medium leading-none">{displayName || 'Account'}</p>
                     <p className="text-xs leading-none text-muted-foreground truncate">
                        {user.email}
                     </p>

@@ -6,9 +6,19 @@ export default async function PrivacyPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
+  let profile = null;
+  if (user) {
+    const { data } = await supabase
+      .from('user_profiles')
+      .select('display_name')
+      .eq('id', user.id)
+      .single();
+    profile = data;
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-background font-sans text-foreground">
-      <SiteHeader user={user} />
+      <SiteHeader user={user} displayName={profile?.display_name} />
       <main className="flex-1 container max-w-3xl mx-auto px-4 py-12">
         <h1 className="text-4xl font-bold mb-8">Privacy Policy</h1>
         <div className="prose dark:prose-invert max-w-none space-y-6">

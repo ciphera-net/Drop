@@ -5,11 +5,12 @@ import { cn } from "@/lib/utils";
 
 interface SiteHeaderProps {
   user?: User | null;
+  displayName?: string | null;
   simple?: boolean; // If true, hides extra navigation/menus, focuses on Logo
   className?: string;
 }
 
-export function SiteHeader({ user, simple = false, className }: SiteHeaderProps) {
+export function SiteHeader({ user, displayName, simple = false, className }: SiteHeaderProps) {
   return (
     <header className={cn("w-full py-4 px-4 md:px-8 border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-50", className)}>
       <div className="max-w-6xl mx-auto flex items-center justify-between">
@@ -23,7 +24,7 @@ export function SiteHeader({ user, simple = false, className }: SiteHeaderProps)
         </div>
 
         <div className="flex items-center gap-2 md:gap-4">
-          {!simple && <UserMenu user={user ?? null} />}
+          {!simple && <UserMenu user={user ?? null} displayName={displayName} />}
         </div>
       </div>
     </header>

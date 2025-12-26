@@ -13,6 +13,12 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('display_name')
+    .eq('id', user.id)
+    .single();
+
   const { data: uploads } = await supabase
     .from('uploads')
     .select('*')
@@ -66,7 +72,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-       <SiteHeader user={user} />
+       <SiteHeader user={user} displayName={profile?.display_name} />
        <main className="flex-1 max-w-4xl w-full mx-auto p-4 py-8 md:p-8">
           <DashboardView uploads={uploads || []} requests={requests || []} />
        </main>

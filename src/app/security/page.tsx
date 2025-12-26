@@ -16,9 +16,19 @@ export default async function SecurityPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
+  let profile = null;
+  if (user) {
+    const { data } = await supabase
+      .from('user_profiles')
+      .select('display_name')
+      .eq('id', user.id)
+      .single();
+    profile = data;
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-background font-sans">
-      <SiteHeader user={user} />
+      <SiteHeader user={user} displayName={profile?.display_name} />
       
       <main className="flex-1 w-full max-w-4xl mx-auto px-6 py-16 md:py-24">
         

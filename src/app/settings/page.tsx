@@ -24,7 +24,7 @@ export default async function SettingsPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <SiteHeader user={user} />
+      <SiteHeader user={user} displayName={profile?.display_name} />
       <main className="flex-1 w-full max-w-5xl mx-auto py-10 px-4 md:px-6">
         <div className="space-y-6">
           <div className="space-y-0.5">

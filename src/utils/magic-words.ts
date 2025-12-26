@@ -49,9 +49,17 @@ export function generateMagicWords(): string {
   // Let's stick to a simple 3 word random selection from a combined pool to maximize entropy.
   
   const allWords = [...ADJECTIVES, ...NOUNS, ...VERBS];
-  const word1 = allWords[Math.floor(Math.random() * allWords.length)];
-  const word2 = allWords[Math.floor(Math.random() * allWords.length)];
-  const word3 = allWords[Math.floor(Math.random() * allWords.length)];
+  
+  // Use crypto for secure random number generation
+  const getRandomIndex = (max: number) => {
+    const array = new Uint32Array(1);
+    crypto.getRandomValues(array);
+    return array[0] % max;
+  };
+
+  const word1 = allWords[getRandomIndex(allWords.length)];
+  const word2 = allWords[getRandomIndex(allWords.length)];
+  const word3 = allWords[getRandomIndex(allWords.length)];
   
   return `${word1}-${word2}-${word3}`;
 }

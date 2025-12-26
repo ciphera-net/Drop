@@ -1,11 +1,22 @@
 import { createAdminClient } from "@/utils/supabase/admin";
 import { NextRequest, NextResponse } from "next/server";
 import { sendDownloadNotification } from "@/lib/email";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
   try {
     const { id } = await req.json();
     if (!id) return NextResponse.json({ error: "Missing ID" }, { status: 400 });
+
+    // Rate Limit Check to prevent DoS on download limits
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown';
+    // 100 downloads per hour per IP seems reasonable for a legitimate user
+    // This prevents a single IP from rapidly exhausting a file's download limit (griefing)
+    const { allowed } = await checkRateLimit(ip, 'increment-download', 100, 3600);
+
+    if (!allowed) {
+        return NextResponse.json({ error: "Too many download attempts. Please try again later." }, { status: 429 });
+    }
 
     const supabase = createAdminClient();
 

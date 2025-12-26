@@ -1,8 +1,9 @@
 import { createClient } from "@/utils/supabase/server";
 import { sendOtpEmail } from "@/lib/email";
 import { NextResponse } from "next/server";
+import { checkRateLimit } from "@/lib/rate-limit";
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -13,6 +14,14 @@ export async function POST() {
 
     if (!user.email) {
       return NextResponse.json({ error: "User email not found" }, { status: 400 });
+    }
+
+    // Rate Limit Check
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown';
+    const { allowed } = await checkRateLimit(ip, 'send-otp', 5, 3600); // 5 requests per hour
+
+    if (!allowed) {
+      return NextResponse.json({ error: "Too many attempts. Please try again later." }, { status: 429 });
     }
 
     // Generate 6 digit OTP

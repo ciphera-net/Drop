@@ -1,5 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   try {
@@ -14,6 +15,15 @@ export async function POST(request: Request) {
 
     if (!otp) {
         return NextResponse.json({ error: "OTP required" }, { status: 400 });
+    }
+
+    // Rate Limit Check
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown';
+    // Strict limit: 5 attempts per 10 minutes to prevent brute forcing
+    const { allowed } = await checkRateLimit(ip, 'verify-otp', 5, 600); 
+
+    if (!allowed) {
+      return NextResponse.json({ error: "Too many failed attempts. Please try again later." }, { status: 429 });
     }
 
     const { data: verification, error: dbError } = await supabase

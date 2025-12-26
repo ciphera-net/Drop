@@ -7,6 +7,10 @@
     {
       "path": "/api/monitor",
       "schedule": "30 * * * *"
+    },
+    {
+      "path": "/api/cleanup-orphans",
+      "schedule": "0 3 * * *"
     }
   ]
 }

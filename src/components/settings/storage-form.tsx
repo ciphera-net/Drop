@@ -37,7 +37,7 @@ function formatBytes(bytes: number, decimals = 2) {
 
 export function StorageForm({ user }: StorageFormProps) {
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ fileCount: 0, totalBytes: 0 });
+  const [stats, setStats] = useState({ fileCount: 0, totalBytes: 0, limit: null as number | null });
   const [actionLoading, setActionLoading] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isExpiredDeleteDialogOpen, setIsExpiredDeleteDialogOpen] = useState(false);
@@ -92,17 +92,9 @@ export function StorageForm({ user }: StorageFormProps) {
     }
   };
 
-  // Assuming a soft limit or just showing usage. 
-  // If there's no hard limit, we can just show the bar as visual flair or relative to some arbitrary "large" amount (e.g. 1GB or 10GB) if we want to show scale,
-  // or just show full width if we don't have a limit.
-  // The requirements say "Usage Bar: Visual indicator of total storage used vs. limit (if any)".
-  // If no limit, maybe just show the text and a small bar representing "used".
-  // Let's assume a hypothetical limit for visualization if none exists, or just show text.
-  // Actually, standard free tier might be 1GB? Let's just show text if no limit known.
-  // But to satisfy "Usage Bar", I'll put a progress bar. If no limit, maybe 100% full? Or 0%?
-  // Let's assume 1GB for visualization if we don't have profile limit.
-  const visualLimit = 1024 * 1024 * 1024; // 1 GB
-  const percentage = Math.min((stats.totalBytes / visualLimit) * 100, 100);
+  const limit = stats.limit || 1024 * 1024 * 1024 * 5; // Default 5GB visualization if not set
+  const percentage = Math.min((stats.totalBytes / limit) * 100, 100);
+  const isLimitReached = stats.totalBytes >= limit;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -119,12 +111,20 @@ export function StorageForm({ user }: StorageFormProps) {
         <div className="space-y-2">
             <div className="flex justify-between text-sm font-medium">
                 <span>Storage Used</span>
-                <span>{formatBytes(stats.totalBytes)}</span>
+                <span>{formatBytes(stats.totalBytes)} / {formatBytes(limit)}</span>
             </div>
             <Progress value={percentage} className="h-2" />
-            <p className="text-xs text-muted-foreground">
-                Total active files: {stats.fileCount}
-            </p>
+            <div className="flex justify-between items-start">
+                <p className="text-xs text-muted-foreground">
+                    Total active files: {stats.fileCount}
+                </p>
+                {isLimitReached && (
+                    <p className="text-xs text-destructive font-medium flex items-center gap-1">
+                        <Warning weight="fill" />
+                        Storage Limit Reached
+                    </p>
+                )}
+            </div>
         </div>
 
         {/* Cleanup Tools */}

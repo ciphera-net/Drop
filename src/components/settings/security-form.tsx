@@ -162,7 +162,7 @@ export function SecurityForm({ user }: SecurityFormProps) {
              for (const factor of factors.totp) {
                  // Delete any unverified factor, OR any factor explicitly named "Ciphera Drop" 
                  // (since we are in Setup mode, we shouldn't have valid ones blocking us)
-                 if (factor.status === 'unverified' || factor.friendly_name === 'Ciphera Drop') {
+                 if ((factor.status as string) === 'unverified' || factor.friendly_name === 'Ciphera Drop') {
                       await supabase.auth.mfa.unenroll({ factorId: factor.id });
                  }
              }

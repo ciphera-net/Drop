@@ -43,7 +43,7 @@ export interface FileRequest {
 
 // UI extended types
 export interface DecryptedFile extends FileUpload {
-  name?: string; // Decrypted name
+  filename?: string; // Decrypted name
   aesKey?: CryptoKey; // Decrypted AES key
 }
 
@@ -55,4 +55,6 @@ export interface UserProfile {
   default_expiration?: string | null;
   default_download_limit?: number | null;
   default_auto_delete?: boolean | null;
+  pgp_public_key?: string | null;
+  storage_limit?: number | null; // Added storage limit
 }

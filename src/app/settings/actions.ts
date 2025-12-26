@@ -53,10 +53,17 @@ export async function getStorageStats() {
         throw new Error("Failed to fetch storage stats");
     }
 
+    const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('storage_limit')
+        .eq('id', user.id)
+        .single();
+
     const fileCount = files?.length || 0;
     const totalBytes = files?.reduce((acc, file) => acc + (file.size || 0), 0) || 0;
+    const limit = profile?.storage_limit || null;
 
-    return { fileCount, totalBytes };
+    return { fileCount, totalBytes, limit };
 }
 
 export async function deleteAllFiles() {

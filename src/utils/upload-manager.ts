@@ -26,6 +26,33 @@ export async function uploadEncryptedFile(
   const token = session?.access_token || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!token) throw new Error("No authentication token available");
 
+  // 0. Quota Check (if authenticated)
+  if (session?.user) {
+    // Fetch profile limit and current usage
+    const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('storage_limit')
+        .eq('id', session.user.id)
+        .single();
+    
+    if (profile?.storage_limit) {
+        // Calculate current usage
+        // Note: This is an approximation. A robust system would have a 'used_storage' column updated via triggers.
+        // But for <5k files, a SUM query is fast enough.
+        const { data: usage } = await supabase
+            .from('uploads')
+            .select('size')
+            .eq('user_id', session.user.id)
+            .eq('file_deleted', false);
+        
+        const currentUsage = usage?.reduce((acc, f) => acc + (f.size || 0), 0) || 0;
+        
+        if (currentUsage + file.size > profile.storage_limit) {
+            throw new Error(`Storage Quota Exceeded. Limit: ${(profile.storage_limit / 1024 / 1024 / 1024).toFixed(2)} GB`);
+        }
+    }
+  }
+
   const chunkSize = EncryptionService.CHUNK_SIZE;
   const totalChunks = Math.ceil(file.size / chunkSize);
   const totalOverhead = totalChunks * EncryptionService.ENCRYPTED_CHUNK_OVERHEAD;

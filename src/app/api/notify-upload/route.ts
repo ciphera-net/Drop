@@ -37,7 +37,7 @@ export async function POST(request: Request) {
 
     const { data: reqData, error: reqError } = await supabase
         .from('file_requests')
-        .select('notify_email, name')
+        .select('notify_email, name, user_id')
         .eq('id', requestId)
         .single();
         
@@ -54,7 +54,21 @@ export async function POST(request: Request) {
         return NextResponse.json({ success: true });
     }
 
-    const { data, error } = await sendUploadNotification(reqData.notify_email, reqData.name, fileName);
+    // Fetch PGP Key if user exists
+    let pgpKey: string | null = null;
+    if (reqData.user_id) {
+        const { data: profile } = await supabase
+            .from('user_profiles')
+            .select('pgp_public_key')
+            .eq('id', reqData.user_id)
+            .single();
+        
+        if (profile?.pgp_public_key) {
+            pgpKey = profile.pgp_public_key;
+        }
+    }
+
+    const { data, error } = await sendUploadNotification(reqData.notify_email, reqData.name, fileName, pgpKey);
 
     if (error) {
       console.error("Resend API Error:", error);
@@ -63,8 +77,9 @@ export async function POST(request: Request) {
     
     return NextResponse.json({ success: true, id: data?.id });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Notification Route Error:", error);
-    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Internal Server Error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

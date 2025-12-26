@@ -142,6 +142,21 @@ export class PGPService {
     }
   }
 
+  /**
+   * Validates if a string is a valid PGP public key.
+   */
+  static async validateKey(armoredKey: string): Promise<boolean> {
+    try {
+      if (!armoredKey.includes('-----BEGIN PGP PUBLIC KEY BLOCK-----')) {
+        return false;
+      }
+      await openpgp.readKey({ armoredKey });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   private static async fetchKey(url: string): Promise<string | null> {
     try {
       const controller = new AbortController();
@@ -159,7 +174,7 @@ export class PGPService {
         const key = await openpgp.readKey({ armoredKey: text });
         return key.armor();
       }
-    } catch (e) {
+    } catch {
       // Ignore fetch errors
     }
     return null;

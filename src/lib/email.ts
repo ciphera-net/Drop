@@ -6,6 +6,25 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const NOTIFICATION_EMAIL = 'Drop <drop@operational.ciphera.net>';
 const AUTH_EMAIL = 'Drop <drop@auth.ciphera.net>';
 
+// Helper function to send encrypted email
+async function sendEncryptedEmail(to: string, subject: string, plainBody: string, pgpKey: string) {
+    const encryptedBody = await PGPService.encrypt(plainBody, pgpKey);
+    return await resend.emails.send({
+      from: NOTIFICATION_EMAIL,
+      to: [to],
+      subject: `Encrypted: ${subject}`,
+      text: encryptedBody,
+      html: `
+        <!DOCTYPE html>
+        <html>
+          <body>
+            <pre style="white-space: pre-wrap; word-wrap: break-word; font-family: monospace; color: #333;">${encryptedBody}</pre>
+          </body>
+        </html>
+      `
+    });
+}
+
 export async function sendOtpEmail(email: string, otp: string) {
   if (!process.env.RESEND_API_KEY) {
     throw new Error("Missing RESEND_API_KEY");
@@ -76,27 +95,7 @@ This email was automatically encrypted because we found a public key
 associated with your email address via Web Key Directory (WKD).
 ----------------------------------------------------------------------
 `;
-    
-    // Encrypt the message
-    const encryptedBody = await PGPService.encrypt(plainTextBody, publicKey);
-    
-    // Send encrypted email
-    return await resend.emails.send({
-      from: NOTIFICATION_EMAIL,
-      to: [email],
-      subject: 'Encrypted: A secure file has been shared with you',
-      // We provide both text and HTML versions of the encrypted block.
-      // Proton Mail and others often scan the body for the PGP block.
-      text: encryptedBody,
-      html: `
-        <!DOCTYPE html>
-        <html>
-          <body>
-            <pre style="white-space: pre-wrap; word-wrap: break-word; font-family: monospace; color: #333;">${encryptedBody}</pre>
-          </body>
-        </html>
-      `
-    });
+    return sendEncryptedEmail(email, 'A secure file has been shared with you', plainTextBody, publicKey);
   }
 
   return await resend.emails.send({
@@ -139,12 +138,30 @@ associated with your email address via Web Key Directory (WKD).
   });
 }
 
-export async function sendDownloadNotification(email: string, fileId: string, ip?: string, userAgent?: string) {
+export async function sendDownloadNotification(email: string, fileId: string, ip?: string, userAgent?: string, pgpKey?: string | null) {
   if (!process.env.RESEND_API_KEY) {
     throw new Error("Missing RESEND_API_KEY");
   }
 
   const time = new Date().toLocaleString('en-US', { timeZone: 'UTC', timeZoneName: 'short' });
+
+  if (pgpKey) {
+      const plainBody = `
+File Downloaded
+
+A secure file you shared via Drop has just been downloaded.
+
+File ID: ${fileId}
+Time: ${time}
+${ip ? `IP Address: ${ip}` : ''}
+${userAgent ? `Device / User Agent: ${userAgent}` : ''}
+
+----------------------------------------------------------------------
+This email was automatically encrypted using your PGP public key.
+----------------------------------------------------------------------
+`;
+      return sendEncryptedEmail(email, 'Your file has been downloaded', plainBody, pgpKey);
+  }
 
   return await resend.emails.send({
     from: NOTIFICATION_EMAIL,
@@ -164,7 +181,6 @@ export async function sendDownloadNotification(email: string, fileId: string, ip
             h2 { color: #111; margin-bottom: 20px; }
             .label { color: #666; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
             .value { color: #111; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 14px; }
-            .file-id { background-color: #f3f4f6; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 13px; color: #555; }
           </style>
         </head>
         <body>
@@ -204,12 +220,30 @@ export async function sendDownloadNotification(email: string, fileId: string, ip
   });
 }
 
-export async function sendUploadNotification(email: string, requestName: string, fileName: string) {
+export async function sendUploadNotification(email: string, requestName: string, fileName: string, pgpKey?: string | null) {
   if (!process.env.RESEND_API_KEY) {
     throw new Error("Missing RESEND_API_KEY");
   }
 
   const dashboardUrl = process.env.NEXT_PUBLIC_APP_URL ? `${process.env.NEXT_PUBLIC_APP_URL}/dashboard` : '#';
+
+  if (pgpKey) {
+      const plainBody = `
+New File Received
+
+A new file has been uploaded to your request "${requestName}".
+
+File Name: ${fileName || 'Encrypted File'}
+
+Go to Dashboard to decrypt and download it:
+${dashboardUrl}
+
+----------------------------------------------------------------------
+This email was automatically encrypted using your PGP public key.
+----------------------------------------------------------------------
+`;
+      return sendEncryptedEmail(email, `New File Uploaded: ${requestName}`, plainBody, pgpKey);
+  }
 
   return await resend.emails.send({
     from: NOTIFICATION_EMAIL,

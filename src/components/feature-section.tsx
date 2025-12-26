@@ -19,6 +19,21 @@ export function FeatureSection() {
                title="No Tracking"
                desc="We don't log your IP or sell your data. Pure privacy."
             />
+             <FeatureCard 
+               icon={<ShieldCheck className="w-6 h-6 text-primary" weight="fill" />}
+               title="Secure File Requests"
+               desc="Create a secure link to receive files from anyone, encrypted for your eyes only."
+            />
+             <FeatureCard 
+               icon={<Lock className="w-6 h-6 text-primary" weight="fill" />}
+               title="Encrypted Messaging"
+               desc="Share passwords or sensitive text that self-destruct after reading."
+            />
+             <FeatureCard 
+               icon={<Globe className="w-6 h-6 text-primary" weight="fill" />}
+               title="Smart PGP Support"
+               desc="Email notifications are automatically PGP encrypted for compatible providers."
+            />
     </div>
   )
 }

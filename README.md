@@ -5,11 +5,14 @@
 ## Features
 
 - **Ephemeral Storage**: Files are automatically deleted after a set duration or download count.
+- **Secure File Requests**: Generate a secure link to receive files from anyone.
 - **Magic Words**: Share files using memorable 3-word combinations (e.g., `happy-blue-tiger`) instead of complex URLs.
+- **Encrypted Messages**: Securely share sensitive text or passwords that burn on read.
+- **Smart PGP Notifications**: Email notifications are automatically encrypted if your provider supports WKD (e.g., ProtonMail).
 - **End-to-End Encryption**: Client-side encryption ensures your files remain private.
 - **Password Protection**: Add an extra layer of security with optional passwords.
 - **Download Limits**: Restrict the number of times a file can be downloaded.
-- **No Account Required**: Start sharing immediately without registration.
+- **User Verification**: Verify your email to manage your uploads and file requests.
 
 ## Tech Stack
 

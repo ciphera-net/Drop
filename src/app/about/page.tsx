@@ -78,6 +78,18 @@ export default async function AboutPage() {
             </div>
 
             <div className="grid grid-cols-3 p-4 border-b hover:bg-muted/20 items-center">
+              <div className="font-medium text-sm">Secure File Requests</div>
+              <div className="text-center text-sm text-muted-foreground">Rare</div>
+              <div className="text-center text-green-500 font-bold text-sm">Yes</div>
+            </div>
+
+            <div className="grid grid-cols-3 p-4 border-b hover:bg-muted/20 items-center">
+              <div className="font-medium text-sm">Smart PGP Emails</div>
+              <div className="text-center text-sm text-muted-foreground">No</div>
+              <div className="text-center text-green-500 font-bold text-sm">Yes</div>
+            </div>
+
+            <div className="grid grid-cols-3 p-4 border-b hover:bg-muted/20 items-center">
               <div className="font-medium text-sm">Tracking & Ads</div>
               <div className="text-center text-sm text-muted-foreground">Yes</div>
               <div className="text-center text-sm text-foreground">No</div>

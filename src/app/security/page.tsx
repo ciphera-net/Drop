@@ -184,6 +184,10 @@ export default async function SecurityPage() {
                         </li>
                         <li className="flex items-start gap-2">
                             <CheckCircle weight="fill" className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+                            <span><strong>OpenPGP.js:</strong> Used for encrypting email notifications for users with WKD-enabled email providers.</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                            <CheckCircle weight="fill" className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
                             <span><strong>Web Crypto API:</strong> We use the browser's native, optimized cryptographic implementations.</span>
                         </li>
                     </ul>

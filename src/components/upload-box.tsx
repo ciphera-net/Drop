@@ -14,7 +14,7 @@ import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Label } from "./ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "./ui/dialog";
-import { CloudArrowUp, Copy, Check, X, EnvelopeSimple, LockKey, Warning, QrCode, NotePencil, Fire, Infinity as InfinityIcon, Share, CaretDown, CaretUp, Bell, ShieldCheck } from "@phosphor-icons/react";
+import { CloudArrowUp, Copy, Check, X, EnvelopeSimple, LockKey, Warning, QrCode, NotePencil, Fire, Infinity as InfinityIcon, Share, CaretDown, CaretUp, Bell, ShieldCheck, Sliders } from "@phosphor-icons/react";
 import { QRCodeSVG } from "qrcode.react";
 import { cn } from "@/lib/utils";
 import { uploadEncryptedFile } from "@/utils/upload-manager";
@@ -54,6 +54,7 @@ export function UploadBox() {
 
   const [notifyOnDownload, setNotifyOnDownload] = useState(false);
   const [senderEmail, setSenderEmail] = useState("");
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
@@ -781,75 +782,93 @@ export function UploadBox() {
                         </button>
                       </div>
                       <div className="col-span-2 pt-2 border-t border-dashed border-border/60">
-                         <Label className="text-xs mb-1.5 flex items-center gap-1 text-muted-foreground">
-                            <LockKey weight="fill" className="text-orange-500"/> Password Protection (Optional)
-                         </Label>
-                         <Input 
-                            type="password" 
-                            placeholder="Enter a password to encrypt this file" 
-                            className="h-8 text-xs bg-background"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                         />
-                         <PasswordStrengthMeter password={password} className="mt-2" />
+                         <button
+                            onClick={() => setShowAdvanced(!showAdvanced)}
+                            className="w-full flex items-center justify-between text-xs font-medium text-muted-foreground hover:text-foreground transition-colors py-1"
+                         >
+                            <div className="flex items-center gap-2">
+                                <Sliders weight="fill" className="w-4 h-4" />
+                                <span>Advanced Options</span>
+                            </div>
+                            {showAdvanced ? <CaretUp className="w-3 h-3" /> : <CaretDown className="w-3 h-3" />}
+                         </button>
                       </div>
-                      <div className="col-span-2 pt-2 border-t border-dashed border-border/60">
-                         <Label className="text-xs mb-1.5 flex items-center gap-1 text-muted-foreground">
-                            <NotePencil weight="fill" className="text-blue-500"/> Encrypted Note (Optional)
-                         </Label>
-                         <Textarea 
-                            placeholder="Add a secure message for the recipient..." 
-                            className="min-h-[60px] text-xs bg-background resize-none"
-                            value={message}
-                            onChange={(e) => setMessage(e.target.value)}
-                         />
-                      </div>
-                      
-                      <div className="col-span-2 pt-2 border-t border-dashed border-border/60">
-                         <div className="flex items-center space-x-2 mb-2">
-                             <button
-                                type="button"
-                                onClick={() => setNotifyOnDownload(!notifyOnDownload)}
-                                className={cn(
-                                    "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                                    notifyOnDownload ? "bg-primary" : "bg-input"
-                                )}
-                             >
-                                <span className={cn(
-                                    "pointer-events-none block h-4 w-4 rounded-full bg-background shadow-lg ring-0 transition-transform",
-                                    notifyOnDownload ? "translate-x-4" : "translate-x-0"
-                                )} />
-                             </button>
-                             <Label 
-                                onClick={() => setNotifyOnDownload(!notifyOnDownload)}
-                                className="text-xs flex items-center gap-1 cursor-pointer select-none"
-                             >
-                                <Bell weight="fill" className={cn("w-4 h-4", notifyOnDownload ? "text-primary" : "text-muted-foreground")} />
-                                <span>Notify me when downloaded</span>
-                             </Label>
-                         </div>
-                         
-                         {notifyOnDownload && (
-                             <div className="animate-in slide-in-from-top-1 fade-in duration-200 space-y-2">
-                                 <div className="flex gap-2">
-                                     <Input 
-                                        type="email" 
-                                        placeholder="your-email@example.com" 
-                                        className="h-8 text-xs bg-background flex-1"
-                                        value={senderEmail || ""}
-                                        onChange={(e) => setSenderEmail(e.target.value)}
-                                     />
-                                     <SimpleLoginButton 
-                                        onAliasGenerated={setSenderEmail} 
-                                        className="h-8 px-2 text-xs"
-                                     />
+
+                      {showAdvanced && (
+                          <div className="col-span-2 space-y-4 animate-in slide-in-from-top-2 pt-1">
+                              <div>
+                                 <Label className="text-xs mb-1.5 flex items-center gap-1 text-muted-foreground">
+                                    <LockKey weight="fill" className="text-orange-500"/> Password Protection (Optional)
+                                 </Label>
+                                 <Input 
+                                    type="password" 
+                                    placeholder="Enter a password to encrypt this file" 
+                                    className="h-8 text-xs bg-background"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                 />
+                                 <PasswordStrengthMeter password={password} className="mt-2" />
+                              </div>
+
+                              <div>
+                                 <Label className="text-xs mb-1.5 flex items-center gap-1 text-muted-foreground">
+                                    <NotePencil weight="fill" className="text-blue-500"/> Encrypted Note (Optional)
+                                 </Label>
+                                 <Textarea 
+                                    placeholder="Add a secure message for the recipient..." 
+                                    className="min-h-[60px] text-xs bg-background resize-none"
+                                    value={message}
+                                    onChange={(e) => setMessage(e.target.value)}
+                                 />
+                              </div>
+
+                              <div>
+                                 <div className="flex items-center space-x-2 mb-2">
+                                     <button
+                                        type="button"
+                                        onClick={() => setNotifyOnDownload(!notifyOnDownload)}
+                                        className={cn(
+                                            "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                                            notifyOnDownload ? "bg-primary" : "bg-input"
+                                        )}
+                                     >
+                                        <span className={cn(
+                                            "pointer-events-none block h-4 w-4 rounded-full bg-background shadow-lg ring-0 transition-transform",
+                                            notifyOnDownload ? "translate-x-4" : "translate-x-0"
+                                        )} />
+                                     </button>
+                                     <Label 
+                                        onClick={() => setNotifyOnDownload(!notifyOnDownload)}
+                                        className="text-xs flex items-center gap-1 cursor-pointer select-none"
+                                     >
+                                        <Bell weight="fill" className={cn("w-4 h-4", notifyOnDownload ? "text-primary" : "text-muted-foreground")} />
+                                        <span>Notify me when downloaded</span>
+                                     </Label>
                                  </div>
-                                 <p className="text-[10px] text-muted-foreground ml-1">
-                                     We&apos;ll send you an email when someone downloads this file.
-                                 </p>
-                             </div>
-                         )}
-                      </div>
+                                 
+                                 {notifyOnDownload && (
+                                     <div className="animate-in slide-in-from-top-1 fade-in duration-200 space-y-2">
+                                         <div className="flex gap-2">
+                                             <Input 
+                                                type="email" 
+                                                placeholder="your-email@example.com" 
+                                                className="h-8 text-xs bg-background flex-1"
+                                                value={senderEmail || ""}
+                                                onChange={(e) => setSenderEmail(e.target.value)}
+                                             />
+                                             <SimpleLoginButton 
+                                                onAliasGenerated={setSenderEmail} 
+                                                className="h-8 px-2 text-xs"
+                                             />
+                                         </div>
+                                         <p className="text-[10px] text-muted-foreground ml-1">
+                                             We&apos;ll send you an email when someone downloads this file.
+                                         </p>
+                                     </div>
+                                 )}
+                              </div>
+                          </div>
+                      )}
                     </div>
                  </div>
                </div>

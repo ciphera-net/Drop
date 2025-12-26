@@ -52,4 +52,7 @@ export interface UserProfile {
   simplelogin_api_key?: string | null;
   display_name?: string | null;
   updated_at?: string;
+  default_expiration?: string | null;
+  default_download_limit?: number | null;
+  default_auto_delete?: boolean | null;
 }

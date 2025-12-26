@@ -27,6 +27,8 @@ import { PasswordStrengthMeter } from "@/components/password-strength-meter";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024; // 5GB
 
+import { UserProfile } from "@/types";
+
 export function UploadBox() {
   const [file, setFile] = useState<File | null>(null);
   const [zipping, setZipping] = useState(false);
@@ -56,6 +58,7 @@ export function UploadBox() {
   const [senderEmail, setSenderEmail] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     if (typeof navigator !== 'undefined' && 'share' in navigator) {
@@ -66,15 +69,47 @@ export function UploadBox() {
   const supabase = createClient();
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    const fetchUserAndProfile = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
         setUser(user);
         if (user?.email) {
             setSenderEmail(user.email);
         }
-    });
+
+        if (user) {
+             const { data: profile } = await supabase
+                .from('user_profiles')
+                .select('*')
+                .eq('id', user.id)
+                .single();
+             
+             if (profile) {
+                 setUserProfile(profile);
+                 
+                 // Apply defaults
+                 if (profile.default_expiration) {
+                     setExpiration(profile.default_expiration);
+                 }
+                 
+                 if (profile.default_auto_delete) {
+                     setMaxDownloads(1);
+                 } else if (profile.default_download_limit !== null && profile.default_download_limit !== undefined) {
+                     setMaxDownloads(profile.default_download_limit);
+                 } else {
+                     // If user has preferences set but download limit is null (unlimited), set to null.
+                     // But if they have no preferences, existing logic below (useEffect [user, maxDownloads]) handles it?
+                     // Actually logic below forces 1 if !user.
+                     // If user is logged in, we can set null.
+                     setMaxDownloads(null);
+                 }
+             }
+        }
+    };
+    fetchUserAndProfile();
   }, [supabase]);
 
   useEffect(() => {
+    // Only enforce guest limit if no user
     if (!user && maxDownloads === null) {
       setMaxDownloads(1);
     }
@@ -335,6 +370,7 @@ export function UploadBox() {
       let expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 1d
       if (expiration === '1h') expiresAt = new Date(now.getTime() + 60 * 60 * 1000);
       if (expiration === '7d') expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      if (expiration === 'never') expiresAt = new Date(now.getTime() + 100 * 365 * 24 * 60 * 60 * 1000); // 100 years
 
       const generatedMagicWords = generateMagicWords();
       const { data: { user } } = await supabase.auth.getUser();
@@ -404,7 +440,24 @@ export function UploadBox() {
     setShowHash(false);
     setPassword("");
     setMessage("");
-    setMaxDownloads(1);
+    
+    // Reset defaults based on profile
+    if (userProfile) {
+         if (userProfile.default_expiration) setExpiration(userProfile.default_expiration);
+         else setExpiration("1h");
+
+         if (userProfile.default_auto_delete) {
+             setMaxDownloads(1);
+         } else if (userProfile.default_download_limit !== null && userProfile.default_download_limit !== undefined) {
+             setMaxDownloads(userProfile.default_download_limit);
+         } else {
+             setMaxDownloads(null);
+         }
+    } else {
+        setExpiration("1h");
+        setMaxDownloads(1);
+    }
+    
     setProgress(0);
     setUploading(false);
     setUploadStats(null);
@@ -674,18 +727,18 @@ export function UploadBox() {
                       <div>
                         <Label className="text-xs mb-1.5 block text-muted-foreground">Expires In</Label>
                         <div className="flex space-x-1">
-                           {['1h', '1d', '7d'].map((opt) => (
+                           {['1h', '1d', '7d', 'never'].map((opt) => (
                              <button 
                                key={opt}
                                onClick={() => setExpiration(opt)}
                                className={cn(
-                                 "flex-1 py-1.5 text-xs rounded-md border transition-all duration-200 font-medium",
+                                 "flex-1 py-1.5 text-xs rounded-md border transition-all duration-200 font-medium capitalize",
                                  expiration === opt 
                                    ? "bg-primary text-white border-primary shadow-sm" 
                                    : "bg-background text-muted-foreground border-border hover:border-primary/30"
                                )}
                              >
-                               {opt}
+                               {opt === 'never' ? 'Never' : opt}
                              </button>
                            ))}
                         </div>

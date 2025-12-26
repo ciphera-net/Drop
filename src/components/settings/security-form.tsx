@@ -11,7 +11,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -28,6 +27,7 @@ import { toast } from "sonner";
 import { PasswordStrengthMeter } from "@/components/password-strength-meter";
 import { updatePGPKey, deleteAccount } from "@/app/settings/actions";
 import { CheckCircle, XCircle } from "@phosphor-icons/react";
+import { QRCodeSVG } from "qrcode.react";
 
 interface SecurityFormProps {
   user: User;
@@ -42,6 +42,11 @@ export function SecurityForm({ user }: SecurityFormProps) {
   const [pgpLoading, setPgpLoading] = useState(false);
 
   const [mfaStatus, setMfaStatus] = useState<"enabled" | "disabled" | "loading">("loading");
+  const [isSetupOpen, setIsSetupOpen] = useState(false);
+  const [qrCode, setQrCode] = useState("");
+  const [factorId, setFactorId] = useState("");
+  const [verifyCode, setVerifyCode] = useState("");
+  const [setupError, setSetupError] = useState("");
 
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState("");
@@ -64,25 +69,25 @@ export function SecurityForm({ user }: SecurityFormProps) {
     fetchProfile();
 
     // Fetch MFA Status
-    const fetchMfa = async () => {
-        const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-        if (data) {
-             // aal2 means 2FA is active
-             if (data.currentLevel === 'aal2') {
-                 setMfaStatus('enabled');
-             } else {
-                 // Check enrolled factors just in case they are set up but not currently active for this session
-                 const { data: factors } = await supabase.auth.mfa.listFactors();
-                 if (factors && factors.totp.length > 0) {
-                     setMfaStatus('enabled');
-                 } else {
-                     setMfaStatus('disabled');
-                 }
-             }
-        }
-    };
-    fetchMfa();
+    checkMfaStatus();
   }, [supabase, user.id]);
+
+  const checkMfaStatus = async () => {
+      const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (data) {
+           if (data.currentLevel === 'aal2') {
+               setMfaStatus('enabled');
+           } else {
+               const { data: factors } = await supabase.auth.mfa.listFactors();
+               // Only consider VERIFIED factors as enabled
+               if (factors && factors.totp.some(f => f.status === 'verified')) {
+                   setMfaStatus('enabled');
+               } else {
+                   setMfaStatus('disabled');
+               }
+           }
+      }
+  };
 
 
   const handlePasswordUpdate = async (e: React.FormEvent) => {
@@ -144,6 +149,105 @@ export function SecurityForm({ user }: SecurityFormProps) {
           const message = e instanceof Error ? e.message : "Failed to delete account";
           toast.error(message);
           setDeleteLoading(false);
+      }
+  };
+
+  const onEnable2FA = async () => {
+    setLoading(true);
+    setSetupError("");
+    try {
+        // Aggressively clean up any conflicting factors before enrollment
+        const { data: factors } = await supabase.auth.mfa.listFactors();
+        if (factors && factors.totp) {
+             for (const factor of factors.totp) {
+                 // Delete any unverified factor, OR any factor explicitly named "Ciphera Drop" 
+                 // (since we are in Setup mode, we shouldn't have valid ones blocking us)
+                 if (factor.status === 'unverified' || factor.friendly_name === 'Ciphera Drop') {
+                      await supabase.auth.mfa.unenroll({ factorId: factor.id });
+                 }
+             }
+        }
+
+        // Add a small random suffix if we still have collisions, or just to be safe if multiple devices setup same time
+        const { data, error } = await supabase.auth.mfa.enroll({
+            factorType: 'totp',
+            friendlyName: 'Ciphera Drop'
+        });
+
+        if (error) {
+            // Retry with unique name if duplicate name error persists
+            if (error.message.includes('already exists')) {
+                 const { data: retryData, error: retryError } = await supabase.auth.mfa.enroll({
+                    factorType: 'totp',
+                    friendlyName: `Ciphera Drop (${new Date().getSeconds()})`
+                });
+                if (retryError) throw retryError;
+                setFactorId(retryData.id);
+                setQrCode(retryData.totp.uri || retryData.totp.qr_code);
+                setIsSetupOpen(true);
+                return;
+            }
+            throw error;
+        }
+        
+        setFactorId(data.id);
+        
+        if (data.totp.uri) {
+             setQrCode(data.totp.uri);
+        } else {
+             setQrCode(data.totp.qr_code); 
+        }
+
+        setIsSetupOpen(true);
+    } catch (e: any) {
+        toast.error(e.message);
+    } finally {
+        setLoading(false);
+    }
+  };
+
+  const onVerifySetup = async () => {
+    setLoading(true);
+    setSetupError("");
+    try {
+        const { data: challenge, error: challengeError } = await supabase.auth.mfa.challenge({ factorId });
+        if (challengeError) throw challengeError;
+
+        const { data: verify, error: verifyError } = await supabase.auth.mfa.verify({
+            factorId,
+            challengeId: challenge.id,
+            code: verifyCode
+        });
+        if (verifyError) throw verifyError;
+
+        toast.success("2FA Enabled Successfully");
+        setIsSetupOpen(false);
+        setMfaStatus("enabled");
+        setVerifyCode("");
+    } catch (e: any) {
+        setSetupError(e.message);
+    } finally {
+        setLoading(false);
+    }
+  };
+
+  const onDisable2FA = async () => {
+      if (!confirm("Are you sure you want to disable 2FA? This will make your account less secure.")) return;
+      
+      setLoading(true);
+      try {
+          const { data: factors } = await supabase.auth.mfa.listFactors();
+          if (factors && factors.totp.length > 0) {
+              for (const factor of factors.totp) {
+                   await supabase.auth.mfa.unenroll({ factorId: factor.id });
+              }
+          }
+          setMfaStatus("disabled");
+          toast.success("2FA Disabled");
+      } catch (e: any) {
+          toast.error(e.message);
+      } finally {
+          setLoading(false);
       }
   };
 
@@ -212,7 +316,63 @@ export function SecurityForm({ user }: SecurityFormProps) {
                         </>
                     )}
                 </div>
+                
+                {mfaStatus !== 'loading' && (
+                    mfaStatus === 'enabled' ? (
+                        <Button variant="outline" onClick={onDisable2FA} disabled={loading}>Disable 2FA</Button>
+                    ) : (
+                        <Button onClick={onEnable2FA} disabled={loading}>Setup 2FA</Button>
+                    )
+                )}
             </div>
+
+            <Dialog open={isSetupOpen} onOpenChange={setIsSetupOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Setup Two-Factor Authentication</DialogTitle>
+                        <DialogDescription>
+                            Scan the QR code below with your authenticator app (like Google Authenticator or Authy).
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="flex flex-col items-center justify-center py-6 space-y-6">
+                        <div className="p-4 bg-white rounded-xl border-2 border-primary/10 shadow-[0_0_15px_rgba(253,94,15,0.1)]">
+                             {qrCode && (
+                                qrCode.startsWith('otpauth://') ? (
+                                    <QRCodeSVG value={qrCode} size={180} />
+                                ) : (
+                                    // If it's a data URI image
+                                    <img src={qrCode} alt="QR Code" width={180} height={180} />
+                                )
+                             )}
+                        </div>
+                        
+                        <div className="w-full space-y-3">
+                             <Label className="text-center block text-muted-foreground font-medium">Verification Code</Label>
+                             <div className="flex justify-center">
+                                 <Input 
+                                    placeholder="000000"
+                                    value={verifyCode}
+                                    onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                    className="w-48 text-center text-2xl tracking-[0.5em] font-mono h-14 bg-secondary/30 border-2 focus-visible:ring-0 focus-visible:border-primary transition-all rounded-xl"
+                                 />
+                             </div>
+                             <p className="text-xs text-center text-muted-foreground">Enter the 6-digit code from your authenticator app.</p>
+                        </div>
+
+                        {setupError && (
+                            <p className="text-sm text-destructive font-medium bg-destructive/10 px-3 py-1 rounded-full animate-in fade-in slide-in-from-top-1">{setupError}</p>
+                        )}
+                    </div>
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsSetupOpen(false)}>Cancel</Button>
+                        <Button onClick={onVerifySetup} disabled={loading || verifyCode.length !== 6}>
+                            {loading ? "Verifying..." : "Verify & Enable"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </CardContent>
     </Card>
 

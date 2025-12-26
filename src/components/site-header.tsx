@@ -23,7 +23,7 @@ export function SiteHeader({ user, simple = false, className }: SiteHeaderProps)
           </Link>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 md:gap-4">
           <ThemeToggle />
           {!simple && <UserMenu user={user ?? null} />}
         </div>
@@ -31,4 +31,3 @@ export function SiteHeader({ user, simple = false, className }: SiteHeaderProps)
     </header>
   );
 }
-

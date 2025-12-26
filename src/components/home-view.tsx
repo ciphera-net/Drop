@@ -4,12 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { UploadBox } from "./upload-box";
 import { RequestBox } from "./request-box";
-import { MagicWordInput } from "./magic-word-input";
 import { cn } from "@/lib/utils";
 import { User } from "@supabase/supabase-js";
-import { PaperPlaneTilt, DownloadSimple, LockKey } from "@phosphor-icons/react";
+import { PaperPlaneTilt, ShareNetwork, LockKey } from "@phosphor-icons/react";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card";
+import { DownloadFileDialog } from "./download-file-dialog";
 
 export function HomeView({ user }: { user: User | null }) {
     const [mode, setMode] = useState<'send' | 'request'>('send');
@@ -39,7 +39,7 @@ export function HomeView({ user }: { user: User | null }) {
                                 : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                         )}
                     >
-                        <DownloadSimple weight={mode === 'request' ? "fill" : "bold"} className="w-4 h-4" />
+                        <ShareNetwork weight={mode === 'request' ? "fill" : "bold"} className="w-4 h-4" />
                         Request File
                     </button>
                 </div>
@@ -48,7 +48,6 @@ export function HomeView({ user }: { user: User | null }) {
              <div className="relative">
                  {mode === 'send' ? (
                      <div className="animate-in fade-in slide-in-from-left-4 duration-300">
-                        <MagicWordInput />
                         <UploadBox />
                      </div>
                  ) : (
@@ -86,7 +85,17 @@ export function HomeView({ user }: { user: User | null }) {
                      </div>
                  )}
              </div>
+
+             <div className="mt-8 text-center animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
+                <p className="text-sm text-muted-foreground">
+                    Received a file?{" "}
+                    <DownloadFileDialog>
+                        <button className="font-medium text-primary hover:text-primary/80 transition-colors underline underline-offset-4">
+                            Enter magic words
+                        </button>
+                    </DownloadFileDialog>
+                </p>
+             </div>
         </div>
     );
 }
-

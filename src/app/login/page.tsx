@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { LockKey, Envelope, ArrowLeft } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import Link from "next/link";
+import { notifyNewUserSignup } from "./actions";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -35,6 +36,12 @@ export default function LoginPage() {
         });
         if (error) throw error;
         
+        // Notify Slack about the new signup
+        if (data.user?.email) {
+          // We don't await this to avoid slowing down the UI response
+          void notifyNewUserSignup(data.user.email);
+        }
+
         if (data.session) {
           // Prevent auto-login: Sign out immediately
           await supabase.auth.signOut();

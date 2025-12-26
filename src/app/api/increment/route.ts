@@ -36,9 +36,9 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "File not found" }, { status: 404 });
     }
 
-    const { new_count, limit_reached, allowed } = result;
+    const { new_count, limit_reached, allowed: isDownloadAllowed } = result;
 
-    if (!allowed) {
+    if (!isDownloadAllowed) {
         return NextResponse.json({ 
             error: "This file has reached its download limit and is no longer available.",
             limitReached: true 

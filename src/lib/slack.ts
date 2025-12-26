@@ -12,12 +12,14 @@ export async function sendSlackAlert(
   title: string,
   message: string,
   color: SlackColor = '#36a64f',
-  fields?: SlackField[]
+  fields?: SlackField[],
+  webhookUrlOverride?: string
 ) {
-  const webhookUrl = process.env.SLACK_WEBHOOK_URL;
+  // Use override if provided, otherwise fall back to default env var
+  const webhookUrl = webhookUrlOverride || process.env.SLACK_WEBHOOK_URL;
 
   if (!webhookUrl) {
-    console.warn('SLACK_WEBHOOK_URL is not defined. Skipping Slack notification.');
+    console.warn('Slack webhook URL is not defined. Skipping Slack notification.');
     return;
   }
 
@@ -51,3 +53,19 @@ export async function sendSlackAlert(
   }
 }
 
+export async function sendNewUserAlert(email: string) {
+  const webhookUrl = process.env.SLACK_NEW_USER_WEBHOOK_URL;
+
+  if (!webhookUrl) {
+    console.warn('SLACK_NEW_USER_WEBHOOK_URL is not defined. Skipping New User notification.');
+    return;
+  }
+
+  await sendSlackAlert(
+    'New User Signup',
+    `A new user just signed up to Ciphera Drop.`,
+    '#36a64f',
+    [{ title: 'Email', value: email, short: true }],
+    webhookUrl
+  );
+}

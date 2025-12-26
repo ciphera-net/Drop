@@ -9,39 +9,16 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
   ]);
 }
 
-export async function cleanupExpiredOrLimitReachedFile(fileId: string) {
-  const supabase = createAdminClient();
-
-  // 1. Fetch file to verify conditions
-  const { data: file, error } = await supabase
-    .from('uploads')
-    .select('expiration_time, file_deleted, iv, download_limit, download_count')
-    .eq('id', fileId)
-    .single();
-
-  if (error || !file) {
-    console.error(`Cleanup: File ${fileId} not found or error`, error);
-    return;
-  }
-
-  // Note: We don't return early if file.file_deleted is true because we might still need to clean up storage
-  // if it was only marked logically deleted by the increment API.
-
-  const now = new Date();
-  const expTime = new Date(file.expiration_time);
-  // If date is invalid, treat as expired to be safe (or it will never be cleaned)
-  const isInvalidDate = isNaN(expTime.getTime());
-  const isExpired = isInvalidDate || expTime < now;
-  
-  const isLimitReached = file.download_limit !== null && file.download_count >= file.download_limit;
-  
-  // Debug log for troubleshooting stuck files
-  if (!isExpired && !isLimitReached && !file.file_deleted) {
-      console.log(`Cleanup: Skipping active file ${fileId}. Exp: ${file.expiration_time} (Invalid: ${isInvalidDate}), Limit: ${file.download_limit} (Count: ${file.download_count})`);
-  }
-
-  if (isExpired || isLimitReached || file.file_deleted) {
-    // 2. Remove from Storage
+/**
+ * Forcefully deletes a file's resources (storage and DB flag) regardless of expiration.
+ * Used by "Delete All" functionality and internal cleanup.
+ * @param fileId - The ID of the file to delete.
+ * @param hardDelete - If true, permanently deletes the record from the database. If false, marks it as deleted (soft delete).
+ */
+export async function forceDeleteFile(fileId: string, hardDelete: boolean = false) {
+    const supabase = createAdminClient();
+    
+    // 1. Remove from Storage
     try {
         // Strategy A: Try to remove as a single file (Legacy)
         const { error: legacyError } = await withTimeout(
@@ -81,15 +58,61 @@ export async function cleanupExpiredOrLimitReachedFile(fileId: string) {
         console.error(`Cleanup: Storage operations failed for ${fileId} (proceeding to logical deletion)`, storageError);
     }
 
-    // 3. Update DB
-    const { error: dbError } = await supabase
-        .from('uploads')
-        .update({ file_deleted: true })
-        .eq('id', fileId);
-
-    if (dbError) {
-        console.error(`Cleanup: Failed to update file_deleted flag for ${fileId}`, dbError);
+    // 2. Update DB or Delete
+    if (hardDelete) {
+         const { error: dbError } = await supabase
+            .from('uploads')
+            .delete()
+            .eq('id', fileId);
+         if (dbError) {
+            console.error(`Cleanup: Failed to hard delete file record ${fileId}`, dbError);
+            throw dbError;
+         }
+    } else {
+         const { error: dbError } = await supabase
+            .from('uploads')
+            .update({ file_deleted: true })
+            .eq('id', fileId);
+         if (dbError) {
+            console.error(`Cleanup: Failed to update file_deleted flag for ${fileId}`, dbError);
+            throw dbError;
+         }
     }
+}
+
+export async function cleanupExpiredOrLimitReachedFile(fileId: string) {
+  const supabase = createAdminClient();
+
+  // 1. Fetch file to verify conditions
+  const { data: file, error } = await supabase
+    .from('uploads')
+    .select('expiration_time, file_deleted, iv, download_limit, download_count')
+    .eq('id', fileId)
+    .single();
+
+  if (error || !file) {
+    console.error(`Cleanup: File ${fileId} not found or error`, error);
+    return;
+  }
+
+  // Note: We don't return early if file.file_deleted is true because we might still need to clean up storage
+  // if it was only marked logically deleted by the increment API.
+
+  const now = new Date();
+  const expTime = new Date(file.expiration_time);
+  // If date is invalid, treat as expired to be safe (or it will never be cleaned)
+  const isInvalidDate = isNaN(expTime.getTime());
+  const isExpired = isInvalidDate || expTime < now;
+  
+  const isLimitReached = file.download_limit !== null && file.download_count >= file.download_limit;
+  
+  // Debug log for troubleshooting stuck files
+  if (!isExpired && !isLimitReached && !file.file_deleted) {
+      console.log(`Cleanup: Skipping active file ${fileId}. Exp: ${file.expiration_time} (Invalid: ${isInvalidDate}), Limit: ${file.download_limit} (Count: ${file.download_count})`);
+  }
+
+  if (isExpired || isLimitReached || file.file_deleted) {
+      await forceDeleteFile(fileId);
   }
 }
 

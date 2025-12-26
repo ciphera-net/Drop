@@ -3,7 +3,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { PGPService } from "@/lib/pgp";
-import { cleanupExpiredOrLimitReachedFile } from "@/lib/cleanup";
+import { cleanupExpiredOrLimitReachedFile, forceDeleteFile } from "@/lib/cleanup";
 
 export async function updatePGPKey(key: string) {
   const supabase = await createClient();
@@ -88,8 +88,12 @@ export async function deleteAllFiles() {
     // Process deletion
     let deletedCount = 0;
     for (const file of files) {
-        await cleanupExpiredOrLimitReachedFile(file.id);
-        deletedCount++;
+        try {
+            await forceDeleteFile(file.id, true);
+            deletedCount++;
+        } catch (e) {
+            console.error(`Failed to force delete file ${file.id}`, e);
+        }
     }
 
     return { success: true, count: deletedCount };

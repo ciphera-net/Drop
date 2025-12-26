@@ -56,6 +56,18 @@ export default async function FaqPage() {
       answer: "No. We have a strict privacy policy. We do not scan your files for advertising purposes, sell your data, or track your sharing habits. We store only the minimum metadata required to facilitate the transfer."
     },
     {
+      question: "What can I do in the Dashboard?",
+      answer: "The Dashboard allows verified users to manage their active uploads and file requests. You can see a list of your files, check how many times they've been downloaded, and delete them early if needed. You can also manage your secure file requests."
+    },
+    {
+      question: "Will I get notified when my file is downloaded?",
+      answer: "Yes! If you are a verified user, you can opt-in to receive email notifications when your file is downloaded or when someone uploads a file to your secure request. These notifications can also be PGP-encrypted."
+    },
+    {
+      question: "Why am I seeing a 'Rate Limit Exceeded' message?",
+      answer: "To ensure fair usage and prevent abuse (like denial-of-service attacks), we implement rate limiting. If you make too many requests in a short period, you may be temporarily blocked. Please wait a few minutes and try again."
+    },
+    {
       question: "How do I report illegal content?",
       answer: "We have zero tolerance for illegal content. If you encounter a file that violates our terms of service or local laws, please contact us immediately. We have mechanisms in place to review and remove such content swiftly."
     }

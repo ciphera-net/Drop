@@ -13,6 +13,9 @@
 - **Password Protection**: Add an extra layer of security with optional passwords.
 - **Download Limits**: Restrict the number of times a file can be downloaded.
 - **User Verification**: Verify your email to manage your uploads and file requests.
+- **User Dashboard**: Manage your active uploads, delete files early, and track your file requests.
+- **Download Notifications**: Get notified via email when your shared files are downloaded.
+- **Rate Limiting**: Intelligent abuse prevention ensures fair usage and service availability.
 
 ## Tech Stack
 

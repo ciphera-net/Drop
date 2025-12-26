@@ -214,6 +214,10 @@ export default async function SecurityPage() {
                             <CheckCircle weight="fill" className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
                             <span><strong>Ephemeral Storage:</strong> Files are automatically deleted after expiration or 1 download (if configured).</span>
                         </li>
+                        <li className="flex items-start gap-2">
+                            <CheckCircle weight="fill" className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+                            <span><strong>Rate Limiting:</strong> We implement intelligent rate limiting at the application level to prevent abuse and denial-of-service attacks.</span>
+                        </li>
                     </ul>
                 </div>
             </div>

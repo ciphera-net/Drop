@@ -47,3 +47,9 @@ export interface DecryptedFile extends FileUpload {
   aesKey?: CryptoKey; // Decrypted AES key
 }
 
+export interface UserProfile {
+  id: string;
+  simplelogin_api_key?: string | null;
+  display_name?: string | null;
+  updated_at?: string;
+}

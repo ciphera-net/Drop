@@ -23,6 +23,7 @@ import { getFileCategory, calculateFileHash } from "@/utils/file-helpers";
 import { FileIconDisplay } from "@/components/file-icon-display";
 import { Fingerprint } from "@phosphor-icons/react";
 import { SimpleLoginButton } from "@/components/simple-login-button";
+import { PasswordStrengthMeter } from "@/components/password-strength-meter";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024; // 5GB
 
@@ -790,6 +791,7 @@ export function UploadBox() {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                          />
+                         <PasswordStrengthMeter password={password} className="mt-2" />
                       </div>
                       <div className="col-span-2 pt-2 border-t border-dashed border-border/60">
                          <Label className="text-xs mb-1.5 flex items-center gap-1 text-muted-foreground">

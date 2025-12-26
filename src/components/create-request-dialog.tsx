@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { createFileRequest } from "@/utils/request-helper";
+import { PasswordStrengthMeter } from "@/components/password-strength-meter";
 
 export function CreateRequestDialog() {
   const [open, setOpen] = useState(false);
@@ -109,6 +110,7 @@ export function CreateRequestDialog() {
                     value={password} 
                     onChange={e => setPassword(e.target.value)} 
                 />
+                <PasswordStrengthMeter password={password} className="mt-2" />
                 <p className="text-[10px] text-muted-foreground">
                     Do not lose this password. We cannot recover it.
                 </p>

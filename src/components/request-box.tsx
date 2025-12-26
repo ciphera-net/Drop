@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { createFileRequest } from "@/utils/request-helper";
 import { SimpleLoginButton } from "@/components/simple-login-button";
+import { PasswordStrengthMeter } from "@/components/password-strength-meter";
 
 export function RequestBox() {
   const [loading, setLoading] = useState(false);
@@ -187,6 +188,7 @@ export function RequestBox() {
                     value={password} 
                     onChange={e => setPassword(e.target.value)} 
                 />
+                <PasswordStrengthMeter password={password} className="mt-2" />
                 <p className="text-[10px] text-muted-foreground">
                     Do not lose this password. We cannot recover it.
                 </p>

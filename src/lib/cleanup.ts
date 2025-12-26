@@ -97,60 +97,66 @@ export async function cleanupAllExpiredFiles() {
     const supabase = createAdminClient();
     const now = new Date().toISOString();
 
-    // Find all files that are expired OR (limit reached AND not yet marked deleted)
-    // Note: It's hard to query "download_count >= download_limit" directly in Supabase simple query syntax without RPC.
-    // So we fetch files that are either expired OR have a limit set.
-    
-    // 1. Fetch Expired Files
+    console.log(`[Cleanup] Starting cleanup job at ${now}`);
+
+    // 1. Fetch Expired Files (High Priority)
     const { data: expiredFiles, error: expiredError } = await supabase
         .from('uploads')
         .select('id')
         .lt('expiration_time', now)
         .eq('file_deleted', false)
         .order('expiration_time', { ascending: true })
-        .limit(50); // Process oldest first, limit batch size to avoid timeouts // Only active ones need logical deletion first
+        .limit(50);
 
     if (expiredError) {
-        console.error("Cleanup: Failed to fetch expired files", expiredError);
+        console.error("[Cleanup] Failed to fetch expired files", expiredError);
         return { error: expiredError };
     }
 
+    console.log(`[Cleanup] Found ${expiredFiles?.length || 0} expired files to process.`);
+
     // 2. Fetch Files with Limits (Potentially reached)
-    // We can't easily do `where download_count >= download_limit` in standard PostgREST without a computed column or RPC.
-    // For now, let's just iterate over active files that HAVE a limit.
+    // OPTIMIZATION: Fetch counts and limits upfront to filter in memory
+    // This avoids processing active files that haven't reached their limit
     const { data: limitedFiles, error: limitedError } = await supabase
         .from('uploads')
-        .select('id')
+        .select('id, download_limit, download_count')
         .not('download_limit', 'is', null)
         .eq('file_deleted', false);
 
     if (limitedError) {
-         console.error("Cleanup: Failed to fetch limited files", limitedError);
+         console.error("[Cleanup] Failed to fetch limited files", limitedError);
     }
 
-    // Combine lists (Set to avoid duplicates)
+    const limitReachedIds = limitedFiles
+        ?.filter(f => f.download_limit !== null && f.download_count >= f.download_limit)
+        .map(f => f.id) || [];
+    
+    console.log(`[Cleanup] Found ${limitReachedIds.length} limit-reached files.`);
+
+    // Combine lists
     const filesToCheck = new Set<string>();
     expiredFiles?.forEach(f => filesToCheck.add(f.id));
-    limitedFiles?.forEach(f => filesToCheck.add(f.id));
-
-    // Also fetch ALREADY deleted files that might still have storage (Optional, but good for hygiene)
-    // For this MVP cron, let's focus on logic deletion + immediate storage cleanup via the single file function.
+    limitReachedIds.forEach(id => filesToCheck.add(id));
 
     const results = {
         processed: 0,
-        errors: 0
+        errors: 0,
+        total_candidates: filesToCheck.size
     };
 
     // Process sequentially to avoid overwhelming DB/Storage
     for (const fileId of filesToCheck) {
         try {
+            console.log(`[Cleanup] Processing ${fileId}...`);
             await cleanupExpiredOrLimitReachedFile(fileId);
             results.processed++;
         } catch (e) {
-            console.error(`Cleanup: Error processing ${fileId}`, e);
+            console.error(`[Cleanup] Critical error processing ${fileId}`, e);
             results.errors++;
         }
     }
 
+    console.log(`[Cleanup] Job finished. Processed: ${results.processed}, Errors: ${results.errors}`);
     return results;
 }

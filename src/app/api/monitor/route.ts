@@ -3,6 +3,8 @@ import { createAdminClient } from '@/utils/supabase/admin';
 import { sendSlackAlert } from '@/lib/slack';
 import { subMinutes } from 'date-fns';
 
+import { cleanupExpiredOrLimitReachedFile } from '@/lib/cleanup';
+
 export async function GET(request: Request) {
   // 1. Security: Only allow Cron or Admin Secret
   const authHeader = request.headers.get('authorization');
@@ -40,18 +42,45 @@ export async function GET(request: Request) {
   let zombieCount = 0;
 
   try {
-    const { count, error } = await supabase
+    // Determine zombies to report and FIX
+    const { data: zombies, count, error } = await supabase
       .from('uploads')
-      .select('*', { count: 'exact', head: true })
+      .select('id, expiration_time', { count: 'exact' })
       .lt('expiration_time', zombieThreshold)
-      .eq('file_deleted', false);
+      .eq('file_deleted', false)
+      .limit(20); // Limit to avoid timeout during self-healing
 
     if (error) throw error;
     zombieCount = count || 0;
 
     if (zombieCount > 0) {
       statusColor = '#ff0000';
-      statusMsg = `⚠️ Privacy Alert: ${zombieCount} files are expired >90mins but NOT deleted. Cleanup cron may be broken.`;
+      statusMsg = `⚠️ Privacy Alert: ${zombieCount} files are expired >90mins but NOT deleted. Attempting self-healing...`;
+      
+      console.log(`[Monitor] Found ${zombieCount} zombie files. IDs: ${zombies?.map(z => z.id).join(', ')}`);
+      
+      // SELF-HEALING: Attempt to cleanup immediately
+      let healedCount = 0;
+      if (zombies && zombies.length > 0) {
+          for (const zombie of zombies) {
+              try {
+                  console.log(`[Monitor] Healing zombie ${zombie.id}...`);
+                  await cleanupExpiredOrLimitReachedFile(zombie.id);
+                  healedCount++;
+              } catch (healingError) {
+                  console.error(`[Monitor] Failed to heal zombie ${zombie.id}`, healingError);
+              }
+          }
+      }
+      
+      if (healedCount > 0) {
+          statusMsg += ` (Healed ${healedCount}/${zombies?.length} in this run)`;
+          // Downgrade alert if we fixed them all (visibly)
+          if (healedCount === zombies?.length && zombieCount <= 20) {
+              statusColor = '#ffcc00'; // Warning instead of Alert
+              statusMsg = `⚠️ Recovered from ${zombieCount} zombie files via self-healing. Check cleanup cron logs.`;
+          }
+      }
     }
   } catch (e: any) {
     // If DB failed above, this will likely fail too

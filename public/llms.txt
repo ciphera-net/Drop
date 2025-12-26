@@ -1,0 +1,20 @@
+# Drop by Ciphera
+
+> End-to-end encrypted file sharing. Private, secure, and open-source.
+
+Built by [Ciphera](https://ciphera.net).
+
+## Pages
+
+- [Home](https://drop.ciphera.net/) - Upload and share files securely
+- [Why Drop](https://drop.ciphera.net/why) - Our mission and privacy philosophy
+- [Security](https://drop.ciphera.net/security) - Technical architecture and encryption details
+- [FAQ](https://drop.ciphera.net/faq) - Common questions about file expiry and limitations
+
+## Core Features
+
+- **End-to-End Encryption**: AES-256-GCM encryption in the browser.
+- **Zero Knowledge**: We never see your decryption keys.
+- **Burn on Read**: Files can be set to self-destruct after one download.
+- **Secure File Requests**: Receive files securely from others.
+

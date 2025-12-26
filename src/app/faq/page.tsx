@@ -4,7 +4,7 @@ import { createClient } from "@/utils/supabase/server";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "FAQ - Secure File Sharing Questions",
+  title: "Frequently Asked Questions - Security, Privacy, and How Drop Works",
   description: "Frequently asked questions about Drop's security, encryption, file expiry, and privacy policies.",
   alternates: {
     canonical: '/faq',

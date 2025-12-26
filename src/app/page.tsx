@@ -6,7 +6,7 @@ import { HomeView } from "@/components/home-view";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Drop - Secure, Encrypted File Sharing",
+  title: "Drop - Free Secure File Transfer | Send Large Files with End-to-End Encryption",
   description: "Share files securely with end-to-end encryption. No signup required for basic sharing. Zero-knowledge architecture ensures only you hold the keys.",
   alternates: {
     canonical: '/',
@@ -66,9 +66,10 @@ export default async function Home() {
          <HomeView user={user} />
          
          {/* Features Grid */}
-         <div className="mt-24 w-full animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-300">
+         <section className="mt-24 w-full animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-300">
+            <h2 className="sr-only">Key Security Features</h2>
             <FeatureSection />
-         </div>
+         </section>
 
       </main>
 

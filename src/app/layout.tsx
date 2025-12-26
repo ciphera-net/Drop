@@ -16,8 +16,8 @@ const baseUrl = process.env.NEXT_PUBLIC_APP_URL
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
   title: {
-    default: "Drop - Secure File Sharing by Ciphera",
-    template: "%s | Drop"
+    default: "Drop - Secure, Private & End-to-End Encrypted File Sharing by Ciphera",
+    template: "%s | Drop Secure File Transfer"
   },
   description: "End-to-end encrypted file sharing. Private, secure, and open-source. Share files with confidence using AES-256-GCM encryption.",
   keywords: [

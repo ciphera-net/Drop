@@ -93,14 +93,14 @@ export function UploadBox() {
                  
                  if (profile.default_auto_delete) {
                      setMaxDownloads(1);
+                 } else if (profile.default_download_limit === 0) {
+                     // 0 means Unlimited in new schema
+                     setMaxDownloads(null);
                  } else if (profile.default_download_limit !== null && profile.default_download_limit !== undefined) {
                      setMaxDownloads(profile.default_download_limit);
                  } else {
-                     // If user has preferences set but download limit is null (unlimited), set to null.
-                     // But if they have no preferences, existing logic below (useEffect [user, maxDownloads]) handles it?
-                     // Actually logic below forces 1 if !user.
-                     // If user is logged in, we can set null.
-                     setMaxDownloads(null);
+                     // If user has no preferences set (or old default NULL), default to Burn (1).
+                     setMaxDownloads(1);
                  }
              }
         }

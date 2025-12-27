@@ -24,8 +24,9 @@ export function PreferencesForm({ user, profile }: PreferencesFormProps) {
   // Otherwise we use the download limit (null for infinite)
   const [maxDownloads, setMaxDownloads] = useState<number | null>(() => {
       if (profile?.default_auto_delete) return 1;
-      if (profile?.default_download_limit !== undefined) return profile.default_download_limit;
-      return null; // Default to unlimited if not set
+      if (profile?.default_download_limit === 0) return null;
+      if (profile?.default_download_limit !== undefined && profile?.default_download_limit !== null) return profile.default_download_limit;
+      return 1; // Default to 1 (Burn) if not set
   });
 
   const supabase = createClient();
@@ -44,7 +45,8 @@ export function PreferencesForm({ user, profile }: PreferencesFormProps) {
         // If burn mode, we can set limit to 1 or null, but auto_delete is the key flag.
         // Let's set limit to 1 if burn mode for consistency, or whatever logic UploadBox uses.
         // UploadBox logic: if maxDownloads is 1, it enables "burn after download".
-        default_download_limit: isBurnMode ? 1 : maxDownloads, 
+        // New logic: 0 means Unlimited.
+        default_download_limit: isBurnMode ? 1 : (maxDownloads === null ? 0 : maxDownloads), 
         default_auto_delete: isBurnMode,
         updated_at: new Date().toISOString(),
       };

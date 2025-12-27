@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { Plus } from "@phosphor-icons/react";
+import { Button } from "@/components/ui/button";
 import { DashboardList } from "./dashboard-list";
 import { RequestList } from "./request-list";
 import { CreateRequestDialog } from "./create-request-dialog";
@@ -25,11 +28,11 @@ export function DashboardView({ uploads, requests }: { uploads: any[], requests:
               <div className="flex gap-2">
                   {activeTab === 'requests' && <CreateRequestDialog />}
                   {activeTab === 'uploads' && (
-                     <a href="/">
-                        <button className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 shadow-sm">
-                            New Transfer
-                        </button>
-                     </a>
+                     <Button asChild className="shadow-orange-500/20 shadow-lg">
+                        <Link href="/">
+                            <Plus className="mr-2" weight="bold" /> New Transfer
+                        </Link>
+                     </Button>
                   )}
               </div>
           </div>

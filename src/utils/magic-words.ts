@@ -38,16 +38,7 @@ const VERBS = [
 ];
 
 export function generateMagicWords(): string {
-  const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
-  const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
-  const verb = VERBS[Math.floor(Math.random() * VERBS.length)];
-  
-  // Format: adjective-noun-verb (e.g., happy-cat-run)
-  // Or maybe just 3 random words from a combined pool for more entropy?
-  // User asked for "correct-horse-battery" style (XKCD style), which is usually 4 words but user said 3.
-  // "correct-horse-battery" is Adj-Noun-Noun.
-  // Let's stick to a simple 3 word random selection from a combined pool to maximize entropy.
-  
+  // Combine all words for maximum entropy
   const allWords = [...ADJECTIVES, ...NOUNS, ...VERBS];
   
   // Use crypto for secure random number generation

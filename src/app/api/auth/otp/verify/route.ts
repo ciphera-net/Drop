@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { verifyOtp } from "@/lib/otp-security";
 
 export async function POST(request: Request) {
   try {
@@ -41,8 +42,8 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "OTP expired" }, { status: 400 });
     }
 
-    // Check if match
-    if (verification.otp_code !== otp) {
+    // * Verify OTP using constant-time comparison to prevent timing attacks
+    if (!verifyOtp(otp, verification.otp_code)) {
         return NextResponse.json({ error: "Invalid OTP" }, { status: 400 });
     }
 

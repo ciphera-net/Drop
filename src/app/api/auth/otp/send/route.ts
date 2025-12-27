@@ -2,6 +2,8 @@ import { createClient } from "@/utils/supabase/server";
 import { sendOtpEmail } from "@/lib/email";
 import { NextResponse } from "next/server";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { randomInt } from "crypto";
+import { hashOtp } from "@/lib/otp-security";
 
 export async function POST(request: Request) {
   try {
@@ -24,9 +26,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Too many attempts. Please try again later." }, { status: 429 });
     }
 
-    // Generate 6 digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    // * Generate 6 digit OTP using cryptographic RNG
+    const otp = randomInt(100000, 1000000).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 mins
+
+    // * Hash OTP before storing (security best practice)
+    const hashedOtp = hashOtp(otp);
 
     // Upsert OTP
     // We explicitly set user_id. user_verifications has user_id as PK.
@@ -37,7 +42,7 @@ export async function POST(request: Request) {
       .from("user_verifications")
       .upsert({
         user_id: user.id,
-        otp_code: otp,
+        otp_code: hashedOtp,
         otp_expires_at: expiresAt,
         updated_at: new Date().toISOString()
       }, { onConflict: 'user_id' });

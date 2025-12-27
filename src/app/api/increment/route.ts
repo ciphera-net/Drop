@@ -47,62 +47,64 @@ export async function POST(req: NextRequest) {
     }
 
     // --- Generate Signed URLs for Access ---
-    // Because RLS prevents public access once limit is reached (or count > limit),
-    // and we just incremented the count, we might have hit the limit.
-    // However, if isDownloadAllowed is true, it means we are still within limit (or just hit it).
-    // But RLS "Secure public download" checks "download_count < download_limit".
-    // If we just hit the limit (count == limit), then RLS will return false immediately after this request.
-    // BUT we need to give the user the file NOW.
-    // So we use the Service Role to sign the URL, bypassing RLS.
-    // This is safer than Client Side signing because we've already validated the limit here.
-
     const EXPIRES_IN = 60 * 60; // 1 hour link validity
     let downloadUrls: string[] = [];
     
-    // Check if it's a chunked file (folder) or single file
-    // We can list the folder to see chunks.
-    const { data: listData, error: listError } = await supabase.storage
-        .from('drop-files')
-        .list(id); // List folder 'id'
+    // Fetch file metadata to determine structure (Chunked vs Single)
+    const { data: fileData, error: fileError } = await supabase
+        .from('uploads')
+        .select('iv, size')
+        .eq('id', id)
+        .single();
 
-    if (!listError && listData && listData.length > 0) {
-        // Sort chunks numerically (0, 1, 2...)
-        const sortedChunks = listData.sort((a, b) => {
-             const idxA = parseInt(a.name);
-             const idxB = parseInt(b.name);
-             return idxA - idxB;
-        });
-
-        const urls = await Promise.all(sortedChunks.map(async (chunk) => {
-             const { data: signed } = await supabase.storage
-                .from('drop-files')
-                .createSignedUrl(`${id}/${chunk.name}`, EXPIRES_IN);
-             return signed?.signedUrl;
-        }));
-        
-        // Filter out undefined
-        downloadUrls = urls.filter(u => u) as string[];
-
-
-    } else {
-        // Legacy Single File or CHUNKED_V1 (TUS)
-        // For TUS, the signed URL is for the whole file ID usually? 
-        // Or CHUNKED_V1 implies a folder... 
-        // Wait, TUS uploads are usually single objects in S3 if they are finalized?
-        // Let's assume standard download logic for single file.
-        // If it's CHUNKED_V1 (Legacy), we might need to handle it differently, 
-        // but the client logic uses `downloadStream` with a single signed URL for `file.id`.
-        
-        const { data: signedData, error: signError } = await supabase.storage
+    if (fileError || !fileData) {
+         console.error("Failed to fetch file metadata", fileError);
+         // Fallback to legacy list behavior if metadata fetch fails
+         const { data: listData, error: listError } = await supabase.storage
             .from('drop-files')
-            .createSignedUrl(id, EXPIRES_IN);
+            .list(id); 
 
-        if (signError || !signedData) {
-             console.error("Failed to sign URL", signError);
-             return NextResponse.json({ error: "Failed to sign download URL" }, { status: 500 });
+         if (!listError && listData && listData.length > 0) {
+            const sortedChunks = listData.sort((a, b) => parseInt(a.name) - parseInt(b.name));
+            const urls = await Promise.all(sortedChunks.map(async (chunk) => {
+                 const { data: signed } = await supabase.storage
+                    .from('drop-files')
+                    .createSignedUrl(`${id}/${chunk.name}`, EXPIRES_IN);
+                 return signed?.signedUrl;
+            }));
+            downloadUrls = urls.filter(u => u) as string[];
+         } else {
+            const { data: signedData } = await supabase.storage
+                .from('drop-files')
+                .createSignedUrl(id, EXPIRES_IN);
+            if (signedData?.signedUrl) downloadUrls = [signedData.signedUrl];
+         }
+    } else {
+        // Robust generation based on metadata
+        if (fileData.iv === 'CHUNKED_PARALLEL_V1' || fileData.iv === 'CHUNKED_V1') {
+            const CHUNK_SIZE = 20 * 1024 * 1024; // 20MB - Must match EncryptionService.CHUNK_SIZE
+            // Note: DB size is original size.
+            // If size is 0 (empty file), it has 1 chunk (empty).
+            const totalChunks = Math.max(1, Math.ceil((fileData.size || 0) / CHUNK_SIZE));
+            
+            const urls = await Promise.all(Array.from({ length: totalChunks }, async (_, i) => {
+                 const { data: signed } = await supabase.storage
+                    .from('drop-files')
+                    .createSignedUrl(`${id}/${i}`, EXPIRES_IN);
+                 return signed?.signedUrl;
+            }));
+            downloadUrls = urls.filter(u => u) as string[];
+        } else {
+            // Legacy single file
+            const { data: signedData } = await supabase.storage
+                .from('drop-files')
+                .createSignedUrl(id, EXPIRES_IN);
+            if (signedData?.signedUrl) downloadUrls = [signedData.signedUrl];
         }
-        
-        downloadUrls = [signedData.signedUrl];
+    }
+    
+    if (downloadUrls.length === 0) {
+         console.warn("No download URLs generated for id:", id);
     }
 
     // --- End Signed URLs ---

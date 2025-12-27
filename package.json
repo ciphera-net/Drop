@@ -4,10 +4,26 @@
   "description": "A secure, ephemeral file sharing service with magic-word access.",
   "license": "GPL-3.0",
   "private": true,
+  "author": "Ciphera <security@ciphera.com>",
+  "homepage": "https://drop.ciphera.net",
+  "bugs": {
+    "url": "https://github.com/ciphera-net/Drop/issues"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/ciphera-net/Drop.git"
   },
+  "keywords": [
+    "file-sharing",
+    "encryption",
+    "privacy",
+    "security",
+    "ephemeral",
+    "zero-knowledge",
+    "end-to-end-encryption",
+    "nextjs",
+    "supabase"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",

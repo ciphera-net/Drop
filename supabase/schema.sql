@@ -473,3 +473,281 @@ create policy "Secure public download"
     )
   );
 
+-- 26_add_user_profiles.sql
+-- Add simplelogin_api_key to user_profiles (or create user_profiles if it doesn't exist)
+-- This table extends auth.users with app-specific settings.
+
+create table if not exists public.user_profiles (
+  id uuid references auth.users(id) on delete cascade primary key,
+  simplelogin_api_key text
+);
+
+-- RLS
+alter table public.user_profiles enable row level security;
+
+-- Users can view their own profile
+create policy "Users can view own profile" 
+  on public.user_profiles for select 
+  using (auth.uid() = id);
+
+-- Users can update their own profile
+create policy "Users can update own profile" 
+  on public.user_profiles for update 
+  using (auth.uid() = id);
+
+-- Users can insert their own profile
+create policy "Users can insert own profile" 
+  on public.user_profiles for insert 
+  with check (auth.uid() = id);
+
+-- Update the existing handle_new_user function to create profile on signup
+create or replace function public.handle_new_user() 
+returns trigger 
+language plpgsql 
+security definer set search_path = public
+as $$
+begin
+  -- Insert into verifications
+  insert into public.user_verifications (user_id)
+  values (new.id);
+
+  -- Insert into profiles
+  insert into public.user_profiles (id)
+  values (new.id);
+
+  return new;
+end;
+$$;
+
+-- 27_add_profile_fields.sql
+-- Add display_name to user_profiles
+alter table public.user_profiles 
+add column if not exists display_name text;
+
+-- Add updated_at column
+alter table public.user_profiles 
+add column if not exists updated_at timestamptz default now();
+
+-- 28_add_user_preferences.sql
+-- Add preferences columns to user_profiles
+alter table public.user_profiles 
+add column if not exists default_expiration text default '1h',
+add column if not exists default_download_limit integer default null,
+add column if not exists default_auto_delete boolean default false;
+
+-- 29_add_security_fields.sql
+-- Add pgp_public_key to user_profiles
+alter table public.user_profiles 
+add column if not exists pgp_public_key text;
+
+-- 30_add_storage_limit.sql
+-- Add storage_limit to user_profiles
+alter table public.user_profiles
+add column if not exists storage_limit bigint default 5368709120; -- 5 GB in bytes
+
+-- Update existing profiles that might be null (though the default handles new ones)
+update public.user_profiles
+set storage_limit = 5368709120
+where storage_limit is null;
+
+-- 31_add_session_management.sql
+-- Function to get active sessions for the current user
+create or replace function get_active_sessions()
+returns table (
+  id uuid,
+  created_at timestamptz,
+  updated_at timestamptz,
+  ip inet,
+  user_agent text,
+  is_current boolean
+)
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+declare
+  current_session_id uuid;
+begin
+  current_session_id := (select (auth.jwt() ->> 'session_id')::uuid);
+  
+  return query
+  select
+    s.id,
+    s.created_at,
+    s.updated_at,
+    s.ip,
+    s.user_agent,
+    (s.id = current_session_id) as is_current
+  from
+    auth.sessions s
+  where
+    s.user_id = auth.uid()
+  order by
+    s.created_at desc;
+end;
+$$;
+
+-- Function to revoke a specific session
+create or replace function revoke_session(session_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+begin
+  delete from auth.sessions
+  where id = session_id
+  and user_id = auth.uid();
+end;
+$$;
+
+-- Function to revoke all other sessions
+create or replace function revoke_all_other_sessions()
+returns void
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+declare
+  current_session_id uuid;
+begin
+  current_session_id := (select (auth.jwt() ->> 'session_id')::uuid);
+  
+  delete from auth.sessions
+  where user_id = auth.uid()
+  and id != current_session_id;
+end;
+$$;
+
+-- 32_performance_optimization.sql
+-- 1. Add missing indices for high-traffic filtering
+create index if not exists uploads_expiration_time_idx on public.uploads (expiration_time) where file_deleted = false;
+create index if not exists uploads_user_id_idx on public.uploads (user_id);
+create index if not exists uploads_request_id_idx on public.uploads (request_id);
+
+-- 2. Optimized Rate Limiting Function (1 DB Call instead of 2)
+create or replace function check_rate_limit_rpc(
+  _ip text, 
+  _endpoint text, 
+  _limit int, 
+  _window_seconds int
+)
+returns boolean
+language plpgsql
+security definer
+as $$
+declare
+  _current_requests int;
+  _last_request timestamptz;
+  _now timestamptz := now();
+begin
+  -- Attempt to update existing record
+  update public.rate_limits
+  set 
+    requests = case 
+      when _now - last_request > (_window_seconds || ' seconds')::interval then 1 -- Reset window
+      else requests + 1 -- Increment
+    end,
+    last_request = case 
+      when _now - last_request > (_window_seconds || ' seconds')::interval then _now -- Reset time
+      else last_request 
+    end
+  where ip = _ip and endpoint = _endpoint
+  returning requests, last_request into _current_requests, _last_request;
+
+  -- If no record existed, insert one
+  if not found then
+    insert into public.rate_limits (ip, endpoint, requests, last_request)
+    values (_ip, _endpoint, 1, _now)
+    on conflict (ip, endpoint) do nothing; -- Handle race condition
+    return true;
+  end if;
+
+  -- Return allowed status
+  -- Note: If we just reset the window (requests=1), it is allowed.
+  -- If we incremented, check if we exceeded limit.
+  return _current_requests <= _limit;
+end;
+$$;
+
+-- 3. Optimized Cleanup Query (Filter in DB, not Memory)
+create or replace function get_expired_or_limit_reached_ids(batch_size int default 50)
+returns table (id uuid)
+language sql
+security definer
+as $$
+  select id from public.uploads
+  where file_deleted = false
+  and (
+    -- Condition A: Time Expired
+    expiration_time < now()
+    or
+    -- Condition B: Download Limit Reached
+    (download_limit is not null and download_count >= download_limit)
+  )
+  limit batch_size;
+$$;
+
+-- 33_fix_burn_after_download.sql
+-- Fix increment_download_count to NOT mark file as deleted immediately.
+-- This prevents the creation of "Zombies" (files marked deleted in DB but still in storage),
+-- because the Cleanup Job (get_expired_or_limit_reached_ids) only looks for file_deleted = false.
+-- By keeping file_deleted = false, the Cleanup Job will find it (via limit check), 
+-- delete the storage, and THEN mark it as deleted.
+
+create or replace function increment_download_count(row_id uuid)
+returns table (new_count int, limit_reached boolean, allowed boolean)
+language plpgsql
+security definer
+as $$
+declare
+  _limit int;
+  _count int;
+  _is_deleted boolean;
+begin
+  -- Lock the row for update to prevent race conditions
+  select download_limit, download_count, file_deleted
+  into _limit, _count, _is_deleted
+  from public.uploads
+  where id = row_id
+  for update;
+
+  if not found then
+    raise exception 'File not found';
+  end if;
+
+  if _is_deleted then
+     -- If already deleted, denied.
+     return query select _count, true, false;
+     return;
+  end if;
+
+  -- Check if we are ALREADY at the limit before this increment
+  if _limit is not null and _count >= _limit then
+     -- Limit was already reached
+     return query select _count, true, false;
+     return;
+  end if;
+
+  -- Increment
+  _count := coalesce(_count, 0) + 1;
+
+  -- Update
+  update public.uploads
+  set download_count = _count
+  where id = row_id;
+
+  -- Allowed is true because we just successfully incremented within the limit
+  return query select _count, (_limit is not null and _count >= _limit), true;
+end;
+$$;
+
+-- Cleanup existing Zombies (Files marked deleted in DB but still in Storage)
+-- This fixes the issue for users who already experienced the bug.
+delete from storage.objects 
+where bucket_id = 'drop-files' 
+and exists (
+    select 1 from public.uploads 
+    where id::text = split_part(storage.objects.name, '/', 1) 
+    and file_deleted = true
+);

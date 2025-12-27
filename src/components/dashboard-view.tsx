@@ -20,8 +20,8 @@ export function DashboardView({ uploads, requests }: { uploads: any[], requests:
                  </h2>
                  <p className="text-muted-foreground text-sm mt-1">
                     {activeTab === 'uploads' 
-                        ? 'Manage your sent files.' 
-                        : 'Manage secure upload links you created.'}
+                        ? 'Manage your uploads.' 
+                        : 'Manage your requests.'}
                  </p>
               </div>
               

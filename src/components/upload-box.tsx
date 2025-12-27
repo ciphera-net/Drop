@@ -622,7 +622,7 @@ export function UploadBox() {
                     Scan this QR code with your mobile device to download the file.
                   </DialogDescription>
                 </DialogHeader>
-                <div className="flex justify-center py-6 bg-white rounded-xl border-2 border-primary/10 shadow-[0_0_15px_rgba(253,94,15,0.1)]">
+                <div className="flex justify-center py-6 bg-white dark:bg-neutral-900 rounded-xl border-2 border-primary/10 dark:border-primary/20 shadow-[0_0_15px_rgba(253,94,15,0.1)]">
                   <QRCodeSVG 
                     value={shareLink} 
                     size={180} 

@@ -42,4 +42,3 @@ jobs:
           SLACK_COLOR: '#ff0000'
           SLACK_TITLE: 'Tests Failed'
           SLACK_MESSAGE: 'Tests failed on branch ${{ github.ref_name }}. Please check the logs.'
-

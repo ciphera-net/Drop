@@ -645,7 +645,7 @@ export function DownloadView({ file }: { file: FileUpload }) {
                           <iframe src={previewUrl} className="w-full h-[500px]" title="PDF Preview" sandbox="allow-scripts"></iframe>
                       )}
                       {decryptedMimeType?.startsWith('text/') && (
-                          <iframe src={previewUrl} className="w-full h-[400px] bg-white" title="Text Preview" sandbox=""></iframe>
+                          <iframe src={previewUrl} className="w-full h-[400px] bg-white dark:bg-neutral-900" title="Text Preview" sandbox=""></iframe>
                       )}
                   </div>
               )}

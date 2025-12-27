@@ -205,7 +205,7 @@ export default function LoginPage() {
             )}
             
             {message && (
-               <div className={`p-3 rounded-md text-sm ${message.includes("Check") ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400" : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400"}`}>
+               <div className={`p-3 rounded-md text-sm ${message.includes("Check") ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300" : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300"}`}>
                   {message}
                </div>
             )}

@@ -197,7 +197,7 @@ export function RequestList({ requests: initialRequests }: { requests: FileReque
                     <h3 className="font-semibold text-foreground flex items-center gap-2">
                         {req.name}
                         <span className={cn("text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider font-bold",
-                             req.status === 'active' ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-gray-100 text-gray-500"
+                             req.status === 'active' ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground"
                         )}>
                             {req.status}
                         </span>

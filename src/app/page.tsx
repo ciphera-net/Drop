@@ -3,6 +3,7 @@ import { createClient } from "@/utils/supabase/server";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { HomeView } from "@/components/home-view";
+import { TypewriterText } from "@/components/typewriter-text";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -61,7 +62,7 @@ export default async function Home() {
             <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-foreground mb-6">
                The Secure Way <br/>
                <span className="text-primary relative whitespace-nowrap">
-                 to Share
+                 to <TypewriterText texts={["Share", "Encrypt", "Transfer"]} />
                  <svg className="absolute w-full h-3 -bottom-1 left-0 text-orange-200 dark:text-orange-900 -z-10" viewBox="0 0 100 10" preserveAspectRatio="none">
                     <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="8" fill="none" />
                  </svg>

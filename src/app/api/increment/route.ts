@@ -149,7 +149,7 @@ export async function POST(req: NextRequest) {
         success: true, 
         count: new_count,
         limitReached: limit_reached,
-        downloadUrls: downloadUrls
+        signedUrls: downloadUrls
     });
 
   } catch (error: unknown) {

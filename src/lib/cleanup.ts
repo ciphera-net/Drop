@@ -122,60 +122,37 @@ export async function cleanupAllExpiredFiles() {
 
     console.log(`[Cleanup] Starting cleanup job at ${now}`);
 
-    // 1. Fetch Expired Files (High Priority)
-    const { data: expiredFiles, error: expiredError } = await supabase
-        .from('uploads')
-        .select('id')
-        .lt('expiration_time', now)
-        .eq('file_deleted', false)
-        .order('expiration_time', { ascending: true })
-        .limit(50);
+    // OPTIMIZATION: Use RPC to get exactly the IDs that need cleanup
+    // This avoids loading thousands of rows into memory
+    const { data: candidateIds, error } = await supabase
+        .rpc('get_expired_or_limit_reached_ids', { batch_size: 50 });
 
-    if (expiredError) {
-        console.error("[Cleanup] Failed to fetch expired files", expiredError);
-        return { error: expiredError };
+    if (error) {
+        console.error("[Cleanup] Failed to fetch candidates via RPC", error);
+        return { error };
     }
 
-    console.log(`[Cleanup] Found ${expiredFiles?.length || 0} expired files to process.`);
-
-    // 2. Fetch Files with Limits (Potentially reached)
-    // OPTIMIZATION: Fetch counts and limits upfront to filter in memory
-    // This avoids processing active files that haven't reached their limit
-    const { data: limitedFiles, error: limitedError } = await supabase
-        .from('uploads')
-        .select('id, download_limit, download_count')
-        .not('download_limit', 'is', null)
-        .eq('file_deleted', false);
-
-    if (limitedError) {
-         console.error("[Cleanup] Failed to fetch limited files", limitedError);
+    if (!candidateIds || candidateIds.length === 0) {
+        console.log("[Cleanup] No files to clean.");
+        return { processed: 0, errors: 0 };
     }
 
-    const limitReachedIds = limitedFiles
-        ?.filter(f => f.download_limit !== null && f.download_count >= f.download_limit)
-        .map(f => f.id) || [];
-    
-    console.log(`[Cleanup] Found ${limitReachedIds.length} limit-reached files.`);
-
-    // Combine lists
-    const filesToCheck = new Set<string>();
-    expiredFiles?.forEach(f => filesToCheck.add(f.id));
-    limitReachedIds.forEach(id => filesToCheck.add(id));
+    console.log(`[Cleanup] Found ${candidateIds.length} files to process.`);
 
     const results = {
         processed: 0,
         errors: 0,
-        total_candidates: filesToCheck.size
+        total_candidates: candidateIds.length
     };
 
-    // Process sequentially to avoid overwhelming DB/Storage
-    for (const fileId of filesToCheck) {
+    // Process sequentially (could be parallelized if storage API rate limits allow)
+    for (const { id } of candidateIds) {
         try {
-            console.log(`[Cleanup] Processing ${fileId}...`);
-            await cleanupExpiredOrLimitReachedFile(fileId);
+            console.log(`[Cleanup] Processing ${id}...`);
+            await cleanupExpiredOrLimitReachedFile(id);
             results.processed++;
         } catch (e) {
-            console.error(`[Cleanup] Critical error processing ${fileId}`, e);
+            console.error(`[Cleanup] Critical error processing ${id}`, e);
             results.errors++;
         }
     }

@@ -135,26 +135,28 @@ export async function cleanupAllExpiredFiles() {
 
     if (!candidateIds || candidateIds.length === 0) {
         console.log("[Cleanup] No files to clean.");
-        return { processed: 0, errors: 0 };
+        // Even if no files, we might want to notify (per user request)
+    } else {
+        console.log(`[Cleanup] Found ${candidateIds.length} files to process.`);
     }
-
-    console.log(`[Cleanup] Found ${candidateIds.length} files to process.`);
 
     const results = {
         processed: 0,
         errors: 0,
-        total_candidates: candidateIds.length
+        total_candidates: candidateIds ? candidateIds.length : 0
     };
 
-    // Process sequentially (could be parallelized if storage API rate limits allow)
-    for (const { id } of candidateIds) {
-        try {
-            console.log(`[Cleanup] Processing ${id}...`);
-            await cleanupExpiredOrLimitReachedFile(id);
-            results.processed++;
-        } catch (e) {
-            console.error(`[Cleanup] Critical error processing ${id}`, e);
-            results.errors++;
+    if (candidateIds && candidateIds.length > 0) {
+        // Process sequentially (could be parallelized if storage API rate limits allow)
+        for (const { id } of candidateIds) {
+            try {
+                console.log(`[Cleanup] Processing ${id}...`);
+                await cleanupExpiredOrLimitReachedFile(id);
+                results.processed++;
+            } catch (e) {
+                console.error(`[Cleanup] Critical error processing ${id}`, e);
+                results.errors++;
+            }
         }
     }
 
@@ -166,7 +168,7 @@ export async function cleanupAllExpiredFiles() {
     if (webhookUrl) {
         await sendSlackAlert(
             '🧹 Cleanup Job Report',
-            `Cleanup job finished. Processed: ${results.processed}, Errors: ${results.errors}`,
+            `Cleanup job finished. Processed: ${results.processed}, Errors: ${results.errors}, Found: ${results.total_candidates}`,
             results.errors > 0 ? '#ff0000' : '#36a64f',
             [
                 { title: 'Processed', value: results.processed.toString(), short: true },

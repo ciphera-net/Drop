@@ -11,7 +11,8 @@ const createMockBuilder = () => {
   builder.insert = vi.fn().mockReturnValue(builder);
   builder.update = vi.fn().mockReturnValue(builder);
   builder.eq = vi.fn().mockReturnValue(builder);
-  builder.single = vi.fn(); // Terminating method 1
+  builder.single = vi.fn(); 
+  builder.rpc = vi.fn(); // Added RPC mock
   
   // Make it thenable (awaitable)
   // Default to returning { error: null } if awaited directly
@@ -40,97 +41,34 @@ describe('checkRateLimit', () => {
     mockClient.then = (resolve: any) => resolve({ error: null });
   });
 
-  it('should allow request if no record exists (first request)', async () => {
-    // Mock single() returning null (no record found)
-    mockClient.single.mockResolvedValue({ data: null, error: { code: 'PGRST116' } });
-    
-    // insert() is awaited in the code, so it needs to resolve
-    mockClient.insert.mockReturnValue({
-       then: (resolve: any) => resolve({ error: null })
-    });
-
-    const result = await checkRateLimit(ip, endpoint, limit, windowSeconds);
-
-    expect(result.allowed).toBe(true);
-    expect(mockClient.insert).toHaveBeenCalledWith(expect.objectContaining({
-      ip,
-      endpoint,
-      requests: 1,
-    }));
-  });
-
-  it('should allow request if limit not reached', async () => {
-    // Mock existing record with 2 requests
-    const now = new Date();
-    mockClient.single.mockResolvedValue({
-      data: { 
-        ip, 
-        endpoint, 
-        requests: 2, 
-        last_request: now.toISOString() 
-      }, 
-      error: null 
-    });
-
-    // Code: .update(...).eq(...).eq(...)
-    // We need the final .eq() to resolve to { error: null }
-    // Since our builder returns itself, and itself is thenable (default success), this should work.
-    // However, let's be explicit to avoid "then is not a function" if I mess up the chain.
+  it('should allow request if RPC returns true', async () => {
+    // Mock RPC returning true (allowed)
+    mockClient.rpc.mockResolvedValue({ data: true, error: null });
     
     const result = await checkRateLimit(ip, endpoint, limit, windowSeconds);
 
     expect(result.allowed).toBe(true);
-    expect(mockClient.update).toHaveBeenCalledWith({ requests: 3 });
-    expect(mockClient.eq).toHaveBeenCalledWith('ip', ip);
-    expect(mockClient.eq).toHaveBeenCalledWith('endpoint', endpoint);
+    expect(mockClient.rpc).toHaveBeenCalledWith('check_rate_limit_rpc', {
+      _ip: ip,
+      _endpoint: endpoint,
+      _limit: limit,
+      _window_seconds: windowSeconds
+    });
   });
 
-  it('should block request if limit reached within window', async () => {
-    // Mock existing record with 5 requests (at limit)
-    const now = new Date();
-    mockClient.single.mockResolvedValue({
-      data: { 
-        ip, 
-        endpoint, 
-        requests: 5, 
-        last_request: now.toISOString() 
-      }, 
-      error: null 
-    });
+  it('should block request if RPC returns false', async () => {
+    // Mock RPC returning false (blocked)
+    mockClient.rpc.mockResolvedValue({ data: false, error: null });
 
     const result = await checkRateLimit(ip, endpoint, limit, windowSeconds);
 
     expect(result.allowed).toBe(false);
-    expect(mockClient.update).not.toHaveBeenCalled();
-  });
-
-  it('should reset limit if window has passed', async () => {
-    // Mock existing record with 5 requests (at limit) but OLD timestamp
-    const oldDate = new Date();
-    oldDate.setSeconds(oldDate.getSeconds() - (windowSeconds + 10)); // Past the window
-
-    mockClient.single.mockResolvedValue({
-      data: { 
-        ip, 
-        endpoint, 
-        requests: 5, 
-        last_request: oldDate.toISOString() 
-      }, 
-      error: null 
-    });
-
-    const result = await checkRateLimit(ip, endpoint, limit, windowSeconds);
-
-    expect(result.allowed).toBe(true);
-    // Should reset requests to 1
-    expect(mockClient.update).toHaveBeenCalledWith(expect.objectContaining({
-      requests: 1,
-    }));
+    expect(mockClient.rpc).toHaveBeenCalledWith('check_rate_limit_rpc', expect.anything());
   });
 
   it('should fail open (allow) if DB error occurs', async () => {
-    // Mock DB Error
-    mockClient.single.mockResolvedValue({ 
+    // Mock RPC Error
+    mockClient.rpc.mockResolvedValue({ 
       data: null, 
       error: { code: '500', message: 'DB Disconnected' } 
     });

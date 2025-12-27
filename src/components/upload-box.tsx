@@ -678,8 +678,8 @@ export function UploadBox() {
                ref={fileInputRef} 
                onChange={handleFileSelect} 
              />
-             <div className="bg-orange-50 dark:bg-primary/10 group-hover:bg-orange-100 dark:group-hover:bg-primary/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 transition-colors duration-300">
-                <CloudArrowUp className="w-8 h-8 text-primary" weight="fill" />
+             <div className="bg-orange-50 dark:bg-primary/10 group-hover:bg-orange-100 dark:group-hover:bg-primary/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 transition-all duration-300 group-hover:scale-110">
+                <CloudArrowUp className="w-8 h-8 text-primary animate-pulse" weight="fill" style={{ animationDuration: '3s' }} />
              </div>
              <p className="font-medium text-foreground">Click to upload or drag and drop</p>
              <p className="text-sm text-muted-foreground mt-1">Single file or multiple files (auto-zipped) up to 5GB</p>

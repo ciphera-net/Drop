@@ -17,14 +17,20 @@ export function HomeView({ user }: { user: User | null }) {
     return (
         <div className="w-full max-w-md animate-in fade-in slide-in-from-bottom-8 duration-700 delay-150">
              <div className="flex justify-center mb-8">
-                <div className="inline-flex p-1 bg-muted/50 backdrop-blur-sm rounded-xl border border-border/50">
+                <div className="relative inline-flex p-1 bg-muted/50 backdrop-blur-sm rounded-xl border border-border/50">
+                    <div 
+                        className={cn(
+                            "absolute inset-y-1 w-[calc(50%-4px)] bg-background shadow-sm rounded-lg transition-all duration-300 ease-spring",
+                            mode === 'send' ? "left-1" : "left-[calc(50%+2px)]"
+                        )}
+                    />
                     <button
                         onClick={() => setMode('send')}
                         className={cn(
-                            "flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                            "relative z-10 flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200 w-28 justify-center",
                             mode === 'send' 
-                                ? "bg-background text-primary shadow-sm ring-1 ring-border" 
-                                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                                ? "text-primary" 
+                                : "text-muted-foreground hover:text-foreground"
                         )}
                     >
                         <PaperPlaneTilt weight={mode === 'send' ? "fill" : "regular"} className="w-4 h-4" />
@@ -33,10 +39,10 @@ export function HomeView({ user }: { user: User | null }) {
                     <button
                         onClick={() => setMode('request')}
                         className={cn(
-                            "flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                            "relative z-10 flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200 w-28 justify-center",
                             mode === 'request' 
-                                ? "bg-background text-primary shadow-sm ring-1 ring-border" 
-                                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                                ? "text-primary" 
+                                : "text-muted-foreground hover:text-foreground"
                         )}
                     >
                         <ShareNetwork weight={mode === 'request' ? "fill" : "bold"} className="w-4 h-4" />

@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/utils/supabase/admin";
+import { sendSlackAlert } from "./slack";
 
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   return Promise.race([
@@ -158,5 +159,25 @@ export async function cleanupAllExpiredFiles() {
     }
 
     console.log(`[Cleanup] Job finished. Processed: ${results.processed}, Errors: ${results.errors}`);
+
+    // Send Slack Notification
+    const webhookUrl = process.env.SLACK_CLEANUP_JOB_WEBHOOK_URL;
+    
+    if (webhookUrl) {
+        await sendSlackAlert(
+            '🧹 Cleanup Job Report',
+            `Cleanup job finished. Processed: ${results.processed}, Errors: ${results.errors}`,
+            results.errors > 0 ? '#ff0000' : '#36a64f',
+            [
+                { title: 'Processed', value: results.processed.toString(), short: true },
+                { title: 'Errors', value: results.errors.toString(), short: true },
+                { title: 'Candidates Found', value: results.total_candidates.toString(), short: true }
+            ],
+            webhookUrl
+        );
+    } else {
+        console.warn("[Cleanup] SLACK_CLEANUP_JOB_WEBHOOK_URL not set. Notification skipped.");
+    }
+
     return results;
 }

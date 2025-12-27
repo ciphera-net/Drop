@@ -135,7 +135,7 @@ begin
   if _limit is not null and _count >= _limit then
      -- Limit was already reached (race condition handling if is_deleted wasn't set yet)
      -- Mark deleted self-healing
-     update public.uploads set file_deleted = true where id = row_id;
+     -- update public.uploads set file_deleted = true where id = row_id;
      return query select _count, true, false;
      return;
   end if;
@@ -145,9 +145,7 @@ begin
 
   -- Update
   update public.uploads
-  set download_count = _count,
-      -- If limit reached (>= limit), mark deleted immediately
-      file_deleted = case when (_limit is not null and _count >= _limit) then true else file_deleted end
+  set download_count = _count
   where id = row_id;
 
   -- Allowed is true because we just successfully incremented within the limit

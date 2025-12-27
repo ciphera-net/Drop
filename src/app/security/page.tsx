@@ -240,6 +240,27 @@ export default async function SecurityPage() {
                     </ul>
                 </div>
             </div>
+            
+            <div className="md:col-span-2 bg-muted/30 p-6 rounded-xl border">
+                <h3 className="text-lg font-semibold text-foreground mb-4">Account Security</h3>
+                <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <h4 className="font-medium mb-2">Session Management</h4>
+                        <p className="text-sm text-muted-foreground">
+                            We provide a complete view of all devices and browsers logged into your account. 
+                            You can view login times, IP locations, and instantly revoke access to any suspicious session.
+                        </p>
+                    </div>
+                    <div>
+                        <h4 className="font-medium mb-2">Identity Verification</h4>
+                        <p className="text-sm text-muted-foreground">
+                            Critical actions and account recovery rely on email verification. 
+                            We never ask for or store phone numbers or unnecessary personal data.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
           </div>
         </section>
       </main>

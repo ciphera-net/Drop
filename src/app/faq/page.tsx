@@ -59,6 +59,14 @@ export default async function FaqPage() {
       answer: "Yes, to ensure fair usage and optimal performance for everyone, there are limits on file sizes. These limits may vary depending on server configuration, but we strive to support large file transfers for your convenience."
     },
     {
+      question: "Is there a limit to how much I can store?",
+      answer: "Yes. Each user has a storage quota (e.g., 1GB). You can view your current usage in the Storage section of your settings. If you reach the limit, you'll need to delete old files before uploading new ones."
+    },
+    {
+      question: "Can I save my preferred upload settings?",
+      answer: "Yes! In your Profile Settings, you can set your default expiration time and download limit (e.g., always default to 'Burn on Read'). These defaults will be automatically applied to every new upload."
+    },
+    {
       question: "Can I delete a file before it expires?",
       answer: "Absolutely. If you are logged in, you can manage your uploads via the dashboard and delete any active file instantly. Once deleted, the file is immediately removed from storage."
     },
@@ -89,6 +97,10 @@ export default async function FaqPage() {
     {
       question: "How do I report illegal content?",
       answer: "We have zero tolerance for illegal content. If you encounter a file that violates our terms of service or local laws, please contact us immediately. We have mechanisms in place to review and remove such content swiftly."
+    },
+    {
+      question: "How do I manage my active sessions?",
+      answer: "Go to Settings > Sessions to see a list of all devices and browsers currently logged into your account. You can revoke access to any session instantly if you don't recognize it."
     }
   ];
 

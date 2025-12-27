@@ -1,5 +1,10 @@
 # Drop
 
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![Tests](https://github.com/ciphera-net/Drop/actions/workflows/test.yml/badge.svg)](https://github.com/ciphera-net/Drop/actions/workflows/test.yml)
+[![GitHub issues](https://img.shields.io/github/issues/ciphera-net/Drop)](https://github.com/ciphera-net/Drop/issues)
+[![GitHub stars](https://img.shields.io/github/stars/ciphera-net/Drop)](https://github.com/ciphera-net/Drop/stargazers)
+
 **Drop** is a secure, ephemeral file sharing service designed for privacy and simplicity. Share files securely with magic words, password protection, and automatic cleanup.
 
 ## Features
@@ -62,11 +67,10 @@
    - `SLACK_WEBHOOK_URL` (optional, for monitoring alerts)
    - `NEXT_PUBLIC_APP_URL` (e.g. http://localhost:3000)
 
-4. **Run Database Migrations**
-   The database schema is managed via Supabase migrations.
+4. **Run Database Schema**
+   The complete database schema (including all migrations) is in a single file.
    
-   1. Execute `supabase/schema.sql` in your Supabase SQL Editor to set up the base schema.
-   2. Apply all SQL files from the `migrations/` directory in sequential order to bring the database up to date.
+   Execute `supabase/schema.sql` in your Supabase SQL Editor to set up the complete database.
 
 5. **Start the Development Server**
    ```bash

@@ -13,6 +13,14 @@ import {
   deleteExpiredFiles 
 } from "@/app/settings/actions";
 import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -97,15 +105,15 @@ export function StorageForm({ user }: StorageFormProps) {
   const isLimitReached = stats.totalBytes >= limit;
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold tracking-tight">Storage Management</h2>
-        <p className="text-muted-foreground">
-          Manage your files and storage usage.
-        </p>
-      </div>
-
-      <div className="space-y-6 max-w-md">
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <Card>
+        <CardHeader>
+          <CardTitle>Storage Management</CardTitle>
+          <CardDescription>
+            Manage your files and storage usage.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6 max-w-md">
         
         {/* Usage Section */}
         <div className="space-y-2">
@@ -182,7 +190,8 @@ export function StorageForm({ user }: StorageFormProps) {
              </Dialog>
         </div>
 
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

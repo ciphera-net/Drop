@@ -6,6 +6,14 @@ import { UserProfile } from "@/types";
 import { createClient } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Fire, LockKey, Infinity as InfinityIcon } from "@phosphor-icons/react";
@@ -67,15 +75,15 @@ export function PreferencesForm({ user, profile }: PreferencesFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8 animate-in fade-in duration-500">
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold tracking-tight">Upload Preferences</h2>
-        <p className="text-muted-foreground">
-          Set default behaviors for your new uploads.
-        </p>
-      </div>
-
-      <div className="space-y-6 max-w-md">
+    <form onSubmit={handleSubmit} className="space-y-6 animate-in fade-in duration-500">
+      <Card>
+        <CardHeader>
+          <CardTitle>Upload Preferences</CardTitle>
+          <CardDescription>
+            Set default behaviors for your new uploads.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6 max-w-md">
         
         {/* Expiration Section */}
         <div>
@@ -179,11 +187,13 @@ export function PreferencesForm({ user, profile }: PreferencesFormProps) {
             </p>
         </div>
 
-      </div>
-
-      <Button type="submit" disabled={loading}>
-        {loading ? "Saving..." : "Save Preferences"}
-      </Button>
+      </CardContent>
+      <CardFooter>
+        <Button type="submit" disabled={loading}>
+            {loading ? "Saving..." : "Save Preferences"}
+        </Button>
+      </CardFooter>
+      </Card>
     </form>
   );
 }

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { UserMenu } from "@/components/user-menu";
 import { User } from "@supabase/supabase-js";
 import { cn } from "@/lib/utils";
+import { StatusBadge } from "@/components/status-badge";
 
 interface SiteHeaderProps {
   user?: User | null;
@@ -24,6 +25,7 @@ export function SiteHeader({ user, displayName, simple = false, className }: Sit
         </div>
 
         <div className="flex items-center gap-2 md:gap-4">
+          {!simple && <StatusBadge />}
           {!simple && <UserMenu user={user ?? null} displayName={displayName} />}
         </div>
       </div>

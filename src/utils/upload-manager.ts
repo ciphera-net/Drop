@@ -207,4 +207,19 @@ export async function uploadEncryptedFile(
   }
   
   await Promise.all(activeUploads);
+
+  // Increment Global Stats
+  try {
+      // Use RPC if possible, or direct update if we have permissions (likely need an RPC for security/concurrency)
+      // Since we are client-side here, we should call an API route to handle this securely.
+      // We don't want to expose direct write access to the global_stats table.
+      await fetch('/api/increment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ size: file.size })
+      });
+  } catch (e) {
+      console.error("Failed to update global stats:", e);
+      // Don't fail the upload just because stats failed
+  }
 }

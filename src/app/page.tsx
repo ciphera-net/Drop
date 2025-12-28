@@ -54,7 +54,7 @@ export default async function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <SiteHeader user={user} displayName={displayName} />
-
+      
       {/* Main Content */}
       <main className="flex-1 w-full max-w-6xl mx-auto px-4 py-12 md:py-20 flex flex-col items-center">
          
@@ -64,7 +64,7 @@ export default async function Home() {
                <span className="text-primary relative whitespace-nowrap">
                  to <TypewriterText texts={["Share", "Encrypt", "Transfer"]} />
                  <svg className="absolute w-full h-3 -bottom-1 left-0 text-orange-200 dark:text-orange-900 -z-10" viewBox="0 0 100 10" preserveAspectRatio="none">
-                    <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="8" fill="none" />
+                    <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="8" fill="none" className="animate-draw" />
                  </svg>
                </span>
             </h1>

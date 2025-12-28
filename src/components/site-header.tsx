@@ -3,15 +3,17 @@ import { UserMenu } from "@/components/user-menu";
 import { User } from "@supabase/supabase-js";
 import { cn } from "@/lib/utils";
 import { StatusBadge } from "@/components/status-badge";
+import { GlobalStats } from "@/lib/stats";
 
 interface SiteHeaderProps {
   user?: User | null;
   displayName?: string | null;
+  stats?: GlobalStats | null;
   simple?: boolean; // If true, hides extra navigation/menus, focuses on Logo
   className?: string;
 }
 
-export function SiteHeader({ user, displayName, simple = false, className }: SiteHeaderProps) {
+export function SiteHeader({ user, displayName, stats, simple = false, className }: SiteHeaderProps) {
   return (
     <header className={cn("w-full py-4 px-4 md:px-8 border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-50", className)}>
       <div className="max-w-6xl mx-auto flex items-center justify-between">
@@ -25,7 +27,7 @@ export function SiteHeader({ user, displayName, simple = false, className }: Sit
         </div>
 
         <div className="flex items-center gap-2 md:gap-4">
-          {!simple && <StatusBadge />}
+          {!simple && <StatusBadge stats={stats} />}
           {!simple && <UserMenu user={user ?? null} displayName={displayName} />}
         </div>
       </div>

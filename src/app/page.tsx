@@ -4,6 +4,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { HomeView } from "@/components/home-view";
 import { TypewriterText } from "@/components/typewriter-text";
+import { getGlobalStats } from "@/lib/stats";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -17,6 +18,7 @@ export const metadata: Metadata = {
 export default async function Home() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+  const globalStats = await getGlobalStats();
 
   let displayName = null;
   if (user) {
@@ -53,7 +55,7 @@ export default async function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <SiteHeader user={user} displayName={displayName} />
+      <SiteHeader user={user} displayName={displayName} stats={globalStats} />
       
       {/* Main Content */}
       <main className="flex-1 w-full max-w-6xl mx-auto px-4 py-12 md:py-20 flex flex-col items-center">

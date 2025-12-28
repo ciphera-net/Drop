@@ -1,25 +1,17 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { Check, ShieldCheck } from "@phosphor-icons/react";
 
 interface Stats {
   filesProtected: number;
 }
 
-export function StatusBadge() {
-  const [stats, setStats] = useState<Stats | null>(null);
+interface StatusBadgeProps {
+  stats?: Stats | null;
+  className?: string;
+}
 
-  useEffect(() => {
-    fetch('/api/stats')
-      .then(res => res.json())
-      .then(data => setStats(data))
-      .catch(err => console.error("Failed to load stats", err));
-  }, []);
-
+export function StatusBadge({ stats, className }: StatusBadgeProps) {
   return (
-    <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 border border-border/50 text-xs font-medium text-muted-foreground animate-in fade-in zoom-in duration-500">
+    <div className={cn("hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 border border-border/50 text-xs font-medium text-muted-foreground animate-in fade-in zoom-in duration-500", className)}>
         <div className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>

@@ -23,7 +23,7 @@ export async function deriveKeyFromPassword(
   return crypto.subtle.deriveKey(
     {
       name: 'PBKDF2',
-      salt: salt,
+      salt: salt as BufferSource,
       iterations: 100000, // * High iteration count for security
       hash: 'SHA-256',
     },
@@ -58,7 +58,7 @@ export async function encryptKeyWithPassword(
   const encrypted = await crypto.subtle.encrypt(
     {
       name: 'AES-GCM',
-      iv: iv,
+      iv: iv as BufferSource,
     },
     derivedKey,
     key
@@ -85,7 +85,7 @@ export async function decryptKeyWithPassword(
   const decrypted = await crypto.subtle.decrypt(
     {
       name: 'AES-GCM',
-      iv: iv,
+      iv: iv as BufferSource,
     },
     derivedKey,
     encrypted

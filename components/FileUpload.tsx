@@ -5,6 +5,7 @@ import { encryptFile, encryptString, arrayBufferToBase64 } from '../lib/crypto/e
 import { encodeKeyForSharing } from '../lib/crypto/key-management'
 import { uploadFile } from '../lib/api/upload'
 import type { UploadRequest } from '../lib/types/api'
+import { MAX_FILE_SIZE } from '../lib/constants'
 
 interface FileUploadProps {
   onUploadComplete?: (shareUrl: string) => void
@@ -24,8 +25,26 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
     if (!selectedFiles) return
     
     const fileArray = Array.from(selectedFiles)
-    setFiles((prev) => [...prev, ...fileArray])
-    setError(null)
+    const validFiles: File[] = []
+    let errorMsg: string | null = null
+
+    fileArray.forEach(file => {
+      if (file.size > MAX_FILE_SIZE) {
+        errorMsg = `File ${file.name} is too large. Max size is 5GB.`
+      } else {
+        validFiles.push(file)
+      }
+    })
+
+    if (errorMsg) {
+      setError(errorMsg)
+    } else {
+      setError(null)
+    }
+
+    if (validFiles.length > 0) {
+      setFiles((prev) => [...prev, ...validFiles])
+    }
   }, [])
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -56,6 +75,10 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
     try {
       // * For now, upload the first file (multi-file support will be added later)
       const file = files[0]
+
+      if (file.size > MAX_FILE_SIZE) {
+        throw new Error(`File ${file.name} is too large. Max size is 5GB.`)
+      }
 
       // * Encrypt file
       const { encrypted, iv, key } = await encryptFile(file)

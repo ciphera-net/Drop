@@ -26,7 +26,7 @@ export async function encryptFile(
   const encrypted = await crypto.subtle.encrypt(
     {
       name: 'AES-GCM',
-      iv: iv,
+      iv: iv as BufferSource, // Explicit cast for TS compatibility
     },
     key.key,
     fileData
@@ -54,7 +54,7 @@ export async function decryptFile(
   const decrypted = await crypto.subtle.decrypt(
     {
       name: 'AES-GCM',
-      iv: iv,
+      iv: iv as BufferSource,
     },
     cryptoKey,
     encryptedData
@@ -79,7 +79,7 @@ export async function encryptString(
   return crypto.subtle.encrypt(
     {
       name: 'AES-GCM',
-      iv: iv,
+      iv: iv as BufferSource,
     },
     key,
     data
@@ -97,7 +97,7 @@ export async function decryptString(
   const decrypted = await crypto.subtle.decrypt(
     {
       name: 'AES-GCM',
-      iv: iv,
+      iv: iv as BufferSource,
     },
     key,
     encryptedData

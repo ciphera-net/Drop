@@ -83,20 +83,20 @@ export default function DownloadPage({ shareId, encryptionKey }: DownloadPagePro
     <div className="w-full max-w-2xl mx-auto space-y-6">
       <div className="text-center space-y-4">
         <h1 className="text-3xl font-bold">Download File</h1>
-        <p className="text-neutral-600 dark:text-neutral-400">
+        <p className="text-neutral-600">
           Share ID: {shareId}
         </p>
       </div>
 
       {error && (
-        <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-          <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-sm text-red-800">{error}</p>
         </div>
       )}
 
       {filename && (
-        <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-          <p className="text-sm text-green-800 dark:text-green-200">
+        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+          <p className="text-sm text-green-800">
             Downloaded: {filename}
           </p>
         </div>
@@ -112,7 +112,7 @@ export default function DownloadPage({ shareId, encryptionKey }: DownloadPagePro
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Enter password if file is protected"
-            className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800"
+            className="w-full px-3 py-2 border border-neutral-300 rounded-lg bg-white"
             disabled={downloading}
           />
         </div>
@@ -127,8 +127,8 @@ export default function DownloadPage({ shareId, encryptionKey }: DownloadPagePro
       </div>
 
       {!encryptionKey && (
-        <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-          <p className="text-sm text-yellow-800 dark:text-yellow-200">
+        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <p className="text-sm text-yellow-800">
             Encryption key not found. Please use the full share link.
           </p>
         </div>

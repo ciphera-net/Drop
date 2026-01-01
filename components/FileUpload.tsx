@@ -136,12 +136,12 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
   }, [files, expirationDays, password, downloadLimit, oneTimeDownload, onUploadComplete])
 
   return (
-    <div className="w-full max-w-2xl mx-auto space-y-6">
+    <div className="w-full mx-auto space-y-6">
       {/* * Drag and drop area */}
       <div
         onDragOver={handleDragOver}
         onDrop={handleDrop}
-        className="border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg p-12 text-center hover:border-brand-orange transition-colors cursor-pointer"
+        className="group relative border-2 border-dashed border-neutral-200 hover:border-brand-orange bg-neutral-50/50 hover:bg-brand-orange/5 rounded-2xl p-12 text-center transition-all duration-300 ease-in-out cursor-pointer"
       >
         <input
           type="file"
@@ -151,14 +151,32 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
           id="file-input"
           disabled={uploading}
         />
-        <label htmlFor="file-input" className="cursor-pointer">
-          <div className="space-y-4">
-            <p className="text-lg font-medium">
-              Drag and drop files here, or click to select
-            </p>
-            <p className="text-sm text-neutral-500 dark:text-neutral-500">
-              Files are encrypted before upload
-            </p>
+        <label htmlFor="file-input" className="cursor-pointer w-full h-full block">
+          <div className="space-y-4 flex flex-col items-center">
+            <div className="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:scale-110 group-hover:shadow-md transition-all duration-300">
+              <svg 
+                className="w-8 h-8 text-neutral-400 group-hover:text-brand-orange transition-colors" 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+            </div>
+            <div className="space-y-2">
+              <p className="text-xl font-semibold text-neutral-700 group-hover:text-brand-orange transition-colors">
+                Click to upload or drag and drop
+              </p>
+              <p className="text-sm text-neutral-500 max-w-xs mx-auto">
+                Files are encrypted client-side before being uploaded. Maximum file size 5GB.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-neutral-400 bg-white/50 px-3 py-1.5 rounded-full border border-neutral-100">
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              <span>End-to-end encrypted</span>
+            </div>
           </div>
         </label>
       </div>
@@ -170,7 +188,7 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
           {files.map((file, index) => (
             <div
               key={index}
-              className="flex items-center justify-between p-3 bg-neutral-100 dark:bg-neutral-800 rounded-lg"
+              className="flex items-center justify-between p-3 bg-neutral-100 rounded-lg"
             >
               <span className="text-sm truncate flex-1">{file.name}</span>
               <button
@@ -187,7 +205,7 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
 
       {/* * Upload options */}
       {files.length > 0 && (
-        <div className="space-y-4 p-4 bg-neutral-50 dark:bg-neutral-900 rounded-lg">
+        <div className="space-y-4 p-4 bg-neutral-50 rounded-lg">
           <div>
             <label className="block text-sm font-medium mb-2">
               Expiration (days)
@@ -198,7 +216,7 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
               max="30"
               value={expirationDays}
               onChange={(e) => setExpirationDays(parseInt(e.target.value) || 7)}
-              className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800"
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg bg-white"
               disabled={uploading}
             />
           </div>
@@ -212,7 +230,7 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Protect with password"
-              className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800"
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg bg-white"
               disabled={uploading}
             />
           </div>
@@ -231,7 +249,7 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
                 )
               }
               placeholder="Unlimited"
-              className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800"
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg bg-white"
               disabled={uploading}
             />
           </div>
@@ -265,8 +283,8 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
 
       {/* * Error message */}
       {error && (
-        <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-          <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-sm text-red-800">{error}</p>
         </div>
       )}
     </div>

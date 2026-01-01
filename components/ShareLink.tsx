@@ -22,31 +22,48 @@ export default function ShareLink({ shareUrl, onReset }: ShareLinkProps) {
 
   return (
     <div className="space-y-6">
-      <div className="p-6 bg-neutral-50 dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-800">
-        <h2 className="text-xl font-semibold mb-4">Share Link Generated</h2>
-        <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
-          Your file has been encrypted and uploaded. Share this link with anyone you want to give access to.
-        </p>
+      <div className="p-8 bg-neutral-50/50 rounded-xl border border-neutral-100">
+        <div className="flex flex-col items-center text-center mb-6">
+          <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4 text-green-600">
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-neutral-900">Share Link Ready</h2>
+          <p className="text-sm text-neutral-500 mt-1 max-w-sm">
+            Your file has been encrypted and secured. Share this link with recipients.
+          </p>
+        </div>
         
-        <div className="flex items-center gap-2 mb-4">
+        <div className="flex items-center gap-2 mb-6">
           <input
             type="text"
             value={shareUrl}
             readOnly
-            className="flex-1 px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-sm font-mono"
+            className="flex-1 px-4 py-3 border border-neutral-200 rounded-xl bg-white text-sm font-mono text-neutral-600 focus:ring-2 focus:ring-brand-orange/20 focus:border-brand-orange outline-none transition-all"
           />
           <button
             onClick={handleCopy}
-            className="btn-secondary whitespace-nowrap"
+            className="btn-secondary whitespace-nowrap !px-6 !py-3 h-[46px] flex items-center"
           >
-            {copied ? 'Copied!' : 'Copy'}
+            {copied ? 'Copied!' : 'Copy Link'}
           </button>
         </div>
 
-        <div className="text-xs text-neutral-500 dark:text-neutral-500 space-y-1">
-          <p>• Files are encrypted before upload</p>
-          <p>• Only people with this link can download</p>
-          <p>• The encryption key is in the URL hash</p>
+        <div className="flex flex-col gap-2 text-xs text-neutral-400 border-t border-neutral-100 pt-4">
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4 text-brand-orange" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <span>End-to-end encrypted zero-knowledge storage</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4 text-brand-orange" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+            <span>Only accessible via this unique link</span>
+          </div>
         </div>
       </div>
 

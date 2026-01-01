@@ -19,35 +19,32 @@
     --color-neutral-800: #262626;
     --color-neutral-900: #171717;
     
-    /* * Dark mode support */
+    /* * Dark mode support - Forced Light Mode */
     --color-bg: #ffffff;
     --color-text: #171717;
   }
   
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --color-bg: #0a0a0a;
-      --color-text: #fafafa;
-    }
-  }
-  
   * {
-    @apply border-neutral-200 dark:border-neutral-800;
+    @apply border-neutral-200;
   }
   
   body {
-    @apply bg-white dark:bg-black text-neutral-900 dark:text-neutral-50;
+    @apply bg-white text-neutral-900;
     font-family: var(--font-plus-jakarta-sans), system-ui, sans-serif;
+    background-image: 
+      radial-gradient(at 0% 0%, hsla(20, 98%, 52%, 0.03) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, hsla(20, 98%, 52%, 0.03) 0px, transparent 50%);
+    background-attachment: fixed;
   }
 }
 
 @layer components {
   /* * Reusable component styles */
   .btn-primary {
-    @apply bg-brand-orange text-white px-4 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-brand-orange focus:ring-offset-2;
+    @apply bg-brand-orange text-white px-5 py-2.5 rounded-xl font-semibold shadow-sm shadow-orange-200 hover:shadow-orange-300 hover:-translate-y-0.5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-brand-orange focus:ring-offset-2;
   }
   
   .btn-secondary {
-    @apply bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-50 px-4 py-2 rounded-lg font-medium hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:ring-offset-2;
+    @apply bg-white border border-neutral-200 text-neutral-900 px-5 py-2.5 rounded-xl font-medium hover:bg-neutral-50 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-neutral-200 focus:ring-offset-2;
   }
 }

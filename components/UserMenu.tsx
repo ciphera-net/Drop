@@ -9,7 +9,7 @@ export default function UserMenu() {
   const router = useRouter()
 
   if (loading) {
-    return <div className="h-8 w-20 animate-pulse rounded bg-neutral-100 dark:bg-neutral-800" />
+    return <div className="h-8 w-20 animate-pulse rounded bg-neutral-100" />
   }
 
   if (user) {
@@ -17,13 +17,13 @@ export default function UserMenu() {
       <div className="flex items-center gap-4">
         <Link 
           href="/dashboard"
-          className="text-sm font-medium text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
+          className="text-sm font-medium text-neutral-600 hover:text-neutral-900"
         >
           Dashboard
         </Link>
         <button
           onClick={logout}
-          className="text-sm font-medium text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+          className="text-sm font-medium text-red-600 hover:text-red-700"
         >
           Sign Out
         </button>
@@ -35,13 +35,13 @@ export default function UserMenu() {
     <div className="flex items-center gap-4">
       <Link
         href="/login"
-        className="text-sm font-medium text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
+        className="text-sm font-medium text-neutral-600 hover:text-neutral-900"
       >
         Sign in
       </Link>
       <Link
         href="/signup"
-        className="rounded-full bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
+        className="btn-primary text-sm"
       >
         Sign up
       </Link>

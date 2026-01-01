@@ -61,7 +61,7 @@ export async function encryptKeyWithPassword(
       iv: iv as BufferSource,
     },
     derivedKey,
-    key
+    key as BufferSource
   )
 
   return {

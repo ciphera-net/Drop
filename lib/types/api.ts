@@ -6,7 +6,7 @@ export interface UploadRequest {
   file: File
   encryptedData: ArrayBuffer
   encryptedFilename: string
-  iv: string // Base64 encoded
+  iv: Uint8Array
   expirationDays?: number
   password?: string // Optional password for share link
   downloadLimit?: number // Optional download limit

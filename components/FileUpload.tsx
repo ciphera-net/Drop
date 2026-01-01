@@ -73,7 +73,7 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
         file,
         encryptedData: encrypted,
         encryptedFilename,
-        iv: arrayBufferToBase64(iv),
+        iv,
         expirationDays,
         password: password || undefined,
         downloadLimit: downloadLimit || undefined,

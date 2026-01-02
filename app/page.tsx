@@ -58,14 +58,17 @@ export default function HomePage() {
     <main className="min-h-screen flex items-center justify-center p-4 py-12 relative overflow-hidden bg-white">
       <div className="max-w-2xl w-full space-y-8 relative z-10">
         <div className="text-center space-y-4">
+          <div className="inline-flex items-center rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-sm text-neutral-600 mb-2">
+            <span className="mr-2 h-2 w-2 rounded-full bg-green-500"></span>
+            End-to-End Encrypted
+          </div>
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-neutral-900">
             The Secure Way<br />
             <span className="text-brand-orange">to {text}</span>
             <span className="animate-pulse text-brand-orange">|</span>
           </h1>
           <p className="text-lg md:text-xl text-neutral-600 max-w-md mx-auto leading-relaxed">
-            Privacy-first file sharing.<br/>
-            <span className="text-neutral-400">We cannot see what you upload.</span>
+            Share files securely with a single link.
           </p>
         </div>
 

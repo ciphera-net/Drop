@@ -15,18 +15,18 @@ export default function UserMenu() {
   if (user) {
     return (
       <div className="flex items-center gap-4">
-        <Link 
-          href="/dashboard"
-          className="text-sm font-medium text-neutral-600 hover:text-neutral-900"
-        >
-          Dashboard
-        </Link>
         <button
           onClick={logout}
-          className="text-sm font-medium text-red-600 hover:text-red-700"
+          className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors"
         >
           Sign Out
         </button>
+        <Link 
+          href="/dashboard"
+          className="btn-primary text-sm"
+        >
+          Dashboard
+        </Link>
       </div>
     )
   }

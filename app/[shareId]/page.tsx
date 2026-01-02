@@ -24,8 +24,10 @@ export default function DownloadPage({ params }: DownloadPageProps) {
   }, [])
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-4 py-12">
-      <DownloadPageComponent shareId={shareId} encryptionKey={encryptionKey} />
+    <main className="min-h-screen flex items-center justify-center p-4 py-12 relative overflow-hidden bg-neutral-50/50">
+      <div className="relative z-10 w-full max-w-2xl">
+        <DownloadPageComponent shareId={shareId} encryptionKey={encryptionKey} />
+      </div>
     </main>
   )
 }

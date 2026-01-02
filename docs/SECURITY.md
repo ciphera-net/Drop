@@ -4,7 +4,25 @@
 
 Drop is designed with privacy and security as core principles. This document outlines the security architecture and measures implemented.
 
-## Zero-Knowledge Architecture
+## Authentication & Identity
+
+### Zero-Knowledge Password Architecture (Double Hashing)
+To ensure the server never sees or stores a user's raw password, we implement a "Hash-then-Hash" protocol:
+
+1.  **Client-Side Derivation**:
+    *   The client derives an `Auth Key` using `PBKDF2-HMAC-SHA256` (100,000 iterations).
+    *   Input: `User Password` + `Email` (as salt).
+    *   Output: 32-byte key (encoded as 64-char Hex string).
+    *   **Only this derived key** is sent to the server.
+
+2.  **Server-Side Hashing**:
+    *   The server receives the `Auth Key`.
+    *   The server hashes it again using `Argon2id` (memory-hard function).
+    *   The database stores: `$argon2id$...` (Hash of the Auth Key).
+
+This ensures that even if the TLS connection is stripped or the server logs are compromised, the attacker only sees the derived key, which cannot be used to decrypt user files (as file encryption keys will be derived separately).
+
+### Zero-Knowledge Architecture
 
 ### Client-Side Encryption
 

@@ -9,9 +9,50 @@ All API endpoints are prefixed with `/api/v1`.
 
 ## Authentication
 
-Currently, no authentication is required. Rate limiting is applied per IP address.
+Authentication is handled by the `Ciphera Auth` service. It uses JSON Web Tokens (JWT) for stateless session management.
 
-## Endpoints
+### Base URL (Auth)
+- **Development**: `http://localhost:8081`
+- **Production**: `https://auth.ciphera.net`
+
+### Register
+**Endpoint**: `POST /auth/register`
+
+**Request Body**:
+```json
+{
+  "email": "user@example.com",
+  "password": "64-char-hex-encoded-derived-key"
+}
+```
+*Note: Password must be Client-Side Derived Key (PBKDF2 of raw password + email).*
+
+### Login
+**Endpoint**: `POST /auth/login`
+
+**Request Body**:
+```json
+{
+  "email": "user@example.com",
+  "password": "64-char-hex-encoded-derived-key"
+}
+```
+
+**Response**:
+```json
+{
+  "token": "jwt-token-string",
+  "user": {
+    "id": "user-uuid",
+    "email": "user@example.com"
+  }
+}
+```
+
+## API Endpoints (Backend)
+
+All backend endpoints (except Health) require the JWT token in the `Authorization` header:
+`Authorization: Bearer <token>`
 
 ### Upload File
 

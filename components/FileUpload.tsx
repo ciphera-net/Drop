@@ -263,7 +263,7 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
       {/* * Upload options */}
       {files.length > 0 && (
         <div className="space-y-5 pt-2">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6">
             {/* Expiration */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-neutral-700">

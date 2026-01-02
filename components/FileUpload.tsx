@@ -175,48 +175,50 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
   return (
     <div className="w-full max-w-md mx-auto space-y-6">
       {/* * Drag and drop area */}
-      <div
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}
-        className="group relative aspect-square border-2 border-dashed border-neutral-200 hover:border-brand-orange bg-neutral-50/50 hover:bg-brand-orange/5 rounded-2xl p-12 text-center transition-all duration-300 ease-in-out cursor-pointer"
-      >
-        <input
-          type="file"
-          multiple
-          onChange={(e) => handleFileSelect(e.target.files)}
-          className="hidden"
-          id="file-input"
-          disabled={uploading}
-        />
-        <label htmlFor="file-input" className="cursor-pointer w-full h-full block">
-          <div className="space-y-4 flex flex-col items-center justify-center h-full">
-            <div className="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:scale-110 group-hover:shadow-md transition-all duration-300">
-              <svg 
-                className="w-8 h-8 text-neutral-400 group-hover:text-brand-orange transition-colors" 
-                fill="none" 
-                viewBox="0 0 24 24" 
-                stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-              </svg>
+      {files.length === 0 && (
+        <div
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+          className="group relative aspect-square border-2 border-dashed border-neutral-200 hover:border-brand-orange bg-neutral-50/50 hover:bg-brand-orange/5 rounded-2xl p-12 text-center transition-all duration-300 ease-in-out cursor-pointer"
+        >
+          <input
+            type="file"
+            multiple
+            onChange={(e) => handleFileSelect(e.target.files)}
+            className="hidden"
+            id="file-input"
+            disabled={uploading}
+          />
+          <label htmlFor="file-input" className="cursor-pointer w-full h-full block">
+            <div className="space-y-4 flex flex-col items-center justify-center h-full">
+              <div className="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:scale-110 group-hover:shadow-md transition-all duration-300">
+                <svg 
+                  className="w-8 h-8 text-neutral-400 group-hover:text-brand-orange transition-colors" 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+              </div>
+              <div className="space-y-2">
+                <p className="text-xl font-semibold text-neutral-700 group-hover:text-brand-orange transition-colors">
+                  Click to upload or drag and drop
+                </p>
+                <p className="text-sm text-neutral-500 max-w-xs mx-auto">
+                  Files are encrypted client-side before being uploaded. Maximum file size 5GB.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-neutral-400 bg-white/50 px-3 py-1.5 rounded-full border border-neutral-100">
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                <span>End-to-end encrypted</span>
+              </div>
             </div>
-            <div className="space-y-2">
-              <p className="text-xl font-semibold text-neutral-700 group-hover:text-brand-orange transition-colors">
-                Click to upload or drag and drop
-              </p>
-              <p className="text-sm text-neutral-500 max-w-xs mx-auto">
-                Files are encrypted client-side before being uploaded. Maximum file size 5GB.
-              </p>
-            </div>
-            <div className="flex items-center gap-2 text-xs text-neutral-400 bg-white/50 px-3 py-1.5 rounded-full border border-neutral-100">
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-              <span>End-to-end encrypted</span>
-            </div>
-          </div>
-        </label>
-      </div>
+          </label>
+        </div>
+      )}
 
       {/* * Selected files */}
       {files.length > 0 && (

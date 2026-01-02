@@ -23,6 +23,7 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
   const [password, setPassword] = useState('')
   const [downloadLimit, setDownloadLimit] = useState<number | undefined>()
   const [oneTimeDownload, setOneTimeDownload] = useState(true)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const EXPIRATION_OPTIONS = [
     { label: '1 Hour', value: 60 },
@@ -59,6 +60,11 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
 
     if (validFiles.length > 0) {
       setFiles((prev) => [...prev, ...validFiles])
+    }
+    
+    // Reset input value to allow selecting the same file again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
     }
   }, [])
 
@@ -188,6 +194,16 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
 
   return (
     <div className="w-full max-w-md mx-auto space-y-6">
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        onChange={(e) => handleFileSelect(e.target.files)}
+        className="hidden"
+        id="file-input"
+        disabled={uploading}
+      />
+
       {/* * Drag and drop area */}
       {files.length === 0 && (
         <div
@@ -195,14 +211,6 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
           onDrop={handleDrop}
           className="group relative aspect-square border-2 border-dashed border-neutral-200 hover:border-brand-orange bg-neutral-50/50 hover:bg-brand-orange/5 rounded-2xl p-12 text-center transition-all duration-300 ease-in-out cursor-pointer"
         >
-          <input
-            type="file"
-            multiple
-            onChange={(e) => handleFileSelect(e.target.files)}
-            className="hidden"
-            id="file-input"
-            disabled={uploading}
-          />
           <label htmlFor="file-input" className="cursor-pointer w-full h-full block">
             <div className="space-y-4 flex flex-col items-center justify-center h-full">
               <div className="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:scale-110 group-hover:shadow-md transition-all duration-300">
@@ -239,7 +247,20 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="font-medium text-neutral-900">Selected files</h3>
-            <span className="text-xs text-neutral-500">{files.length} file{files.length !== 1 ? 's' : ''}</span>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-neutral-500">{files.length} file{files.length !== 1 ? 's' : ''}</span>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-brand-orange bg-brand-orange/5 hover:bg-brand-orange/10 rounded-full transition-colors"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Add more
+              </button>
+            </div>
           </div>
           {files.map((file, index) => (
             <div

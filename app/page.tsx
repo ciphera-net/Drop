@@ -72,7 +72,7 @@ export default function HomePage() {
           </p>
         </div>
 
-        <div className="bg-white p-6 md:p-8 rounded-3xl shadow-xl shadow-brand-orange/5 border border-neutral-100/50 backdrop-blur-sm">
+        <div className="bg-white p-6 md:p-8 rounded-3xl shadow-xl shadow-brand-orange/5 border border-neutral-100/50 backdrop-blur-sm max-w-md mx-auto">
           {shareUrl ? (
             <ShareLink shareUrl={shareUrl} onReset={() => setShareUrl(null)} />
           ) : (

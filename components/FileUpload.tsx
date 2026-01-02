@@ -173,12 +173,12 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
   }, [files, expirationMinutes, password, downloadLimit, oneTimeDownload, onUploadComplete])
 
   return (
-    <div className="w-full mx-auto space-y-6">
+    <div className="w-full max-w-md mx-auto space-y-6">
       {/* * Drag and drop area */}
       <div
         onDragOver={handleDragOver}
         onDrop={handleDrop}
-        className="group relative border-2 border-dashed border-neutral-200 hover:border-brand-orange bg-neutral-50/50 hover:bg-brand-orange/5 rounded-2xl p-12 text-center transition-all duration-300 ease-in-out cursor-pointer"
+        className="group relative aspect-square border-2 border-dashed border-neutral-200 hover:border-brand-orange bg-neutral-50/50 hover:bg-brand-orange/5 rounded-2xl p-12 text-center transition-all duration-300 ease-in-out cursor-pointer"
       >
         <input
           type="file"
@@ -189,7 +189,7 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
           disabled={uploading}
         />
         <label htmlFor="file-input" className="cursor-pointer w-full h-full block">
-          <div className="space-y-4 flex flex-col items-center">
+          <div className="space-y-4 flex flex-col items-center justify-center h-full">
             <div className="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:scale-110 group-hover:shadow-md transition-all duration-300">
               <svg 
                 className="w-8 h-8 text-neutral-400 group-hover:text-brand-orange transition-colors" 

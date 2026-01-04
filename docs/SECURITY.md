@@ -41,8 +41,8 @@ This ensures that even if the TLS connection is stripped or the server logs are 
 
 ### Infrastructure
 
-- **Database**: Supabase PostgreSQL (encrypted at rest)
-- **Storage**: Supabase Storage (S3-compatible, encrypted at rest)
+- **Database**: Railway PostgreSQL (encrypted at rest)
+- **Storage**: Cloudflare R2 Storage (S3-compatible, encrypted at rest)
 - **HTTPS**: All communications encrypted in transit (TLS 1.3)
 
 ### Security Headers

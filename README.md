@@ -1,5 +1,9 @@
 # Drop - Privacy-First File Sharing
 
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-green.svg)](https://www.gnu.org/licenses/agpl-3.0)
+[![Built with Next.js](https://img.shields.io/badge/Built%20with-Next.js-blue.svg?logo=next.js&logoColor=white)](https://nextjs.org/)
+[![Powered by Vercel](https://img.shields.io/badge/Powered%20by-Vercel-orange.svg?logo=vercel&logoColor=white)](https://vercel.com/)
+
 Drop is a privacy-first file sharing application that encrypts files client-side before upload, ensuring that even the service provider cannot access user data.
 
 ## Features

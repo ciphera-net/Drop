@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import apiRequest from '@/lib/api/client'
 
-export default function VerifyPage() {
+function VerifyContent() {
   const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying')
   const [message, setMessage] = useState('Verifying your email...')
   const router = useRouter()
@@ -67,5 +67,13 @@ export default function VerifyPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function VerifyPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center">Loading...</div>}>
+      <VerifyContent />
+    </Suspense>
   )
 }

@@ -10,6 +10,9 @@ export default function LoginPage() {
   const handleLogin = async () => {
     setLoading(true)
     try {
+      // * Artificial delay for better UX (prevents instant flicker)
+      await new Promise((resolve) => setTimeout(resolve, 800))
+
       // * Generate PKCE challenge
       const { verifier, challenge } = await generatePKCE()
       const state = generateRandomString(16)

@@ -36,7 +36,7 @@ export default function LoginPage() {
       })
 
       // * Redirect to Ciphera Auth
-      window.location.href = `${authUrl}/api/v1/oauth/authorize?${params.toString()}`
+      window.location.href = `${authUrl}/oauth/authorize?${params.toString()}`
     } catch (err) {
       console.error('Failed to initialize login', err)
       setLoading(false)

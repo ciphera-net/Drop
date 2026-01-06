@@ -19,14 +19,14 @@ Authentication is handled by the **Ciphera Auth** service (`auth.ciphera.net`) u
 
 To authenticate a user, applications must follow the standard Authorization Code Flow with PKCE:
 
-1.  **Authorize**: Redirect user to `GET /api/v1/oauth/authorize`
+1.  **Authorize**: Redirect user to `GET /oauth/authorize`
     *   Params: `client_id`, `redirect_uri`, `response_type=code`, `state`, `code_challenge`, `code_challenge_method=S256`
 2.  **Login**: User logs in on the hosted page.
 3.  **Callback**: Server redirects back to `redirect_uri` with a `code`.
 4.  **Token Exchange**: Application swaps code for token.
 
 ### Token Endpoint
-**Endpoint**: `POST /api/v1/oauth/token`
+**Endpoint**: `POST /oauth/token`
 
 **Request Body**:
 ```json

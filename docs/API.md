@@ -43,9 +43,29 @@ To authenticate a user, applications must follow the standard Authorization Code
 ```json
 {
   "access_token": "jwt-token-string",
+  "refresh_token": "random-refresh-token",
   "token_type": "Bearer",
-  "expires_in": 3600,
+  "expires_in": 900,
   "id_token": "jwt-token-string"
+}
+```
+
+### Refresh Token Endpoint
+**Endpoint**: `POST /api/v1/auth/refresh`
+
+**Request Body**:
+```json
+{
+  "refresh_token": "your-refresh-token"
+}
+```
+
+**Response**:
+```json
+{
+  "access_token": "new-jwt-token-string",
+  "refresh_token": "new-random-refresh-token",
+  "expires_in": 900
 }
 ```
 

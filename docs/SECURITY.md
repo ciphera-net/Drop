@@ -28,6 +28,15 @@ To ensure the server never sees or stores a user's raw password, we implement a 
 
 This ensures that even if the TLS connection is stripped or the Auth Server logs are compromised, the attacker only sees the derived key, which cannot be used to decrypt user files (as file encryption keys will be derived separately).
 
+### Authentication & Sessions
+
+- **Access Tokens**: Short-lived (15 minutes) JWTs used for API access.
+- **Refresh Tokens**: Long-lived (30 days) opaque tokens used to obtain new Access Tokens.
+  - Stored in database with hash (SHA-256).
+  - Rotated on every use (Reuse Detection).
+  - Revoked on logout or password change.
+- **Email Verification**: Required for new accounts before login is permitted.
+
 ### Zero-Knowledge File Architecture
 
 ### Client-Side Encryption

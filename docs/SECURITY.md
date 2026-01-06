@@ -6,23 +6,29 @@ Drop is designed with privacy and security as core principles. This document out
 
 ## Authentication & Identity
 
+### Identity Provider (IdP)
+We utilize a centralized Identity Provider, `auth.ciphera.net`, which implements the **OpenID Connect (OIDC)** and **OAuth 2.0** protocols. This ensures:
+- **Centralized Security**: Authentication policies (MFA, rate limiting, lockout) are enforced globally.
+- **Session Management**: Single Sign-On (SSO) capabilities across the Ciphera ecosystem.
+- **Attack Surface Reduction**: Applications (like Drop) never handle user credentials directly, only temporary Access Tokens.
+
 ### Zero-Knowledge Password Architecture (Double Hashing)
-To ensure the server never sees or stores a user's raw password, we implement a "Hash-then-Hash" protocol:
+To ensure the server never sees or stores a user's raw password, we implement a "Hash-then-Hash" protocol during the login process on `auth.ciphera.net`:
 
 1.  **Client-Side Derivation**:
     *   The client derives an `Auth Key` using `PBKDF2-HMAC-SHA256` (100,000 iterations).
     *   Input: `User Password` + `Email` (as salt).
     *   Output: 32-byte key (encoded as 64-char Hex string).
-    *   **Only this derived key** is sent to the server.
+    *   **Only this derived key** is sent to the Auth Server.
 
 2.  **Server-Side Hashing**:
-    *   The server receives the `Auth Key`.
+    *   The Auth Server receives the `Auth Key`.
     *   The server hashes it again using `Argon2id` (memory-hard function).
     *   The database stores: `$argon2id$...` (Hash of the Auth Key).
 
-This ensures that even if the TLS connection is stripped or the server logs are compromised, the attacker only sees the derived key, which cannot be used to decrypt user files (as file encryption keys will be derived separately).
+This ensures that even if the TLS connection is stripped or the Auth Server logs are compromised, the attacker only sees the derived key, which cannot be used to decrypt user files (as file encryption keys will be derived separately).
 
-### Zero-Knowledge Architecture
+### Zero-Knowledge File Architecture
 
 ### Client-Side Encryption
 
@@ -41,9 +47,13 @@ This ensures that even if the TLS connection is stripped or the server logs are 
 
 ### Infrastructure
 
+- **Frontend**: Hosted on Vercel (Global Edge Network)
+- **Backend API**: Hosted on Railway (encapsulated container environment)
+- **Auth Service**: Hosted on Railway (isolated service)
 - **Database**: Railway PostgreSQL (encrypted at rest)
 - **Storage**: Cloudflare R2 Storage (S3-compatible, encrypted at rest)
-- **HTTPS**: All communications encrypted in transit (TLS 1.3)
+- **DNS & CDN**: Cloudflare (DDoS protection, WAF, SSL termination)
+- **HTTPS**: All communications encrypted in transit (TLS 1.3, Strict SSL)
 
 ### Security Headers
 
@@ -67,6 +77,7 @@ The backend sets the following security headers:
 - All API inputs are validated
 - SQL injection prevention via parameterized queries
 - XSS prevention through proper encoding
+- PKCE verification for OAuth flows
 
 ## Privacy
 
@@ -99,7 +110,8 @@ The backend sets the following security headers:
 ### Protected Against
 
 - Server compromise (files remain encrypted)
-- Network interception (HTTPS)
+- Auth Server compromise (passwords remain secure due to double-hashing)
+- Network interception (HTTPS + PKCE)
 - Unauthorized access (encryption keys required)
 - Replay attacks (unique IVs per file)
 

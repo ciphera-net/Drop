@@ -3,49 +3,49 @@
 ## Base URL
 
 - **Development**: `http://localhost:8080`
-- **Production**: `https://api.drop.ciphera.net`
+- **Production**: `https://drop-api.ciphera.net`
 
 All API endpoints are prefixed with `/api/v1`.
 
 ## Authentication
 
-Authentication is handled by the `Ciphera Auth` service. It uses JSON Web Tokens (JWT) for stateless session management.
+Authentication is handled by the **Ciphera Auth** service (`auth.ciphera.net`) using OAuth 2.0 with PKCE.
 
 ### Base URL (Auth)
 - **Development**: `http://localhost:8081`
 - **Production**: `https://auth.ciphera.net`
 
-### Register
-**Endpoint**: `POST /auth/register`
+### OAuth2 Flow
+
+To authenticate a user, applications must follow the standard Authorization Code Flow with PKCE:
+
+1.  **Authorize**: Redirect user to `GET /api/v1/oauth/authorize`
+    *   Params: `client_id`, `redirect_uri`, `response_type=code`, `state`, `code_challenge`, `code_challenge_method=S256`
+2.  **Login**: User logs in on the hosted page.
+3.  **Callback**: Server redirects back to `redirect_uri` with a `code`.
+4.  **Token Exchange**: Application swaps code for token.
+
+### Token Endpoint
+**Endpoint**: `POST /api/v1/oauth/token`
 
 **Request Body**:
 ```json
 {
-  "email": "user@example.com",
-  "password": "64-char-hex-encoded-derived-key"
-}
-```
-*Note: Password must be Client-Side Derived Key (PBKDF2 of raw password + email).*
-
-### Login
-**Endpoint**: `POST /auth/login`
-
-**Request Body**:
-```json
-{
-  "email": "user@example.com",
-  "password": "64-char-hex-encoded-derived-key"
+  "grant_type": "authorization_code",
+  "code": "auth-code-from-callback",
+  "client_id": "drop-app",
+  "redirect_uri": "https://drop.ciphera.net/auth/callback",
+  "code_verifier": "pkce-verifier-string"
 }
 ```
 
 **Response**:
 ```json
 {
-  "token": "jwt-token-string",
-  "user": {
-    "id": "user-uuid",
-    "email": "user@example.com"
-  }
+  "access_token": "jwt-token-string",
+  "token_type": "Bearer",
+  "expires_in": 3600,
+  "id_token": "jwt-token-string"
 }
 ```
 

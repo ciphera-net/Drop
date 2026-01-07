@@ -26,6 +26,7 @@ export interface UploadRequest {
   // Captcha
   captcha_id?: string
   captcha_solution?: string
+  captcha_token?: string
 }
 
 export interface UploadResponse {

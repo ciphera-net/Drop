@@ -35,6 +35,7 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
   // Captcha State
   const [captchaId, setCaptchaId] = useState('')
   const [captchaSolution, setCaptchaSolution] = useState('')
+  const [captchaToken, setCaptchaToken] = useState('')
 
   const EXPIRATION_OPTIONS = [
     { label: '1 Hour', value: 60 },
@@ -104,9 +105,10 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
     setFiles((prev) => prev.filter((_, i) => i !== index))
   }, [])
 
-  const handleCaptchaVerify = useCallback((id: string, solution: string) => {
+  const handleCaptchaVerify = useCallback((id: string, solution: string, token?: string) => {
     setCaptchaId(id)
     setCaptchaSolution(solution)
+    if (token) setCaptchaToken(token)
   }, [])
 
   const handleUpload = useCallback(async () => {
@@ -116,7 +118,7 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
     }
 
     // Require captcha for anonymous uploads (unless it's a request upload)
-    if (!user && !requestId && !captchaSolution) {
+    if (!user && !requestId && !captchaSolution && !captchaToken) {
       setError('Please complete the security check')
       return
     }
@@ -180,6 +182,7 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
         oneTimeDownload: !requestId ? oneTimeDownload : undefined,
         captcha_id: !user && !requestId ? captchaId : undefined,
         captcha_solution: !user && !requestId ? captchaSolution : undefined,
+        captcha_token: !user && !requestId ? captchaToken : undefined,
       }
 
       // * Upload to backend
@@ -231,10 +234,12 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
         setDownloadLimit(undefined)
         setOneTimeDownload(false)
         setCaptchaSolution('') // Reset captcha for next upload
+        setCaptchaToken('')
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed')
       setCaptchaSolution('') // Reset captcha on error too
+      setCaptchaToken('')
     } finally {
       setUploading(false)
       setProgress(0)

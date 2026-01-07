@@ -30,6 +30,7 @@ export async function uploadFile(
     oneTimeDownload: request.oneTimeDownload,
     captcha_id: request.captcha_id,
     captcha_solution: request.captcha_solution,
+    captcha_token: request.captcha_token,
   }
 
   return new Promise((resolve, reject) => {
@@ -99,6 +100,7 @@ export async function uploadToRequest(
     // Expiration and limits are controlled by the Request config, not the uploader
     captcha_id: request.captcha_id,
     captcha_solution: request.captcha_solution,
+    captcha_token: request.captcha_token,
   }
 
   return new Promise((resolve, reject) => {

@@ -57,3 +57,23 @@ export interface CreateRequestResponse {
   requestUrl: string
   expiresAt: string
 }
+
+export interface DownloadRequest {
+  shareId: string
+  password?: string
+}
+
+export interface DownloadResponse {
+  encryptedData: ArrayBuffer
+  filename: string // Still encrypted but base64
+  iv: ArrayBuffer
+  expiresAt: string
+  downloadCount: number
+  downloadLimit?: number
+  oneTimeDownload?: boolean
+}
+
+export interface ErrorResponse {
+  error: string
+  message?: string
+}

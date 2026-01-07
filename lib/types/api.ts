@@ -1,3 +1,16 @@
+export interface FileRequest {
+  requestId: string
+  encryptedTitle: string
+  encryptedDescription?: string
+  iv: string
+  expiresAt: string
+  maxUploads?: number
+
+  // Decrypted fields added on client
+  title?: string
+  description?: string
+}
+
 export interface UploadRequest {
   file: File
   encryptedData: ArrayBuffer

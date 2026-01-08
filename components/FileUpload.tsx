@@ -269,13 +269,13 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
         <div
           onDragOver={handleDragOver}
           onDrop={handleDrop}
-          className="group relative aspect-square border-2 border-dashed border-neutral-200 hover:border-brand-orange bg-neutral-50/50 hover:bg-brand-orange/5 rounded-2xl p-12 text-center transition-all duration-300 ease-in-out cursor-pointer"
+          className="group relative aspect-square border-2 border-dashed border-neutral-200 dark:border-neutral-800 hover:border-brand-orange dark:hover:border-brand-orange bg-neutral-50/50 dark:bg-neutral-900/50 hover:bg-brand-orange/5 dark:hover:bg-brand-orange/10 rounded-2xl p-12 text-center transition-all duration-300 ease-in-out cursor-pointer"
         >
           <label htmlFor="file-input" className="cursor-pointer w-full h-full block">
             <div className="space-y-4 flex flex-col items-center justify-center h-full">
-              <div className="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:scale-110 group-hover:shadow-md transition-all duration-300">
+              <div className="w-16 h-16 rounded-full bg-white dark:bg-neutral-800 shadow-sm flex items-center justify-center group-hover:scale-110 group-hover:shadow-md transition-all duration-300">
                 <svg 
-                  className="w-8 h-8 text-neutral-400 group-hover:text-brand-orange transition-colors" 
+                  className="w-8 h-8 text-neutral-400 dark:text-neutral-500 group-hover:text-brand-orange transition-colors" 
                   fill="none" 
                   viewBox="0 0 24 24" 
                   stroke="currentColor"
@@ -284,14 +284,14 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
                 </svg>
               </div>
               <div className="space-y-2">
-                <p className="text-xl font-semibold text-neutral-700 group-hover:text-brand-orange transition-colors">
+                <p className="text-xl font-semibold text-neutral-700 dark:text-neutral-200 group-hover:text-brand-orange transition-colors">
                   {requestId ? 'Upload Requested Files' : 'Click to upload or drag and drop'}
                 </p>
-                <p className="text-sm text-neutral-500 max-w-xs mx-auto">
+                <p className="text-sm text-neutral-500 dark:text-neutral-400 max-w-xs mx-auto">
                   Files are encrypted client-side before being uploaded. Maximum file size 5GB.
                 </p>
               </div>
-              <div className="flex items-center gap-2 text-xs text-neutral-400 bg-white/50 px-3 py-1.5 rounded-full border border-neutral-100">
+              <div className="flex items-center gap-2 text-xs text-neutral-400 dark:text-neutral-500 bg-white/50 dark:bg-neutral-800/50 px-3 py-1.5 rounded-full border border-neutral-100 dark:border-neutral-800">
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
@@ -306,14 +306,14 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
       {files.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="font-medium text-neutral-900">Selected files</h3>
+            <h3 className="font-medium text-neutral-900 dark:text-white">Selected files</h3>
             <div className="flex items-center gap-3">
-              <span className="text-xs text-neutral-500">{files.length} file{files.length !== 1 ? 's' : ''}</span>
+              <span className="text-xs text-neutral-500 dark:text-neutral-400">{files.length} file{files.length !== 1 ? 's' : ''}</span>
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-brand-orange bg-brand-orange/5 hover:bg-brand-orange/10 rounded-xl transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-brand-orange bg-brand-orange/5 dark:bg-brand-orange/10 hover:bg-brand-orange/10 dark:hover:bg-brand-orange/20 rounded-xl transition-colors"
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -325,7 +325,7 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
           {files.map((file, index) => (
             <div
               key={index}
-              className="relative group flex items-center p-4 bg-white border border-neutral-200 rounded-xl shadow-sm hover:border-brand-orange/30 hover:shadow-md transition-all duration-200"
+              className="relative group flex items-center p-4 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-sm hover:border-brand-orange/30 hover:shadow-md transition-all duration-200"
             >
               <div className="flex-shrink-0 w-10 h-10 bg-brand-orange/10 rounded-lg flex items-center justify-center mr-4 text-brand-orange">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -334,10 +334,10 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
               </div>
               
               <div className="flex-1 min-w-0 mr-4">
-                <p className="text-sm font-medium text-neutral-900 truncate" title={file.name}>
+                <p className="text-sm font-medium text-neutral-900 dark:text-white truncate" title={file.name}>
                   {file.name}
                 </p>
-                <p className="text-xs text-neutral-500">
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">
                   {formatBytes(file.size)}
                 </p>
               </div>
@@ -363,7 +363,7 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
           <div className="grid grid-cols-1 gap-6">
             {/* Expiration */}
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-neutral-700">
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
                 Expiration
               </label>
               <div className="grid grid-cols-3 gap-2">
@@ -375,7 +375,7 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
                     className={`px-3 py-2 text-sm font-medium rounded-xl border transition-all duration-200 ${
                       expirationMinutes === option.value
                         ? 'bg-brand-orange text-white border-brand-orange shadow-md shadow-brand-orange/20'
-                        : 'bg-white text-neutral-600 border-neutral-200 hover:border-brand-orange/50 hover:bg-brand-orange/5'
+                        : 'bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-800 hover:border-brand-orange/50 hover:bg-brand-orange/5 dark:hover:bg-brand-orange/10'
                     }`}
                   >
                     {option.label}
@@ -386,7 +386,7 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
 
             {/* Download Limit */}
             <div className={`space-y-2 transition-opacity duration-200 ${oneTimeDownload ? 'opacity-50 pointer-events-none' : ''}`}>
-              <label className="block text-sm font-medium text-neutral-700">
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
                 Download limit
               </label>
               <div className="grid grid-cols-3 gap-2">
@@ -398,7 +398,7 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
                     className={`px-3 py-2 text-sm font-medium rounded-xl border transition-all duration-200 ${
                       downloadLimit === option.value
                         ? 'bg-brand-orange text-white border-brand-orange shadow-md shadow-brand-orange/20'
-                        : 'bg-white text-neutral-600 border-neutral-200 hover:border-brand-orange/50 hover:bg-brand-orange/5'
+                        : 'bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-800 hover:border-brand-orange/50 hover:bg-brand-orange/5 dark:hover:bg-brand-orange/10'
                     }`}
                   >
                     {option.label === '∞' ? <span className="text-3xl leading-none -mt-1 block">∞</span> : option.label}
@@ -411,12 +411,12 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
           {/* Burn after download (Switch) */}
           <div className={`flex items-center justify-between p-4 border rounded-xl transition-all duration-200 ${
             oneTimeDownload 
-              ? 'bg-orange-50 border-brand-orange shadow-sm' 
-              : 'bg-white border-neutral-200'
+              ? 'bg-orange-50 dark:bg-brand-orange/10 border-brand-orange shadow-sm' 
+              : 'bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800'
           }`}>
             <div className="flex items-center gap-3">
               <div className={`p-2 rounded-lg transition-colors duration-200 ${
-                oneTimeDownload ? 'bg-brand-orange text-white' : 'bg-neutral-100 text-neutral-400'
+                oneTimeDownload ? 'bg-brand-orange text-white' : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-400'
               }`}>
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
@@ -425,12 +425,12 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
               </div>
               <div className="space-y-0.5">
                 <span className={`block text-sm font-medium transition-colors duration-200 ${
-                  oneTimeDownload ? 'text-brand-orange' : 'text-neutral-900'
+                  oneTimeDownload ? 'text-brand-orange' : 'text-neutral-900 dark:text-white'
                 }`}>
                   Burn after download
                 </span>
                 <span className={`block text-xs transition-colors duration-200 ${
-                  oneTimeDownload ? 'text-brand-orange/80' : 'text-neutral-500'
+                  oneTimeDownload ? 'text-brand-orange/80' : 'text-neutral-500 dark:text-neutral-400'
                 }`}>
                   File will be deleted after first download
                 </span>
@@ -440,7 +440,7 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
               onClick={() => setOneTimeDownload(!oneTimeDownload)}
               disabled={uploading}
               className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                oneTimeDownload ? 'bg-brand-orange' : 'bg-neutral-200'
+                oneTimeDownload ? 'bg-brand-orange' : 'bg-neutral-200 dark:bg-neutral-700'
               }`}
             >
               <span
@@ -477,8 +477,8 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
       {/* * Upload button or Progress */}
       {files.length > 0 && (
         uploading ? (
-          <div className="bg-white p-4 rounded-xl border border-neutral-200 shadow-sm space-y-3">
-            <div className="flex justify-between items-center text-sm font-medium text-neutral-700">
+          <div className="bg-white dark:bg-neutral-900 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-3">
+            <div className="flex justify-between items-center text-sm font-medium text-neutral-700 dark:text-neutral-300">
               <span className="flex items-center gap-2">
                 <svg className="w-4 h-4 text-brand-orange animate-spin" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -489,14 +489,14 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
               <span>{progress}%</span>
             </div>
             
-            <div className="w-full bg-neutral-100 rounded-full h-2 overflow-hidden">
+            <div className="w-full bg-neutral-100 dark:bg-neutral-800 rounded-full h-2 overflow-hidden">
               <div 
                 className="bg-brand-orange h-2 rounded-full transition-all duration-300 ease-out" 
                 style={{ width: `${progress}%` }}
               ></div>
             </div>
             
-            <div className="flex justify-between text-xs text-neutral-500">
+            <div className="flex justify-between text-xs text-neutral-500 dark:text-neutral-400">
               <span>Encrypting & Uploading</span>
               <span>{uploadSpeed}</span>
             </div>
@@ -514,8 +514,8 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
 
       {/* * Error message */}
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-sm text-red-800">{error}</p>
+        <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-lg">
+          <p className="text-sm text-red-800 dark:text-red-300">{error}</p>
         </div>
       )}
     </div>

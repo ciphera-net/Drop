@@ -1,6 +1,7 @@
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import { AuthProvider } from '@/lib/auth/context'
+import { ThemeProviders } from '../components/ThemeProviders'
 import { Toaster } from 'sonner'
 import type { Metadata } from 'next'
 import { Plus_Jakarta_Sans } from 'next/font/google'
@@ -33,15 +34,17 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={plusJakartaSans.variable}>
-      <body className="antialiased min-h-screen flex flex-col">
-        <AuthProvider>
-          <Header />
-          <main className="flex-1 pt-24 pb-8">
-            {children}
-          </main>
-          <Footer />
-          <Toaster position="top-center" richColors closeButton />
-        </AuthProvider>
+      <body className="antialiased min-h-screen flex flex-col bg-white dark:bg-neutral-950 text-neutral-900 dark:text-neutral-50">
+        <ThemeProviders>
+          <AuthProvider>
+            <Header />
+            <main className="flex-1 pt-24 pb-8">
+              {children}
+            </main>
+            <Footer />
+            <Toaster position="top-center" richColors closeButton />
+          </AuthProvider>
+        </ThemeProviders>
       </body>
     </html>
   )

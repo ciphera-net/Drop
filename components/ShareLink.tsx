@@ -26,15 +26,15 @@ export default function ShareLink({ shareUrl, onReset, title }: ShareLinkProps) 
 
   return (
     <div className="space-y-6">
-      <div className="p-8 bg-neutral-50/50 rounded-xl border border-neutral-100">
+      <div className="p-8 bg-neutral-50/50 dark:bg-neutral-800/50 rounded-xl border border-neutral-100 dark:border-neutral-700">
         <div className="flex flex-col items-center text-center mb-6">
-          <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4 text-green-600">
+          <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-4 text-green-600 dark:text-green-400">
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-xl font-bold text-neutral-900">{title || 'Share Link Ready'}</h2>
-          <p className="text-sm text-neutral-500 mt-1 max-w-sm">
+          <h2 className="text-xl font-bold text-neutral-900 dark:text-white">{title || 'Share Link Ready'}</h2>
+          <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1 max-w-sm">
             {title ? 'Your request link has been created.' : 'Your file has been encrypted and secured. Share this link with recipients.'}
           </p>
         </div>
@@ -44,7 +44,7 @@ export default function ShareLink({ shareUrl, onReset, title }: ShareLinkProps) 
             type="text"
             value={shareUrl}
             readOnly
-            className="flex-1 px-4 py-3 border border-neutral-200 rounded-xl bg-white text-sm font-mono text-neutral-600 focus:ring-2 focus:ring-brand-orange/20 focus:border-brand-orange outline-none transition-all"
+            className="flex-1 px-4 py-3 border border-neutral-200 dark:border-neutral-700 rounded-xl bg-white dark:bg-neutral-900 text-sm font-mono text-neutral-600 dark:text-neutral-300 focus:ring-2 focus:ring-brand-orange/20 focus:border-brand-orange outline-none transition-all"
           />
           <button
             onClick={handleCopy}
@@ -54,7 +54,7 @@ export default function ShareLink({ shareUrl, onReset, title }: ShareLinkProps) 
           </button>
         </div>
 
-        <div className="flex flex-col gap-2 text-xs text-neutral-400 border-t border-neutral-100 pt-4">
+        <div className="flex flex-col gap-2 text-xs text-neutral-400 dark:text-neutral-500 border-t border-neutral-100 dark:border-neutral-700 pt-4">
           <div className="flex items-center gap-2">
             <svg className="w-4 h-4 text-brand-orange" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />

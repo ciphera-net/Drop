@@ -112,16 +112,16 @@ export default function DownloadPage({ shareId, encryptionKey }: DownloadPagePro
   return (
     <div className="w-full space-y-8">
       <div className="text-center space-y-4">
-        <h1 className="text-3xl font-bold tracking-tight text-neutral-900">
+        <h1 className="text-3xl font-bold tracking-tight text-neutral-900 dark:text-white">
           Ready to <span className="text-brand-orange">Download</span>
         </h1>
-        <p className="text-neutral-600">
+        <p className="text-neutral-600 dark:text-neutral-400">
           Secure file transfer powered by Drop
         </p>
       </div>
 
-      <div className="bg-white p-6 md:p-8 rounded-3xl shadow-xl shadow-brand-orange/5 border border-neutral-100/50 backdrop-blur-sm space-y-6">
-        <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-2xl border border-neutral-100">
+      <div className="bg-white dark:bg-neutral-900 p-6 md:p-8 rounded-3xl shadow-xl shadow-brand-orange/5 dark:shadow-none border border-neutral-100/50 dark:border-neutral-800 backdrop-blur-sm space-y-6">
+        <div className="flex items-center justify-between p-4 bg-neutral-50 dark:bg-neutral-800 rounded-2xl border border-neutral-100 dark:border-neutral-700">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-brand-orange/10 flex items-center justify-center text-brand-orange">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
@@ -129,54 +129,54 @@ export default function DownloadPage({ shareId, encryptionKey }: DownloadPagePro
               </svg>
             </div>
             <div>
-              <p className="text-sm font-medium text-neutral-900">Secure File</p>
-              <p className="text-xs text-neutral-500 font-mono">{shareId.slice(0, 8)}...</p>
+              <p className="text-sm font-medium text-neutral-900 dark:text-white">Secure File</p>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 font-mono">{shareId.slice(0, 8)}...</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
              <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-             <span className="text-xs font-medium text-neutral-600">Encrypted</span>
+             <span className="text-xs font-medium text-neutral-600 dark:text-neutral-400">Encrypted</span>
           </div>
         </div>
 
         {error && (
-          <div className="p-4 bg-red-50 border border-red-100 rounded-xl flex gap-3">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-red-600 shrink-0">
+          <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/50 rounded-xl flex gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
             </svg>
-            <p className="text-sm text-red-800">{error}</p>
+            <p className="text-sm text-red-800 dark:text-red-300">{error}</p>
           </div>
         )}
 
         {filename && (
-          <div className="p-4 bg-green-50 border border-green-100 rounded-xl flex gap-3">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-green-600 shrink-0">
+          <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-900/50 rounded-xl flex gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-green-600 dark:text-green-400 shrink-0">
                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
             </svg>
-            <p className="text-sm text-green-800">
+            <p className="text-sm text-green-800 dark:text-green-300">
               Successfully downloaded <strong>{filename}</strong>
             </p>
           </div>
         )}
 
         {isBurned && (
-          <div className="p-4 bg-orange-50 border border-orange-100 rounded-xl flex gap-3">
-            <svg className="w-5 h-5 text-orange-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="p-4 bg-orange-50 dark:bg-brand-orange/10 border border-orange-100 dark:border-brand-orange/30 rounded-xl flex gap-3">
+            <svg className="w-5 h-5 text-orange-600 dark:text-brand-orange shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z" />
             </svg>
-            <p className="text-sm text-orange-800">
+            <p className="text-sm text-orange-800 dark:text-orange-300">
               This file has been burned and is no longer available.
             </p>
           </div>
         )}
 
         {!encryptionKey && (
-          <div className="p-4 bg-yellow-50 border border-yellow-100 rounded-xl flex gap-3">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-yellow-600 shrink-0">
+          <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-100 dark:border-yellow-900/50 rounded-xl flex gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-yellow-600 dark:text-yellow-400 shrink-0">
                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.008v.008H12v-.008Z" />
             </svg>
-            <p className="text-sm text-yellow-800">
+            <p className="text-sm text-yellow-800 dark:text-yellow-300">
               Encryption key not found. Please ensure you are using the full share link with the hash fragment.
             </p>
           </div>

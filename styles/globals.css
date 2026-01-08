@@ -19,32 +19,43 @@
     --color-neutral-800: #262626;
     --color-neutral-900: #171717;
     
-    /* * Dark mode support - Forced Light Mode */
+    /* * Dark mode support */
     --color-bg: #ffffff;
     --color-text: #171717;
   }
   
+  .dark {
+    --color-bg: #0a0a0a;
+    --color-text: #fafafa;
+  }
+  
   * {
-    @apply border-neutral-200;
+    @apply border-neutral-200 dark:border-neutral-800;
   }
   
   body {
-    @apply bg-white text-neutral-900;
+    @apply bg-white dark:bg-neutral-950 text-neutral-900 dark:text-neutral-50;
     font-family: var(--font-plus-jakarta-sans), system-ui, sans-serif;
     background-image: 
       radial-gradient(at 0% 0%, hsla(20, 98%, 52%, 0.03) 0px, transparent 50%),
       radial-gradient(at 100% 100%, hsla(20, 98%, 52%, 0.03) 0px, transparent 50%);
     background-attachment: fixed;
   }
+  
+  .dark body {
+    background-image: 
+      radial-gradient(at 0% 0%, hsla(20, 98%, 52%, 0.05) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, hsla(20, 98%, 52%, 0.05) 0px, transparent 50%);
+  }
 }
 
 @layer components {
   /* * Reusable component styles */
   .btn-primary {
-    @apply bg-brand-orange text-white px-5 py-2.5 rounded-xl font-semibold shadow-sm shadow-orange-200 hover:shadow-orange-300 hover:-translate-y-0.5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-brand-orange focus:ring-offset-2;
+    @apply bg-brand-orange text-white px-5 py-2.5 rounded-xl font-semibold shadow-sm shadow-orange-200 dark:shadow-none hover:shadow-orange-300 dark:hover:shadow-brand-orange/20 hover:-translate-y-0.5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-brand-orange focus:ring-offset-2 dark:focus:ring-offset-neutral-900;
   }
   
   .btn-secondary {
-    @apply bg-white border border-neutral-200 text-neutral-900 px-5 py-2.5 rounded-xl font-medium hover:bg-neutral-50 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-neutral-200 focus:ring-offset-2;
+    @apply bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-white px-5 py-2.5 rounded-xl font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all duration-200 shadow-sm hover:shadow-md dark:shadow-none focus:outline-none focus:ring-2 focus:ring-neutral-200 dark:focus:ring-neutral-700 focus:ring-offset-2 dark:focus:ring-offset-neutral-900;
   }
 }

@@ -84,7 +84,7 @@ export default function FileRequest({ onRequestCreated }: FileRequestProps) {
       <div className="space-y-3">
         {/* Header Icon */}
         <div className="flex justify-center mb-1">
-          <div className="w-12 h-12 bg-brand-orange/5 rounded-full flex items-center justify-center text-brand-orange shadow-sm border border-brand-orange/10">
+          <div className="w-12 h-12 bg-brand-orange/5 dark:bg-brand-orange/10 rounded-full flex items-center justify-center text-brand-orange shadow-sm border border-brand-orange/10">
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
             </svg>
@@ -92,13 +92,13 @@ export default function FileRequest({ onRequestCreated }: FileRequestProps) {
         </div>
         
         <div className="text-center mb-4">
-          <h3 className="text-xl font-bold text-neutral-900">Request Files</h3>
-          <p className="text-sm text-neutral-500 mt-1">Create a secure link to receive encrypted files</p>
+          <h3 className="text-xl font-bold text-neutral-900 dark:text-white">Request Files</h3>
+          <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">Create a secure link to receive encrypted files</p>
         </div>
 
         {/* Title Input */}
         <div>
-          <label className="block text-sm font-medium text-neutral-700 mb-1">
+          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
             Request Title <span className="text-brand-orange">*</span>
           </label>
           <input
@@ -106,14 +106,14 @@ export default function FileRequest({ onRequestCreated }: FileRequestProps) {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g. Project Documents"
-            className="w-full px-4 py-2 border border-neutral-200 rounded-xl bg-white focus:ring-2 focus:ring-brand-orange/20 focus:border-brand-orange transition-all outline-none"
+            className="w-full px-4 py-2 border border-neutral-200 dark:border-neutral-800 rounded-xl bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:ring-2 focus:ring-brand-orange/20 focus:border-brand-orange transition-all outline-none"
             disabled={loading}
           />
         </div>
 
         {/* Description Input */}
         <div>
-          <label className="block text-sm font-medium text-neutral-700 mb-1">
+          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
             Description <span className="text-neutral-400 font-normal">(Optional)</span>
           </label>
           <textarea
@@ -121,14 +121,14 @@ export default function FileRequest({ onRequestCreated }: FileRequestProps) {
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Instructions for the uploader..."
             rows={2}
-            className="w-full px-4 py-2 border border-neutral-200 rounded-xl bg-white focus:ring-2 focus:ring-brand-orange/20 focus:border-brand-orange transition-all outline-none resize-none"
+            className="w-full px-4 py-2 border border-neutral-200 dark:border-neutral-800 rounded-xl bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:ring-2 focus:ring-brand-orange/20 focus:border-brand-orange transition-all outline-none resize-none"
             disabled={loading}
           />
         </div>
 
         {/* Expiration Options */}
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-neutral-700">
+          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
             Link Expiration
           </label>
           <div className="grid grid-cols-3 gap-2">
@@ -140,7 +140,7 @@ export default function FileRequest({ onRequestCreated }: FileRequestProps) {
                 className={`px-3 py-2 text-sm font-medium rounded-xl border transition-all duration-200 ${
                   expirationMinutes === option.value
                     ? 'bg-brand-orange text-white border-brand-orange shadow-md shadow-brand-orange/20'
-                    : 'bg-white text-neutral-600 border-neutral-200 hover:border-brand-orange/50 hover:bg-brand-orange/5'
+                    : 'bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-800 hover:border-brand-orange/50 hover:bg-brand-orange/5 dark:hover:bg-brand-orange/10'
                 }`}
               >
                 {option.label}
@@ -173,8 +173,8 @@ export default function FileRequest({ onRequestCreated }: FileRequestProps) {
 
       {/* Error Message */}
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-sm text-red-800">{error}</p>
+        <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-lg">
+          <p className="text-sm text-red-800 dark:text-red-300">{error}</p>
         </div>
       )}
     </div>

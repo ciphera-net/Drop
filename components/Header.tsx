@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import UserMenu from './UserMenu'
+import { ThemeToggle } from './ThemeToggle'
 import { useAuth } from '@/lib/auth/context'
 import { useState, useEffect, useRef } from 'react'
 
@@ -42,7 +43,7 @@ export default function Header() {
         isVisible ? 'translate-y-0' : '-translate-y-full'
       }`}
     >
-      <div className="flex w-full max-w-6xl items-center justify-between rounded-2xl border border-neutral-200/60 bg-white/70 px-4 sm:px-8 py-3.5 shadow-xl shadow-neutral-500/10 backdrop-blur-2xl transition-all duration-300 supports-[backdrop-filter]:bg-white/50 hover:shadow-2xl hover:shadow-neutral-500/15">
+      <div className="flex w-full max-w-6xl items-center justify-between rounded-2xl border border-neutral-200/60 dark:border-neutral-800/60 bg-white/70 dark:bg-neutral-900/70 px-4 sm:px-8 py-3.5 shadow-xl shadow-neutral-500/10 dark:shadow-black/20 backdrop-blur-2xl transition-all duration-300 supports-[backdrop-filter]:bg-white/50 dark:supports-[backdrop-filter]:bg-neutral-900/50 hover:shadow-2xl hover:shadow-neutral-500/15 dark:hover:shadow-black/30">
         {/* * Logo Section */}
         <Link 
           href="/" 
@@ -54,7 +55,7 @@ export default function Header() {
               D
             </div>
           </div>
-          <span className="text-xl sm:text-2xl font-bold text-neutral-900 tracking-tight group-hover:text-brand-orange transition-colors duration-300">
+          <span className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-white tracking-tight group-hover:text-brand-orange transition-colors duration-300">
             Drop
           </span>
         </Link>
@@ -64,19 +65,19 @@ export default function Header() {
           <nav className="hidden md:flex items-center gap-1">
             <Link
               href="/about"
-              className="px-4 py-2 text-sm font-medium text-neutral-600 hover:text-neutral-900 rounded-lg hover:bg-neutral-100/50 transition-all duration-200"
+              className="px-4 py-2 text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white rounded-lg hover:bg-neutral-100/50 dark:hover:bg-neutral-800/50 transition-all duration-200"
             >
               About
             </Link>
             <Link
               href="/faq"
-              className="px-4 py-2 text-sm font-medium text-neutral-600 hover:text-neutral-900 rounded-lg hover:bg-neutral-100/50 transition-all duration-200"
+              className="px-4 py-2 text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white rounded-lg hover:bg-neutral-100/50 dark:hover:bg-neutral-800/50 transition-all duration-200"
             >
               FAQ
             </Link>
             <Link
               href="/security"
-              className="px-4 py-2 text-sm font-medium text-neutral-600 hover:text-neutral-900 rounded-lg hover:bg-neutral-100/50 transition-all duration-200"
+              className="px-4 py-2 text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white rounded-lg hover:bg-neutral-100/50 dark:hover:bg-neutral-800/50 transition-all duration-200"
             >
               Security
             </Link>
@@ -84,7 +85,10 @@ export default function Header() {
         )}
 
         {/* * User Menu */}
-        <UserMenu />
+        <div className="flex items-center gap-3">
+          <ThemeToggle />
+          <UserMenu />
+        </div>
       </div>
     </header>
   )

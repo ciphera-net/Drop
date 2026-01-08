@@ -47,10 +47,10 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-8 rounded-lg border border-neutral-200 bg-white p-6 shadow-sm">
+      <div className="w-full max-w-md space-y-8 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-6 shadow-sm">
         <div className="text-center">
-          <h1 className="text-2xl font-bold">Welcome back</h1>
-          <p className="mt-2 text-sm text-neutral-600">
+          <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">Welcome back</h1>
+          <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
             Sign in to continue to Drop
           </p>
         </div>
@@ -75,12 +75,12 @@ export default function LoginPage() {
         </div>
 
         <div className="text-center text-sm">
-          <span className="text-neutral-600">
+          <span className="text-neutral-600 dark:text-neutral-400">
             Don&apos;t have an account?{' '}
           </span>
           <Link
             href="/signup"
-            className="font-medium text-neutral-900 hover:underline"
+            className="font-medium text-neutral-900 dark:text-white hover:underline"
           >
             Create Ciphera ID
           </Link>

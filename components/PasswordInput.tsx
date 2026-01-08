@@ -28,7 +28,7 @@ export default function PasswordInput({
   return (
     <div className={`space-y-1.5 ${className}`}>
       {label && (
-        <label className="block text-sm font-medium text-neutral-700">
+        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
           {label}
           {required && <span className="text-brand-orange text-xs ml-1">(Required)</span>}
         </label>
@@ -40,17 +40,17 @@ export default function PasswordInput({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           disabled={disabled}
-          className={`w-full pl-11 pr-12 py-3 border rounded-xl bg-neutral-50/50 focus:bg-white 
-            transition-all duration-200 outline-none disabled:opacity-50 disabled:cursor-not-allowed
+          className={`w-full pl-11 pr-12 py-3 border rounded-xl bg-neutral-50/50 dark:bg-neutral-900/50 focus:bg-white dark:focus:bg-neutral-900 
+            transition-all duration-200 outline-none disabled:opacity-50 disabled:cursor-not-allowed dark:text-white
             ${error 
-              ? 'border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-500/10' 
-              : 'border-neutral-200 hover:border-brand-orange/50 focus:border-brand-orange focus:ring-4 focus:ring-brand-orange/10'
+              ? 'border-red-300 dark:border-red-800 focus:border-red-500 focus:ring-4 focus:ring-red-500/10' 
+              : 'border-neutral-200 dark:border-neutral-800 hover:border-brand-orange/50 focus:border-brand-orange focus:ring-4 focus:ring-brand-orange/10'
             }`}
         />
         
         {/* Lock Icon (Left) */}
         <div className={`absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none transition-colors duration-200
-          ${error ? 'text-red-400' : 'text-neutral-400 group-focus-within:text-brand-orange'}`}>
+          ${error ? 'text-red-400' : 'text-neutral-400 dark:text-neutral-500 group-focus-within:text-brand-orange'}`}>
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
@@ -61,8 +61,8 @@ export default function PasswordInput({
           type="button"
           onClick={() => setShowPassword(!showPassword)}
           disabled={disabled}
-          className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-neutral-400 
-            hover:text-neutral-600 hover:bg-neutral-100 transition-all duration-200 focus:outline-none"
+          className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-neutral-400 dark:text-neutral-500
+            hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all duration-200 focus:outline-none"
         >
           {showPassword ? (
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

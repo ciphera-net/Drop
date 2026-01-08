@@ -29,6 +29,7 @@ export async function downloadFile(
     downloadCount: number
     downloadLimit?: number
     oneTimeDownload?: boolean
+    chunkSize?: number
   }>(`${API_URL}/api/v1/download`, body, {
     onDownloadProgress: (progressEvent) => {
       if (onProgress && progressEvent.total) {

@@ -210,7 +210,7 @@ export async function uploadFileChunked(
   request: Omit<UploadRequest, 'encryptedData'>,
   onProgress?: (progress: number, loaded: number, total: number) => void
 ): Promise<UploadResponse> {
-  const CHUNK_SIZE = 5 * 1024 * 1024 // 5MB
+  const CHUNK_SIZE = 16 * 1024 * 1024 // 16MB
   const totalChunks = Math.ceil(file.size / CHUNK_SIZE)
   
   // * 1. Initialize

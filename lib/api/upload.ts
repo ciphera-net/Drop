@@ -154,7 +154,8 @@ async function initMultipartUpload(
 async function uploadPart(
   uploadToken: string,
   partNumber: number,
-  chunk: ArrayBuffer
+  chunk: ArrayBuffer,
+  onProgress?: (loaded: number, total: number) => void
 ): Promise<{ etag: string, partNumber: number }> {
   const formData = new FormData()
   formData.append('uploadToken', uploadToken)
@@ -166,8 +167,11 @@ async function uploadPart(
   try {
     const response = await axios.post(`${API_URL}/api/v1/upload/part`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
-      // * Note: We don't track progress per chunk here as it's confusing,
-      // * we track it in the orchestrator.
+      onUploadProgress: (progressEvent) => {
+        if (onProgress && progressEvent.total) {
+          onProgress(progressEvent.loaded, progressEvent.total)
+        }
+      }
     })
     return response.data
   } catch (error: any) {
@@ -234,7 +238,15 @@ export async function uploadFileChunked(
     
     // * Upload Part
     // Retry logic could be added here
-    const { etag } = await uploadPart(uploadToken, i + 1, encryptedChunk)
+    const { etag } = await uploadPart(uploadToken, i + 1, encryptedChunk, (loaded, total) => {
+      if (onProgress) {
+        const chunkRatio = loaded / total
+        const currentChunkProgress = chunkBlob.size * chunkRatio
+        const currentTotal = totalUploaded + currentChunkProgress
+        const percent = Math.round((currentTotal / file.size) * 100)
+        onProgress(percent, currentTotal, file.size)
+      }
+    })
     parts.push({ partNumber: i + 1, etag })
     
     // * Update Progress

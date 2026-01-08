@@ -10,7 +10,7 @@ import { MAX_FILE_SIZE } from '../lib/constants'
 import { useAuth } from '../lib/auth/context'
 
 import PasswordInput from './PasswordInput'
-import { Captcha } from '@ciphera-net/captcha'
+import { Captcha } from '../lib/captcha'
 
 interface FileUploadProps {
   onUploadComplete?: (shareUrl: string) => void

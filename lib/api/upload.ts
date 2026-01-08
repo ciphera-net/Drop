@@ -2,6 +2,7 @@
  * Upload API calls
  */
 
+import axios from 'axios'
 import type { UploadRequest, UploadResponse } from '../types/api'
 import { arrayBufferToBase64 } from '../crypto/encryption'
 
@@ -33,50 +34,22 @@ export async function uploadFile(
     captcha_token: request.captcha_token,
   }
 
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest()
-    xhr.open('POST', `${API_URL}/api/v1/upload`)
-    xhr.setRequestHeader('Content-Type', 'application/json')
-
-    if (onProgress) {
-      xhr.upload.onprogress = (event) => {
-        if (event.lengthComputable) {
-          const percentComplete = (event.loaded / event.total) * 100
-          onProgress(Math.round(percentComplete), event.loaded, event.total)
+  try {
+    const response = await axios.post(`${API_URL}/api/v1/upload`, body, {
+      onUploadProgress: (progressEvent) => {
+        if (onProgress && progressEvent.total) {
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+          onProgress(percentCompleted, progressEvent.loaded, progressEvent.total)
         }
       }
-    }
-
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        try {
-          const response = JSON.parse(xhr.responseText)
-          resolve(response)
-        } catch (e) {
-          reject(new Error('Invalid JSON response'))
-        }
-      } else {
-        try {
-          const error = JSON.parse(xhr.responseText)
-          // * Include details if available
-          const errorMessage = error.details ? `${error.error}: ${error.details}` : (error.message || error.error || 'Request failed')
-          
-          // * Special handling for captcha required
-          if (error.require_captcha) {
-             // Pass this info up so UI can show captcha
-          }
-          
-          reject(new Error(errorMessage))
-        } catch (e) {
-          reject(new Error(`HTTP ${xhr.status}: ${xhr.statusText}`))
-        }
-      }
-    }
-
-    xhr.onerror = () => reject(new Error('Network request failed'))
-
-    xhr.send(JSON.stringify(body))
-  })
+    })
+    return response.data
+  } catch (error: any) {
+    const errorMessage = error.response?.data?.details 
+      ? `${error.response.data.error}: ${error.response.data.details}` 
+      : (error.response?.data?.message || error.message || 'Request failed')
+    throw new Error(errorMessage)
+  }
 }
 
 /**
@@ -103,41 +76,20 @@ export async function uploadToRequest(
     captcha_token: request.captcha_token,
   }
 
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest()
-    xhr.open('POST', `${API_URL}/api/v1/requests/${requestId}/upload`)
-    xhr.setRequestHeader('Content-Type', 'application/json')
-
-    if (onProgress) {
-      xhr.upload.onprogress = (event) => {
-        if (event.lengthComputable) {
-          const percentComplete = (event.loaded / event.total) * 100
-          onProgress(Math.round(percentComplete), event.loaded, event.total)
+  try {
+    const response = await axios.post(`${API_URL}/api/v1/requests/${requestId}/upload`, body, {
+      onUploadProgress: (progressEvent) => {
+        if (onProgress && progressEvent.total) {
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+          onProgress(percentCompleted, progressEvent.loaded, progressEvent.total)
         }
       }
-    }
-
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        try {
-          const response = JSON.parse(xhr.responseText)
-          resolve(response)
-        } catch (e) {
-          reject(new Error('Invalid JSON response'))
-        }
-      } else {
-        try {
-          const error = JSON.parse(xhr.responseText)
-          const errorMessage = error.details ? `${error.error}: ${error.details}` : (error.message || error.error || 'Request failed')
-          reject(new Error(errorMessage))
-        } catch (e) {
-          reject(new Error(`HTTP ${xhr.status}: ${xhr.statusText}`))
-        }
-      }
-    }
-
-    xhr.onerror = () => reject(new Error('Network request failed'))
-
-    xhr.send(JSON.stringify(body))
-  })
+    })
+    return response.data
+  } catch (error: any) {
+     const errorMessage = error.response?.data?.details 
+      ? `${error.response.data.error}: ${error.response.data.details}` 
+      : (error.response?.data?.message || error.message || 'Request failed')
+    throw new Error(errorMessage)
+  }
 }

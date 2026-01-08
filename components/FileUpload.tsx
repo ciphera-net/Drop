@@ -23,6 +23,7 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
   const { user } = useAuth()
   const [files, setFiles] = useState<File[]>([])
   const [uploading, setUploading] = useState(false)
+  const [encrypting, setEncrypting] = useState(false)
   const [progress, setProgress] = useState(0)
   const [uploadSpeed, setUploadSpeed] = useState<string>('')
   const lastUploadRef = useRef<{ loaded: number; time: number }>({ loaded: 0, time: 0 })
@@ -128,6 +129,7 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
     }
 
     setUploading(true)
+    setEncrypting(true)
     setError(null)
     setProgress(0)
     setUploadSpeed('')
@@ -145,7 +147,9 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
         })
         
         // * Update progress to indicate compression
-        const content = await zip.generateAsync({ type: 'blob' })
+        const content = await zip.generateAsync({ type: 'blob' }, (metadata) => {
+            setProgress(Math.round(metadata.percent))
+        })
         fileToUpload = new File([content], 'archive.zip', { type: 'application/zip' })
       } else {
         fileToUpload = files[0]
@@ -165,6 +169,7 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
       
       // * Encrypt file
       const { encrypted, iv, key } = await encryptFile(fileToUpload, encryptionKey)
+      setEncrypting(false) // Encryption done, start upload
 
       // * Encrypt filename
       const encryptedFilenameBuffer = await encryptString(
@@ -248,6 +253,7 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
       setCaptchaToken('')
     } finally {
       setUploading(false)
+      setEncrypting(false)
       setProgress(0)
     }
   }, [files, expirationMinutes, password, downloadLimit, oneTimeDownload, onUploadComplete, requestId, requestKey, user, captchaId, captchaSolution, captchaToken])
@@ -480,11 +486,22 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
           <div className="bg-white dark:bg-neutral-900 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-3">
             <div className="flex justify-between items-center text-sm font-medium text-neutral-700 dark:text-neutral-300">
               <span className="flex items-center gap-2">
-                <svg className="w-4 h-4 text-brand-orange animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Uploading...
+                {encrypting ? (
+                  <>
+                    <svg className="w-4 h-4 text-brand-orange animate-spin" fill="none" viewBox="0 0 24 24">
+                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                       <path className="opacity-75" fill="currentColor" d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18c-4.418 0-8-3.582-8-8s3.582-8 8-8 8 3.582 8 8-3.582 8-8 8z"></path>
+                    </svg>
+                    <span>{files.length > 1 ? 'Compressing...' : 'Encrypting...'}</span>
+                  </>
+                ) : (
+                   <>
+                    <svg className="w-4 h-4 text-brand-orange animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <span>Uploading...</span>
+                   </>
+                )}
               </span>
               <span>{progress}%</span>
             </div>
@@ -497,8 +514,8 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
             </div>
             
             <div className="flex justify-between text-xs text-neutral-500 dark:text-neutral-400">
-              <span>Encrypting & Uploading</span>
-              <span>{uploadSpeed}</span>
+              <span>{encrypting ? 'Preparing file' : 'Transferring securely'}</span>
+              {!encrypting && <span>{uploadSpeed}</span>}
             </div>
           </div>
         ) : (

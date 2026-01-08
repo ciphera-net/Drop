@@ -9,8 +9,8 @@ import { importEncryptionKey, encodeKeyForSharing } from '../crypto/key-manageme
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
 
-// 16MB chunks
-export const CHUNK_SIZE = 16 * 1024 * 1024 
+// 50MB chunks
+export const CHUNK_SIZE = 50 * 1024 * 1024 
 
 interface InitUploadResponse {
   uploadId: string

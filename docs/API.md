@@ -139,7 +139,7 @@ Upload an encrypted file to the server.
 }
 ```
 
-**Note on Captcha**: Anonymous uploads may require captcha verification. If the server returns `423 Locked`, the response will include `"require_captcha": true`. The client must then solve a captcha (using the `ciphera-captcha` service) and retry the upload with `captcha_token` (or `captcha_id` + `captcha_solution`).
+**Note on Captcha**: Anonymous uploads may require captcha verification. If the server returns `400 Bad Request`, the response will include `"require_captcha": true`. The client must then solve a captcha (using the `ciphera-captcha` service) and retry the upload with `captcha_token` (or `captcha_id` + `captcha_solution`).
 
 #### Download File
 Download an encrypted file from the server.
@@ -273,11 +273,11 @@ All errors follow this format:
 ```
 
 **Status Codes**:
-- `400` - Bad Request
+- `400` - Bad Request (or Captcha Required)
 - `401` - Unauthorized
 - `404` - Not Found
 - `410` - Gone (File/Request expired)
-- `423` - Locked (Captcha verification required)
+- `423` - Locked (Account Locked)
 - `429` - Too Many Requests (Rate limit exceeded)
 - `500` - Internal Server Error
 

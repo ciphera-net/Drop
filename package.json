@@ -3,14 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "prebuild": "node scripts/copy-captcha.js",
-    "dev": "node scripts/copy-captcha.js && next dev",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@ciphera-net/captcha": "file:../ciphera-captcha/ui",
     "framer-motion": "^12.23.26",
     "jszip": "^3.10.1",
     "next": "^16.1.1",

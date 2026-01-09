@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
+import { Button } from '@ciphera-net/ui'
 import { generatePKCE, generateRandomString } from '@/lib/crypto/pkce'
 
 export default function LoginPage() {
@@ -56,10 +57,10 @@ export default function LoginPage() {
         </div>
 
         <div className="mt-8">
-          <button
+          <Button
             onClick={handleLogin}
             disabled={loading}
-            className="w-full btn-primary disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full flex items-center justify-center gap-2"
           >
             {loading ? (
               'Redirecting...'
@@ -71,7 +72,7 @@ export default function LoginPage() {
                 Login with Ciphera ID
               </>
             )}
-          </button>
+          </Button>
         </div>
 
         <div className="text-center text-sm">

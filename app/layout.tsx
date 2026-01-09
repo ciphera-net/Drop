@@ -1,7 +1,7 @@
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import { AuthProvider } from '@/lib/auth/context'
-import { ThemeProviders } from '../components/ThemeProviders'
+import { ThemeProviders } from '@ciphera-net/ui'
 import { Toaster } from 'sonner'
 import type { Metadata } from 'next'
 import { Plus_Jakarta_Sans } from 'next/font/google'

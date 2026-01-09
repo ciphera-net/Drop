@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
+import { Button, Input, PasswordInput } from '@ciphera-net/ui'
 import apiRequest from '@/lib/api/client'
 import { deriveAuthKey } from '@/lib/crypto/password'
 
@@ -82,44 +83,40 @@ export default function SignupPage() {
 
           <div className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-neutral-900 dark:text-neutral-200">
+              <label htmlFor="email" className="block text-sm font-medium text-neutral-900 dark:text-neutral-200 mb-1">
                 Email address
               </label>
-              <input
+              <Input
                 id="email"
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-2 text-sm placeholder-neutral-400 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 text-neutral-900 dark:text-white"
                 placeholder="you@example.com"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-neutral-900 dark:text-neutral-200">
-                Password
-              </label>
-              <input
+              <PasswordInput
                 id="password"
-                type="password"
                 required
                 minLength={8}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-2 text-sm placeholder-neutral-400 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 text-neutral-900 dark:text-white"
                 placeholder="Minimum 8 characters"
+                label="Password"
               />
             </div>
           </div>
 
-          <button
+          <Button
             type="submit"
             disabled={loading}
-            className="w-full btn-primary disabled:opacity-50"
+            isLoading={loading}
+            className="w-full"
           >
             {loading ? 'Creating account...' : 'Create account'}
-          </button>
+          </Button>
         </form>
 
         <div className="text-center text-sm">

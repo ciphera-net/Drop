@@ -95,7 +95,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-white dark:bg-neutral-900 rounded-2xl shadow-xl w-full max-w-md border border-neutral-200 dark:border-neutral-800 pointer-events-auto overflow-hidden"
+              className="bg-white dark:bg-neutral-900 rounded-2xl shadow-xl w-full max-w-lg border border-neutral-200 dark:border-neutral-800 pointer-events-auto overflow-hidden"
             >
               <div className="p-6">
                 <div className="flex justify-between items-start mb-4">
@@ -126,15 +126,15 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                     required
                   />
                   
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-4">
-                    <div className="order-2 sm:order-1">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-6 pt-4 border-t border-neutral-100 dark:border-neutral-800">
+                    <div className="order-2 sm:order-1 w-full sm:w-auto">
                       <Captcha 
                         onVerify={handleCaptchaVerify}
-                        className="w-full sm:w-auto" 
+                        className="!bg-transparent !border-0 !p-0"
                       />
                     </div>
                     
-                    <div className="flex justify-end gap-3 order-1 sm:order-2">
+                    <div className="flex justify-end gap-3 order-1 sm:order-2 shrink-0">
                       <button
                         type="button"
                         onClick={onClose}
@@ -145,7 +145,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                       <button
                         type="submit"
                         disabled={loading || !message.trim()}
-                        className="btn-primary py-2 px-4 text-sm disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                        className="btn-primary py-2 px-6 text-sm disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap shadow-sm"
                       >
                         {loading ? 'Sending...' : 'Send Feedback'}
                       </button>

@@ -290,7 +290,7 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
     // * PoW captcha uses token, traditional captcha uses id + solution
     const hasCaptchaToken = captchaToken && captchaToken.trim() !== ''
     const hasCaptchaSolution = captchaId && captchaSolution && captchaId.trim() !== '' && captchaSolution.trim() !== ''
-    if (!user && !requestId && !hasCaptchaToken && !hasCaptchaSolution) {
+    if (!user && !hasCaptchaToken && !hasCaptchaSolution) {
       setError('Please complete the security check')
       return
     }
@@ -421,9 +421,9 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
           password: !requestId ? (password || undefined) : undefined,
           downloadLimit: !requestId ? (downloadLimit || undefined) : undefined,
           oneTimeDownload: !requestId ? oneTimeDownload : undefined,
-          captcha_id: !user && !requestId ? captchaId : undefined,
-          captcha_solution: !user && !requestId ? captchaSolution : undefined,
-          captcha_token: !user && !requestId ? captchaToken : undefined,
+          captcha_id: !user ? captchaId : undefined,
+          captcha_solution: !user ? captchaSolution : undefined,
+          captcha_token: !user ? captchaToken : undefined,
         }
 
         // * Upload to backend
@@ -792,16 +792,16 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
               disabled={uploading}
             />
           </div>
+        </div>
+      )}
 
-          {/* Captcha */}
-          {!user && (
-            <div className="pt-2">
-              <Captcha 
-                onVerify={handleCaptchaVerify} 
-                className={uploading ? 'opacity-50 pointer-events-none' : ''}
-              />
-            </div>
-          )}
+      {/* Captcha */}
+      {!user && files.length > 0 && (
+        <div className="pt-2">
+          <Captcha 
+            onVerify={handleCaptchaVerify} 
+            className={uploading ? 'opacity-50 pointer-events-none' : ''}
+          />
         </div>
       )}
 

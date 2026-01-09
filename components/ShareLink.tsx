@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { QrCode } from 'lucide-react'
 import { QRCodeCanvas } from 'qrcode.react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useKeyboardShortcuts } from '../lib/hooks/useKeyboardShortcuts'
 
 interface ShareLinkProps {
   shareUrl: string
@@ -27,6 +28,15 @@ export default function ShareLink({ shareUrl, onReset, title }: ShareLinkProps) 
       toast.error('Failed to copy link')
     }
   }
+
+  // * Keyboard Shortcuts
+  useKeyboardShortcuts([
+    {
+      key: 'c',
+      ctrlKey: true,
+      handler: handleCopy
+    }
+  ])
 
   return (
     <div className="space-y-6">

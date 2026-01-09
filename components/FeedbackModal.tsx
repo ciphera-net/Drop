@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
 import Captcha from './Captcha'
+import { useKeyboardShortcuts } from '../lib/hooks/useKeyboardShortcuts'
 
 interface FeedbackModalProps {
   isOpen: boolean
@@ -16,6 +17,16 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
   const [captchaId, setCaptchaId] = useState('')
   const [captchaSolution, setCaptchaSolution] = useState('')
   const [captchaToken, setCaptchaToken] = useState('')
+
+  // * Keyboard Shortcuts
+  useKeyboardShortcuts([
+    {
+      key: 'Escape',
+      handler: () => {
+        if (isOpen) onClose()
+      }
+    }
+  ])
 
   const handleCaptchaVerify = (id: string, solution: string, token?: string) => {
     setCaptchaId(id)

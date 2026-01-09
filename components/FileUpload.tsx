@@ -13,6 +13,7 @@ import type { UploadRequest } from '../lib/types/api'
 import { MAX_FILE_SIZE } from '../lib/constants'
 import { useAuth } from '../lib/auth/context'
 import { formatBytes } from '../lib/utils/format'
+import { useKeyboardShortcuts } from '../lib/hooks/useKeyboardShortcuts'
 
 import PasswordInput from './PasswordInput'
 import Captcha from './Captcha'
@@ -108,6 +109,19 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
       folderInputRef.current.setAttribute('directory', '')
     }
   }, [])
+
+  // * Keyboard Shortcuts
+  useKeyboardShortcuts([
+    {
+      key: 'o',
+      ctrlKey: true,
+      handler: () => {
+        if (!uploading && files.length === 0) {
+          fileInputRef.current?.click()
+        }
+      }
+    }
+  ])
 
   // * Handle paste events for file upload
   useEffect(() => {

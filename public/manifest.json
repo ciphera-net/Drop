@@ -1,7 +1,7 @@
 {
-  "name": "Drop - Privacy-First File Sharing",
+  "name": "Drop",
   "short_name": "Drop",
-  "description": "Secure file sharing with end-to-end encryption. We cannot see what you upload.",
+  "description": "Secure file sharing with end-to-end encryption.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

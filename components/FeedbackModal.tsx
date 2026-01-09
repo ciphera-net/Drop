@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
+import Captcha from './Captcha'
 
 interface FeedbackModalProps {
   isOpen: boolean
@@ -12,10 +13,28 @@ interface FeedbackModalProps {
 export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
+  const [captchaId, setCaptchaId] = useState('')
+  const [captchaSolution, setCaptchaSolution] = useState('')
+  const [captchaToken, setCaptchaToken] = useState('')
+
+  const handleCaptchaVerify = (id: string, solution: string, token?: string) => {
+    setCaptchaId(id)
+    setCaptchaSolution(solution)
+    if (token) setCaptchaToken(token)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!message.trim()) return
+
+    // Require captcha
+    const hasCaptchaToken = captchaToken && captchaToken.trim() !== ''
+    const hasCaptchaSolution = captchaId && captchaSolution && captchaId.trim() !== '' && captchaSolution.trim() !== ''
+    
+    if (!hasCaptchaToken && !hasCaptchaSolution) {
+      toast.error('Please complete the security check')
+      return
+    }
 
     setLoading(true)
     
@@ -32,7 +51,12 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({ 
+          message,
+          captcha_id: captchaId,
+          captcha_solution: captchaSolution,
+          captcha_token: captchaToken
+        }),
       })
 
       if (!response.ok) {
@@ -41,6 +65,8 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
       
       toast.success('Thank you for your feedback!')
       setMessage('')
+      setCaptchaSolution('') // Reset captcha
+      setCaptchaToken('')
       onClose()
     } catch (error) {
       toast.error('Failed to send feedback. Please try again.')
@@ -115,6 +141,13 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                     >
                       {loading ? 'Sending...' : 'Send Feedback'}
                     </button>
+                  </div>
+                  
+                  <div className="mt-4 flex justify-end">
+                    <Captcha 
+                      onVerify={handleCaptchaVerify}
+                      className="scale-90 origin-right" 
+                    />
                   </div>
                 </form>
               </div>

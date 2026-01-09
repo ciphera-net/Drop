@@ -3,6 +3,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import JSZip from 'jszip'
 import { toast } from 'sonner'
+// @ts-ignore
+import exifr from 'exifr'
 import { encryptFile, encryptString, arrayBufferToBase64 } from '../lib/crypto/encryption'
 import { encodeKeyForSharing, importEncryptionKey, generateEncryptionKey } from '../lib/crypto/key-management'
 import { uploadFile, uploadToRequest } from '../lib/api/upload'
@@ -39,6 +41,7 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
   const [password, setPassword] = useState('')
   const [downloadLimit, setDownloadLimit] = useState<number | undefined>()
   const [oneTimeDownload, setOneTimeDownload] = useState(true)
+  const [stripMetadata, setStripMetadata] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Captcha State
@@ -216,6 +219,43 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
     if (token) setCaptchaToken(token)
   }, [])
 
+  // Helper to remove metadata from image file
+  const removeMetadata = async (file: File): Promise<File> => {
+    // Only process JPEG/PNG images
+    if (!file.type.match(/^image\/(jpeg|png)$/i)) return file;
+
+    try {
+      // Create an image bitmap to strip EXIF by re-encoding
+      const bitmap = await createImageBitmap(file);
+      const canvas = document.createElement('canvas');
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      const ctx = canvas.getContext('bitmaprenderer');
+      
+      if (ctx) {
+        ctx.transferFromImageBitmap(bitmap);
+        
+        return new Promise((resolve) => {
+           canvas.toBlob((blob) => {
+             if (blob) {
+                // Recreate file with same name/modified date
+                resolve(new File([blob], file.name, {
+                   type: file.type,
+                   lastModified: Date.now()
+                }));
+             } else {
+                resolve(file); // Fallback
+             }
+           }, file.type); // Preserve format
+        });
+      }
+      return file;
+    } catch (err) {
+      console.warn('Failed to strip metadata for', file.name, err);
+      return file;
+    }
+  };
+
   const handleUpload = useCallback(async () => {
     if (files.length === 0) {
       setError('Please select at least one file')
@@ -241,14 +281,25 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
 
     try {
       let fileToUpload: File
+      let filesToProcess = [...files]
+
+      // * Strip Metadata if enabled
+      if (stripMetadata) {
+         // Show specific status?
+         const processedFiles: File[] = []
+         for (const file of filesToProcess) {
+            processedFiles.push(await removeMetadata(file));
+         }
+         filesToProcess = processedFiles;
+      }
 
       // * Check for zip creation
       // * If uploading to request, we might want to zip as well? Yes, consistent behavior.
-      if (files.length > 1 || folderMode) {
+      if (filesToProcess.length > 1 || folderMode) {
         // * Create zip for multiple files or folder
         const zip = new JSZip()
         
-        files.forEach((file) => {
+        filesToProcess.forEach((file) => {
           const relativePath = (file as FileWithRelativePath).webkitRelativePath || file.name
           zip.file(relativePath, file)
         })
@@ -258,13 +309,13 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
             setProgress(metadata.percent)
         })
         
-        const zipName = folderMode && files[0] && (files[0] as FileWithRelativePath).webkitRelativePath
-          ? `${(files[0] as FileWithRelativePath).webkitRelativePath.split('/')[0]}.zip`
+        const zipName = folderMode && filesToProcess[0] && (filesToProcess[0] as FileWithRelativePath).webkitRelativePath
+          ? `${(filesToProcess[0] as FileWithRelativePath).webkitRelativePath.split('/')[0]}.zip`
           : 'archive.zip'
           
         fileToUpload = new File([content], zipName, { type: 'application/zip' })
       } else {
-        fileToUpload = files[0]
+        fileToUpload = filesToProcess[0]
       }
 
       if (fileToUpload.size > MAX_FILE_SIZE) {
@@ -415,7 +466,7 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
       setEncrypting(false)
       setProgress(0)
     }
-  }, [files, expirationMinutes, password, downloadLimit, oneTimeDownload, onUploadComplete, requestId, requestKey, user, captchaId, captchaSolution, captchaToken])
+  }, [files, expirationMinutes, password, downloadLimit, oneTimeDownload, onUploadComplete, requestId, requestKey, user, captchaId, captchaSolution, captchaToken, stripMetadata])
 
   return (
     <div className={`w-full max-w-md mx-auto ${files.length > 0 ? 'space-y-6' : ''}`}>
@@ -621,6 +672,49 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
               <span
                 className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
                   oneTimeDownload ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Metadata Stripping Toggle */}
+          <div className={`flex items-center justify-between p-4 border rounded-xl transition-all duration-200 ${
+            stripMetadata 
+              ? 'bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800 shadow-sm' 
+              : 'bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800'
+          }`}>
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-lg transition-colors duration-200 ${
+                stripMetadata ? 'bg-blue-500 text-white' : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-400'
+              }`}>
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <div className="space-y-0.5">
+                <span className={`block text-sm font-medium transition-colors duration-200 ${
+                  stripMetadata ? 'text-blue-700 dark:text-blue-400' : 'text-neutral-900 dark:text-white'
+                }`}>
+                  Strip image metadata
+                </span>
+                <span className={`block text-xs transition-colors duration-200 ${
+                  stripMetadata ? 'text-blue-600/80 dark:text-blue-400/80' : 'text-neutral-500 dark:text-neutral-400'
+                }`}>
+                  Remove GPS and camera info from images
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={() => setStripMetadata(!stripMetadata)}
+              disabled={uploading}
+              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                stripMetadata ? 'bg-blue-500' : 'bg-neutral-200 dark:bg-neutral-700'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                  stripMetadata ? 'translate-x-5' : 'translate-x-0'
                 }`}
               />
             </button>

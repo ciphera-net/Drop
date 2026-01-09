@@ -33,6 +33,7 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
   const [folderMode, setFolderMode] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [encrypting, setEncrypting] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
   const [progress, setProgress] = useState(0)
   const [uploadSpeed, setUploadSpeed] = useState<string>('')
   const lastUploadRef = useRef<{ loaded: number; time: number }>({ loaded: 0, time: 0 })
@@ -130,45 +131,54 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
     return () => window.removeEventListener('paste', handlePaste)
   }, [handleFileSelect])
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    // Add drag highlight style
-  }, [])
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    
-    // * Handle folder drop recursively if possible, otherwise flat files
-    const items = e.dataTransfer.items
-    if (items) {
-      const entryPromises: Promise<File[]>[] = []
-      
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i]
-        const entry = item.webkitGetAsEntry()
-        
-        if (entry) {
-          entryPromises.push(scanFiles(entry))
-        } else if (item.kind === 'file') {
-          const file = item.getAsFile()
-          if (file) entryPromises.push(Promise.resolve([file]))
-        }
-      }
-      
-      Promise.all(entryPromises).then(results => {
-        const flatFiles = results.flat()
-        // Check if any file has path structure indicating folder drop
-        const isFolder = flatFiles.some(f => (f as FileWithRelativePath).webkitRelativePath?.includes('/'))
-        if (isFolder) setFolderMode(true)
-        
-        handleFileSelect(createFileList(flatFiles))
-      })
-    } else {
-    handleFileSelect(e.dataTransfer.files)
+  useEffect(() => {
+    const handleDragEnter = (e: DragEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setIsDragging(true)
     }
-  }, [handleFileSelect])
+
+    const handleDragLeave = (e: DragEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      // Only set to false if leaving the window (client coordinates 0 or viewport bounds)
+      if (
+        e.clientX <= 0 ||
+        e.clientY <= 0 ||
+        e.clientX >= window.innerWidth ||
+        e.clientY >= window.innerHeight
+      ) {
+        setIsDragging(false)
+      }
+    }
+
+    const handleDragOver = (e: DragEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      if (!isDragging) setIsDragging(true)
+    }
+
+    const handleDrop = (e: DragEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setIsDragging(false)
+      if (e.dataTransfer?.files) {
+        handleFileSelect(e.dataTransfer.files)
+      }
+    }
+
+    window.addEventListener('dragenter', handleDragEnter)
+    window.addEventListener('dragleave', handleDragLeave)
+    window.addEventListener('dragover', handleDragOver)
+    window.addEventListener('drop', handleDrop)
+
+    return () => {
+      window.removeEventListener('dragenter', handleDragEnter)
+      window.removeEventListener('dragleave', handleDragLeave)
+      window.removeEventListener('dragover', handleDragOver)
+      window.removeEventListener('drop', handleDrop)
+    }
+  }, [handleFileSelect, isDragging])
 
   // Helper to traverse directories
   const scanFiles = (entry: any): Promise<File[]> => {
@@ -470,6 +480,19 @@ export default function FileUpload({ onUploadComplete, requestId, requestKey }: 
 
   return (
     <div className={`w-full max-w-md mx-auto ${files.length > 0 ? 'space-y-6' : ''}`}>
+      {/* Full Screen Drag Overlay */}
+      {isDragging && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-brand-orange/90 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="text-center text-white pointer-events-none">
+            <svg className="w-20 h-20 mx-auto mb-6 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+            <h2 className="text-4xl font-bold mb-2">Drop to Encrypt</h2>
+            <p className="text-white/80 text-lg">Release files to secure them instantly</p>
+          </div>
+        </div>
+      )}
+
       {/* Standard File Input */}
       <input
         ref={fileInputRef}

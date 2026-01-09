@@ -157,13 +157,13 @@ export default function Captcha({
                     )}
                  </div>
                  <span 
-                    className={`text-sm font-medium text-neutral-700 ${loading || verifying ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
+                    className={`text-sm font-medium text-neutral-700 mr-3 ${loading || verifying ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
                     onClick={() => !loading && !verifying && verifyHuman()}
                 >
                      {verifying ? 'Verifying...' : 'I am human'}
                  </span>
             </div>
-            <div className="text-[11px] text-neutral-400 flex flex-col items-end">
+            <div className="text-[11px] text-neutral-400 flex flex-col items-end border-l border-neutral-200 pl-3">
                 <div className="flex items-center gap-2 opacity-90">
                     <img 
                         src={logoUrl}

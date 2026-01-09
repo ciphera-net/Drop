@@ -126,15 +126,15 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                     required
                   />
                   
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-6 pt-4 border-t border-neutral-100 dark:border-neutral-800">
-                    <div className="order-2 sm:order-1 w-full sm:w-auto">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mt-6 pt-4 border-t border-neutral-100 dark:border-neutral-800">
+                    <div className="order-2 sm:order-1 sm:mr-auto">
                       <Captcha 
                         onVerify={handleCaptchaVerify}
                         className="!bg-transparent !border-0 !p-0"
                       />
                     </div>
                     
-                    <div className="flex justify-end gap-3 order-1 sm:order-2 shrink-0">
+                    <div className="flex justify-end gap-3 order-1 sm:order-2 shrink-0 self-center">
                       <button
                         type="button"
                         onClick={onClose}

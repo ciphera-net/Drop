@@ -20,6 +20,11 @@ export const metadata: Metadata = {
   authors: [{ name: 'Ciphera' }],
   creator: 'Ciphera',
   publisher: 'Ciphera',
+  icons: {
+    icon: '/drop_icon_no_margins.png',
+    shortcut: '/drop_icon_no_margins.png',
+    apple: '/drop_icon_no_margins.png',
+  },
   // * Privacy-first: No tracking
   robots: {
     index: true,

@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import UserMenu from './UserMenu'
 import { ThemeToggle } from './ThemeToggle'
 import { useAuth } from '@/lib/auth/context'
@@ -50,10 +51,13 @@ export default function Header() {
           className="flex items-center gap-3 group relative"
         >
           <div className="relative w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center">
-            <div className="absolute inset-0 rounded-full bg-brand-orange/20 blur-md group-hover:bg-brand-orange/30 transition-all duration-300"></div>
-            <div className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-brand-orange flex items-center justify-center text-white font-bold text-xl sm:text-2xl shadow-md shadow-brand-orange/20 group-hover:scale-105 group-hover:shadow-lg group-hover:shadow-brand-orange/30 transition-all duration-300">
-              D
-            </div>
+            <Image 
+              src="/drop_logo_no_margins.png"
+              alt="Drop Logo"
+              width={44}
+              height={44}
+              className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+            />
           </div>
           <span className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-white tracking-tight group-hover:text-brand-orange transition-colors duration-300">
             Drop

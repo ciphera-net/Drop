@@ -29,13 +29,15 @@ This modular design ensures that cryptographic operations (Client) are strictly 
 
 ## Technology Stack
 
-- **Framework**: Next.js 14+ (App Router)
+- **Framework**: Next.js 16+ (App Router)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
 - **Encryption**: Web Crypto API (AES-256-GCM)
 - **Hosting**: Vercel
 - **Infrastructure**: Railway (PostgreSQL), Cloudflare R2 (Storage)
-- **Shared Packages**: `@ciphera-net/captcha` - Reusable captcha UI component from `ciphera-captcha`
+- **Shared Packages**:
+  - `@ciphera-net/ui` - Shared UI components
+  - Internal Captcha implementation (based on `ciphera-captcha` logic)
 
 ## Getting Started
 

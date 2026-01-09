@@ -47,7 +47,7 @@ export default function ShareLink({ shareUrl, onReset, title }: ShareLinkProps) 
             type="text"
             value={shareUrl}
             readOnly
-            className="flex-1 px-4 py-3 border border-neutral-200 dark:border-neutral-700 rounded-xl bg-white dark:bg-neutral-900 text-sm font-mono text-neutral-600 dark:text-neutral-300 focus:ring-2 focus:ring-brand-orange/20 focus:border-brand-orange outline-none transition-all"
+            className="min-w-0 flex-1 px-4 py-3 border border-neutral-200 dark:border-neutral-700 rounded-xl bg-white dark:bg-neutral-900 text-sm font-mono text-neutral-600 dark:text-neutral-300 focus:ring-2 focus:ring-brand-orange/20 focus:border-brand-orange outline-none transition-all"
           />
           <button
             onClick={() => setShowQr(!showQr)}

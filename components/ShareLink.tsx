@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { QrCode } from 'lucide-react'
 import { QRCodeCanvas } from 'qrcode.react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 interface ShareLinkProps {
   shareUrl: string
@@ -66,21 +67,31 @@ export default function ShareLink({ shareUrl, onReset, title }: ShareLinkProps) 
           </div>
         </div>
 
-        {showQr && (
-          <div className="flex flex-col items-center justify-center p-6 mb-6 bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-700 animate-in fade-in slide-in-from-top-2">
-            <div className="bg-white p-4 rounded-lg shadow-sm mb-4">
-              <QRCodeCanvas
-                value={shareUrl}
-                size={200}
-                level={"H"}
-                includeMargin={true}
-              />
-            </div>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center">
-              Scan to open on mobile
-            </p>
-          </div>
-        )}
+        <AnimatePresence>
+          {showQr && (
+            <motion.div
+              initial={{ height: 0, opacity: 0, scale: 0.95 }}
+              animate={{ height: 'auto', opacity: 1, scale: 1 }}
+              exit={{ height: 0, opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="overflow-hidden"
+            >
+              <div className="flex flex-col items-center justify-center p-6 mb-6 bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-700">
+                <div className="bg-white p-4 rounded-lg shadow-sm mb-4">
+                  <QRCodeCanvas
+                    value={shareUrl}
+                    size={200}
+                    level={"H"}
+                    includeMargin={true}
+                  />
+                </div>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center">
+                  Scan to open on mobile
+                </p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <div className="flex flex-col gap-2 text-xs text-neutral-400 dark:text-neutral-500 border-t border-neutral-100 dark:border-neutral-700 pt-4">
           <div className="flex items-center gap-2">

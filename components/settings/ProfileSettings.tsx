@@ -4,13 +4,13 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth/context'
 import { useTheme } from 'next-themes'
 import { motion, AnimatePresence } from 'framer-motion'
-import { PersonIcon, LockClosedIcon, EnvelopeClosedIcon, CheckIcon, ExclamationTriangleIcon, Cross2Icon, GearIcon, SunIcon, MoonIcon, LaptopIcon, MobileIcon } from '@radix-ui/react-icons'
+import { PersonIcon, LockClosedIcon, EnvelopeClosedIcon, CheckIcon, ExclamationTriangleIcon, Cross2Icon, GearIcon, SunIcon, MoonIcon, LaptopIcon, MobileIcon, FileTextIcon, CopyIcon } from '@radix-ui/react-icons'
 import { PasswordInput, Button, Input } from '@ciphera-net/ui'
 import { toast } from 'sonner'
 import api from '@/lib/api/client'
 import { deriveAuthKey } from '@/lib/crypto/password'
 import { deleteAccount, deleteAllUserFiles } from '@/lib/api/user'
-import { setup2FA, verify2FA, disable2FA, Setup2FAResponse } from '@/lib/api/2fa'
+import { setup2FA, verify2FA, disable2FA, regenerateRecoveryCodes, Setup2FAResponse } from '@/lib/api/2fa'
 import Image from 'next/image'
 
 interface ShareDefaults {
@@ -96,6 +96,11 @@ export default function ProfileSettings() {
   const [twoFAData, setTwoFAData] = useState<Setup2FAResponse | null>(null)
   const [twoFACode, setTwoFACode] = useState('')
   const [loading2FA, setLoading2FA] = useState(false)
+
+  // Recovery Codes State
+  const [recoveryCodes, setRecoveryCodes] = useState<string[]>([])
+  const [showRecoveryCodes, setShowRecoveryCodes] = useState(false)
+  const [showRegenerateConfirm, setShowRegenerateConfirm] = useState(false)
 
   // Account Deletion State
   const [showDeletePrompt, setShowDeletePrompt] = useState(false)
@@ -234,11 +239,17 @@ export default function ProfileSettings() {
     e.preventDefault()
     setLoading2FA(true)
     try {
-      await verify2FA(twoFACode)
+      const res = await verify2FA(twoFACode)
       toast.success('2FA enabled successfully')
       setShow2FASetup(false)
       setTwoFAData(null)
       setTwoFACode('')
+      
+      if (res.recovery_codes) {
+        setRecoveryCodes(res.recovery_codes)
+        setShowRecoveryCodes(true)
+      }
+
       await refresh()
     } catch (err: any) {
       toast.error('Invalid code. Please try again.')
@@ -258,6 +269,26 @@ export default function ProfileSettings() {
     } finally {
       setLoading2FA(false)
     }
+  }
+
+  const handleRegenerateCodes = async () => {
+    setLoading2FA(true)
+    try {
+        const res = await regenerateRecoveryCodes()
+        setRecoveryCodes(res.recovery_codes)
+        setShowRecoveryCodes(true)
+        setShowRegenerateConfirm(false)
+        toast.success('Recovery codes regenerated')
+    } catch (err: any) {
+        toast.error('Failed to regenerate codes')
+    } finally {
+        setLoading2FA(false)
+    }
+  }
+
+  const copyCodes = () => {
+    navigator.clipboard.writeText(recoveryCodes.join('\n'))
+    toast.success('Codes copied to clipboard')
   }
 
   if (!user) return null
@@ -533,89 +564,115 @@ export default function ProfileSettings() {
                     <p className="text-sm text-neutral-500 dark:text-neutral-400">Add an extra layer of security to your account.</p>
                   </div>
 
-                  <div className="p-4 bg-neutral-50 dark:bg-neutral-900/50 rounded-xl border border-neutral-100 dark:border-neutral-800">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-white dark:bg-neutral-800 rounded-lg text-neutral-400">
-                          <MobileIcon className="w-6 h-6" />
+                  <div className="space-y-4">
+                    <div className="p-4 bg-neutral-50 dark:bg-neutral-900/50 rounded-xl border border-neutral-100 dark:border-neutral-800">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-white dark:bg-neutral-800 rounded-lg text-neutral-400">
+                            <MobileIcon className="w-6 h-6" />
+                          </div>
+                          <div>
+                            <h3 className="font-medium text-neutral-900 dark:text-white">Authenticator App</h3>
+                            <p className="text-sm text-neutral-500 dark:text-neutral-400">Use an app like Google Authenticator or Authy.</p>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="font-medium text-neutral-900 dark:text-white">Authenticator App</h3>
-                          <p className="text-sm text-neutral-500 dark:text-neutral-400">Use an app like Google Authenticator or Authy.</p>
-                        </div>
+                        
+                        {user.totp_enabled ? (
+                          <button
+                            onClick={handleDisable2FA}
+                            disabled={loading2FA}
+                            className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors"
+                          >
+                            Disable 2FA
+                          </button>
+                        ) : (
+                          <button
+                            onClick={handleStart2FASetup}
+                            disabled={loading2FA}
+                            className="px-4 py-2 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-lg font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors"
+                          >
+                            Enable 2FA
+                          </button>
+                        )}
                       </div>
-                      
-                      {user.totp_enabled ? (
-                        <button
-                          onClick={handleDisable2FA}
-                          disabled={loading2FA}
-                          className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors"
-                        >
-                          Disable 2FA
-                        </button>
-                      ) : (
-                        <button
-                          onClick={handleStart2FASetup}
-                          disabled={loading2FA}
-                          className="px-4 py-2 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-lg font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors"
-                        >
-                          Enable 2FA
-                        </button>
-                      )}
+
+                      <AnimatePresence>
+                        {show2FASetup && twoFAData && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-800 overflow-hidden"
+                          >
+                            <div className="grid md:grid-cols-2 gap-8">
+                              <div className="flex justify-center bg-white p-4 rounded-xl border border-neutral-200">
+                                {/* QR Code */}
+                                <img src={twoFAData.qr_code} alt="2FA QR Code" className="w-48 h-48 object-contain" />
+                              </div>
+                              <div className="space-y-4">
+                                <div>
+                                  <h4 className="font-medium text-neutral-900 dark:text-white mb-2">1. Scan QR Code</h4>
+                                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                                    Open your authenticator app and scan the image.
+                                  </p>
+                                </div>
+                                
+                                <div>
+                                  <h4 className="font-medium text-neutral-900 dark:text-white mb-2">2. Enter Code</h4>
+                                  <form onSubmit={handleVerify2FA} className="flex gap-2">
+                                    <input
+                                      type="text"
+                                      maxLength={6}
+                                      value={twoFACode}
+                                      onChange={(e) => setTwoFACode(e.target.value.replace(/\D/g, ''))}
+                                      placeholder="000000"
+                                      className="w-32 px-3 py-2 text-center tracking-widest font-mono text-lg border border-neutral-200 dark:border-neutral-800 rounded-lg bg-white dark:bg-neutral-900 focus:ring-2 focus:ring-brand-orange/20 focus:border-brand-orange outline-none dark:text-white"
+                                    />
+                                    <button
+                                      type="submit"
+                                      disabled={twoFACode.length !== 6 || loading2FA}
+                                      className="px-4 py-2 bg-brand-orange text-white rounded-lg font-medium hover:bg-brand-orange/90 transition-colors disabled:opacity-50"
+                                    >
+                                      Verify
+                                    </button>
+                                  </form>
+                                </div>
+
+                                <div className="pt-2">
+                                  <p className="text-xs text-neutral-400 font-mono break-all">
+                                    Secret: {twoFAData.secret}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
 
-                    <AnimatePresence>
-                      {show2FASetup && twoFAData && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-800 overflow-hidden"
-                        >
-                          <div className="grid md:grid-cols-2 gap-8">
-                            <div className="flex justify-center bg-white p-4 rounded-xl border border-neutral-200">
-                              {/* QR Code */}
-                              <img src={twoFAData.qr_code} alt="2FA QR Code" className="w-48 h-48 object-contain" />
+                    {user.totp_enabled && (
+                      <div className="p-4 bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-neutral-100 dark:bg-neutral-800 rounded-lg text-neutral-500">
+                              <FileTextIcon className="w-6 h-6" />
                             </div>
-                            <div className="space-y-4">
-                              <div>
-                                <h4 className="font-medium text-neutral-900 dark:text-white mb-2">1. Scan QR Code</h4>
-                                <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                                  Open your authenticator app and scan the image.
-                                </p>
-                              </div>
-                              
-                              <div>
-                                <h4 className="font-medium text-neutral-900 dark:text-white mb-2">2. Enter Code</h4>
-                                <form onSubmit={handleVerify2FA} className="flex gap-2">
-                                  <input
-                                    type="text"
-                                    maxLength={6}
-                                    value={twoFACode}
-                                    onChange={(e) => setTwoFACode(e.target.value.replace(/\D/g, ''))}
-                                    placeholder="000000"
-                                    className="w-32 px-3 py-2 text-center tracking-widest font-mono text-lg border border-neutral-200 dark:border-neutral-800 rounded-lg bg-white dark:bg-neutral-900 focus:ring-2 focus:ring-brand-orange/20 focus:border-brand-orange outline-none dark:text-white"
-                                  />
-                                  <button
-                                    type="submit"
-                                    disabled={twoFACode.length !== 6 || loading2FA}
-                                    className="px-4 py-2 bg-brand-orange text-white rounded-lg font-medium hover:bg-brand-orange/90 transition-colors disabled:opacity-50"
-                                  >
-                                    Verify
-                                  </button>
-                                </form>
-                              </div>
-
-                              <div className="pt-2">
-                                <p className="text-xs text-neutral-400 font-mono break-all">
-                                  Secret: {twoFAData.secret}
-                                </p>
-                              </div>
+                            <div>
+                              <h3 className="font-medium text-neutral-900 dark:text-white">Recovery Codes</h3>
+                              <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                                Generate backup codes in case you lose access to your device.
+                              </p>
                             </div>
                           </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                          <button
+                            onClick={() => setShowRegenerateConfirm(true)}
+                            className="px-4 py-2 border border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-white rounded-lg font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+                          >
+                            Regenerate Codes
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -814,6 +871,116 @@ export default function ProfileSettings() {
                         </button>
                       </div>
                     </form>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Recovery Codes Modal */}
+            <AnimatePresence>
+                {showRecoveryCodes && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 z-10 flex items-center justify-center bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm rounded-2xl p-4"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            className="w-full max-w-lg bg-white dark:bg-neutral-900 p-6 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-xl"
+                        >
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">Recovery Codes</h3>
+                                <button 
+                                    onClick={() => setShowRecoveryCodes(false)}
+                                    className="text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-white"
+                                >
+                                    <Cross2Icon className="w-5 h-5" />
+                                </button>
+                            </div>
+                            
+                            <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-900/30 rounded-lg mb-4">
+                                <p className="text-sm text-yellow-800 dark:text-yellow-200 font-medium flex items-center gap-2">
+                                    <ExclamationTriangleIcon className="w-4 h-4" />
+                                    Save these codes securely!
+                                </p>
+                                <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+                                    They are the only way to access your account if you lose your device. We cannot display them again.
+                                </p>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3 mb-6 p-4 bg-neutral-100 dark:bg-neutral-800 rounded-xl font-mono text-center text-neutral-900 dark:text-white tracking-wider">
+                                {recoveryCodes.map(code => (
+                                    <div key={code}>{code}</div>
+                                ))}
+                            </div>
+
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={copyCodes}
+                                    className="flex-1 px-4 py-2 flex items-center justify-center gap-2 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-900 dark:text-white rounded-xl font-medium hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors"
+                                >
+                                    <CopyIcon className="w-4 h-4" />
+                                    Copy All
+                                </button>
+                                <button
+                                    onClick={() => setShowRecoveryCodes(false)}
+                                    className="flex-1 px-4 py-2 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-xl font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors"
+                                >
+                                    I've Saved Them
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+             {/* Regenerate Confirm Modal */}
+             <AnimatePresence>
+              {showRegenerateConfirm && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 z-10 flex items-center justify-center bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm rounded-2xl p-4"
+                >
+                  <motion.div
+                    initial={{ scale: 0.95, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.95, opacity: 0 }}
+                    className="w-full max-w-sm bg-white dark:bg-neutral-900 p-6 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-xl"
+                  >
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">Regenerate Codes?</h3>
+                      <button 
+                        onClick={() => setShowRegenerateConfirm(false)}
+                        className="text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-white"
+                      >
+                        <Cross2Icon className="w-5 h-5" />
+                      </button>
+                    </div>
+                    
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-6">
+                      This will <span className="font-bold text-red-600 dark:text-red-400">invalidate all existing codes</span>. Make sure you have your new codes saved immediately.
+                    </p>
+
+                    <div className="flex gap-3">
+                        <button
+                        onClick={() => setShowRegenerateConfirm(false)}
+                        className="flex-1 px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl transition-colors"
+                        >
+                        Cancel
+                        </button>
+                        <button
+                        onClick={handleRegenerateCodes}
+                        disabled={loading2FA}
+                        className="flex-1 px-4 py-2 text-sm font-medium text-white bg-neutral-900 dark:bg-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-100 rounded-xl transition-colors disabled:opacity-50"
+                        >
+                        {loading2FA ? 'Generating...' : 'Regenerate'}
+                        </button>
+                    </div>
                   </motion.div>
                 </motion.div>
               )}

@@ -153,7 +153,7 @@ export default function LoginPage() {
             ) : (
               <div>
                 <label htmlFor="totp" className="block text-sm font-medium text-neutral-900 dark:text-neutral-200 mb-1">
-                  Authentication Code
+                  Authentication or Recovery Code
                 </label>
                 <Input
                   id="totp"
@@ -161,14 +161,14 @@ export default function LoginPage() {
                   required
                   value={totpCode}
                   onChange={(e) => setTotpCode(e.target.value)}
-                  placeholder="000000"
-                  maxLength={6}
+                  placeholder="Code"
+                  maxLength={20}
                   autoComplete="one-time-code"
                   className="text-center tracking-widest text-lg"
                   autoFocus
                 />
                 <p className="mt-2 text-xs text-neutral-500 text-center">
-                  Open your authenticator app to view your code.
+                  Open your authenticator app or enter a recovery code.
                 </p>
               </div>
             )}

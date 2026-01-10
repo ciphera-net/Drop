@@ -7,6 +7,7 @@ import apiRequest from '@/lib/api/client'
 interface User {
   id: string
   email: string
+  totp_enabled: boolean
 }
 
 interface AuthContextType {
@@ -14,7 +15,7 @@ interface AuthContextType {
   loading: boolean
   login: (token: string, refreshToken: string, user: User) => void
   logout: () => void
-  refresh: () => void
+  refresh: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -22,33 +23,13 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   login: () => {},
   logout: () => {},
-  refresh: () => {},
+  refresh: async () => {},
 })
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
-
-  useEffect(() => {
-    const token = localStorage.getItem('token')
-    const refreshToken = localStorage.getItem('refreshToken')
-    const savedUser = localStorage.getItem('user')
-    
-    if (token && savedUser) {
-      try {
-        setUser(JSON.parse(savedUser))
-        
-        // * TODO: Here we could check if token is expired (JWT decode) and refresh immediately
-        // * For now we rely on the API client interceptor to handle 401s (To be implemented)
-      } catch (e) {
-        localStorage.removeItem('token')
-        localStorage.removeItem('refreshToken')
-        localStorage.removeItem('user')
-      }
-    }
-    setLoading(false)
-  }, [])
 
   const login = (token: string, refreshToken: string, userData: User) => {
     localStorage.setItem('token', token)
@@ -58,27 +39,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.refresh()
   }
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem('token')
     localStorage.removeItem('refreshToken')
     localStorage.removeItem('user')
     setUser(null)
     router.push('/')
     router.refresh()
-  }
+  }, [router])
 
-  // Reload user data from localStorage or API
-  const refresh = useCallback(() => {
-    const savedUser = localStorage.getItem('user')
-    if (savedUser) {
-        try {
-            setUser(JSON.parse(savedUser))
-        } catch (e) {
-            console.error('Failed to parse user data during refresh', e)
-        }
+  // Reload user data from API
+  const refresh = useCallback(async () => {
+    try {
+      const userData = await apiRequest<User>('/auth/user/me')
+      setUser(userData)
+      localStorage.setItem('user', JSON.stringify(userData))
+    } catch (e) {
+      console.error('Failed to refresh user data', e)
+      // Fallback to local storage if network fails? Or maybe just keep current state
+      const savedUser = localStorage.getItem('user')
+      if (savedUser && !user) {
+         try { setUser(JSON.parse(savedUser)) } catch {}
+      }
     }
     router.refresh()
-  }, [router])
+  }, [router, user])
+
+  // Initial load
+  useEffect(() => {
+    const init = async () => {
+        const token = localStorage.getItem('token')
+        const savedUser = localStorage.getItem('user')
+        
+        if (token) {
+            // Optimistically set from local storage first
+            if (savedUser) {
+                try {
+                    setUser(JSON.parse(savedUser))
+                } catch (e) {
+                    localStorage.removeItem('user')
+                }
+            }
+            
+            // Then fetch fresh data
+            try {
+                const userData = await apiRequest<User>('/auth/user/me')
+                setUser(userData)
+                localStorage.setItem('user', JSON.stringify(userData))
+            } catch (e) {
+                // If fetch fails (e.g. 401), apiRequest might redirect or throw
+                console.error('Failed to fetch initial user data', e)
+            }
+        }
+        setLoading(false)
+    }
+    init()
+  }, [])
 
   return (
     <AuthContext.Provider value={{ user, loading, login, logout, refresh }}>

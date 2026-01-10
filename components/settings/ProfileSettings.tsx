@@ -231,10 +231,22 @@ export default function ProfileSettings() {
       setShow2FASetup(false)
       setTwoFAData(null)
       setTwoFACode('')
-      // Ideally refresh user context here to show "Enabled" state
-      // but simplistic approach is fine for now
+      await refresh()
     } catch (err: any) {
       toast.error('Invalid code. Please try again.')
+    } finally {
+      setLoading2FA(false)
+    }
+  }
+
+  const handleDisable2FA = async () => {
+    setLoading2FA(true)
+    try {
+      await disable2FA()
+      toast.success('2FA disabled successfully')
+      await refresh()
+    } catch (err: any) {
+      toast.error('Failed to disable 2FA')
     } finally {
       setLoading2FA(false)
     }
@@ -525,13 +537,23 @@ export default function ProfileSettings() {
                         </div>
                       </div>
                       
-                      <button
-                        onClick={handleStart2FASetup}
-                        disabled={loading2FA}
-                        className="px-4 py-2 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-lg font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors"
-                      >
-                        Enable 2FA
-                      </button>
+                      {user.totp_enabled ? (
+                        <button
+                          onClick={handleDisable2FA}
+                          disabled={loading2FA}
+                          className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors"
+                        >
+                          Disable 2FA
+                        </button>
+                      ) : (
+                        <button
+                          onClick={handleStart2FASetup}
+                          disabled={loading2FA}
+                          className="px-4 py-2 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-lg font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors"
+                        >
+                          Enable 2FA
+                        </button>
+                      )}
                     </div>
 
                     <AnimatePresence>

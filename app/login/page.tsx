@@ -178,7 +178,7 @@ export default function LoginPage() {
             type="submit"
             disabled={loading}
             isLoading={loading}
-            className="w-full"
+            className="w-full rounded-md"
           >
             {loading ? (show2FA ? 'Verifying...' : 'Signing in...') : (show2FA ? 'Verify Code' : 'Sign in')}
           </Button>

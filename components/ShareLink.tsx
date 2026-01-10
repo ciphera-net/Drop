@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
 import { GridIcon, Share2Icon } from '@radix-ui/react-icons'
 import { QRCodeCanvas } from 'qrcode.react'
@@ -14,6 +15,7 @@ interface ShareLinkProps {
 }
 
 export default function ShareLink({ shareUrl, onReset, title }: ShareLinkProps) {
+  const { resolvedTheme } = useTheme()
   const [copied, setCopied] = useState(false)
   const [showQr, setShowQr] = useState(false)
 
@@ -113,12 +115,14 @@ export default function ShareLink({ shareUrl, onReset, title }: ShareLinkProps) 
               className="overflow-hidden"
             >
               <div className="flex flex-col items-center justify-center p-6 mb-6 bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-700">
-            <div className="bg-white p-4 rounded-lg shadow-sm mb-4">
+            <div className="bg-white dark:bg-neutral-800 p-4 rounded-lg shadow-sm mb-4">
               <QRCodeCanvas
                 value={shareUrl}
                 size={200}
                 level={"H"}
                 includeMargin={true}
+                bgColor={resolvedTheme === 'dark' ? '#262626' : '#ffffff'}
+                fgColor={resolvedTheme === 'dark' ? '#ffffff' : '#000000'}
               />
             </div>
             <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center">

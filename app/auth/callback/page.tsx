@@ -66,7 +66,8 @@ function AuthCallbackContent() {
         
         login(data.access_token, data.refresh_token, {
             id: payload.sub,
-            email: payload.email || 'user@ciphera.net' // Fallback if email claim missing
+            email: payload.email || 'user@ciphera.net', // Fallback if email claim missing
+            totp_enabled: payload.totp_enabled || false
         })
         
         // * Cleanup

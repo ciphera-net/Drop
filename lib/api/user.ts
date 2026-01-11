@@ -60,3 +60,18 @@ export async function revokeSession(sessionId: string): Promise<void> {
     method: 'DELETE',
   })
 }
+
+export interface UserPreferences {
+  email_notifications: {
+    new_file_received: boolean
+    file_downloaded: boolean
+    security_alerts: boolean
+  }
+}
+
+export async function updateUserPreferences(preferences: UserPreferences): Promise<void> {
+  return apiRequest<void>('/auth/user/preferences', {
+    method: 'PUT',
+    body: JSON.stringify(preferences),
+  })
+}

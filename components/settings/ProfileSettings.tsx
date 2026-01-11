@@ -9,7 +9,7 @@ import { PasswordInput, Button, Input } from '@ciphera-net/ui'
 import { toast } from 'sonner'
 import api from '@/lib/api/client'
 import { deriveAuthKey } from '@/lib/crypto/password'
-import { deleteAccount, deleteAllUserFiles, getUserSessions, revokeSession, type Session } from '@/lib/api/user'
+import { deleteAccount, deleteAllUserFiles, getUserSessions, revokeSession, updateUserPreferences, type Session } from '@/lib/api/user'
 import { setup2FA, verify2FA, disable2FA, regenerateRecoveryCodes, Setup2FAResponse } from '@/lib/api/2fa'
 import Image from 'next/image'
 
@@ -112,6 +112,43 @@ export default function ProfileSettings() {
   const [sessions, setSessions] = useState<Session[]>([])
   const [loadingSessions, setLoadingSessions] = useState(false)
   const [revokingSessionId, setRevokingSessionId] = useState<string | null>(null)
+
+  // Notification Preferences State
+  const [emailNotifications, setEmailNotifications] = useState({
+    new_file_received: true,
+    file_downloaded: true,
+    security_alerts: true,
+  })
+
+  // Initialize preferences from user object
+  useEffect(() => {
+    if (user?.preferences?.email_notifications) {
+      setEmailNotifications(user.preferences.email_notifications)
+    }
+  }, [user])
+
+  const handleToggleNotification = async (key: keyof typeof emailNotifications) => {
+    const newState = {
+      ...emailNotifications,
+      [key]: !emailNotifications[key]
+    }
+    setEmailNotifications(newState)
+
+    try {
+      await updateUserPreferences({
+        email_notifications: newState
+      })
+      // Silent update, no toast needed for simple toggles usually, but we can add one if desired
+      // refresh() // Optional: keep global user state in sync
+    } catch (err) {
+      toast.error('Failed to update preferences')
+      // Revert on error
+      setEmailNotifications(prev => ({
+        ...prev,
+        [key]: !prev[key]
+      }))
+    }
+  }
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -502,6 +539,40 @@ export default function ProfileSettings() {
                       <LaptopIcon className="w-6 h-6" />
                       <span className="text-sm font-medium">System</span>
                     </button>
+                  </div>
+                </div>
+
+                <hr className="border-neutral-100 dark:border-neutral-800" />
+
+                <div>
+                  <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mb-1">Email Notifications</h2>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">Choose what emails you want to receive.</p>
+
+                  <div className="mt-4 space-y-3">
+                    {[
+                      { key: 'new_file_received', label: 'New File Received', description: 'When someone sends you a file.' },
+                      { key: 'file_downloaded', label: 'File Downloaded', description: 'When someone downloads your shared file.' },
+                      { key: 'security_alerts', label: 'Security Alerts', description: 'Important security events like new logins.' },
+                    ].map((item) => (
+                      <div key={item.key} className="flex items-center justify-between p-4 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl">
+                        <div>
+                          <span className="block text-sm font-medium text-neutral-900 dark:text-white">{item.label}</span>
+                          <span className="block text-xs text-neutral-500 dark:text-neutral-400">{item.description}</span>
+                        </div>
+                        <button
+                          onClick={() => handleToggleNotification(item.key as keyof typeof emailNotifications)}
+                          className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                            emailNotifications[item.key as keyof typeof emailNotifications] ? 'bg-brand-orange' : 'bg-neutral-200 dark:bg-neutral-700'
+                          }`}
+                        >
+                          <span
+                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                              emailNotifications[item.key as keyof typeof emailNotifications] ? 'translate-x-5' : 'translate-x-0'
+                            }`}
+                          />
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 </div>
 

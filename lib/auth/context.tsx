@@ -4,10 +4,19 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { useRouter } from 'next/navigation'
 import apiRequest from '@/lib/api/client'
 
+interface UserPreferences {
+  email_notifications: {
+    new_file_received: boolean
+    file_downloaded: boolean
+    security_alerts: boolean
+  }
+}
+
 interface User {
   id: string
   email: string
   totp_enabled: boolean
+  preferences?: UserPreferences
 }
 
 interface AuthContextType {
